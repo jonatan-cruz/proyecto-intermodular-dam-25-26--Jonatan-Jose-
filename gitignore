@@ -1,0 +1,14 @@
+# Datos generados por docker-compose del PI 
+volumesOdoo/ 
+ 
+# Python/Odoo 
+**/__pycache__/ 
+**/*.pyc 
+**/*.pyo 
+ 
+# SO/IDE 
+.DS_Store 
+Thumbs.db 
+.vscode/ 
+.idea/ 
+ 
