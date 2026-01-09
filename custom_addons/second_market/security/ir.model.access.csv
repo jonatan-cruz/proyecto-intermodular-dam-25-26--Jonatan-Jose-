@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_second_market_second_market,second_market.second_market,model_second_market_second_market,base.group_user,1,1,1,1

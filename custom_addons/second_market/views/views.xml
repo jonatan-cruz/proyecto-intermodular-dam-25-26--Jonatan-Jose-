@@ -1,0 +1,60 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+<!--
+    <record model="ir.ui.view" id="second_market.list">
+      <field name="name">second_market list</field>
+      <field name="model">second_market.second_market</field>
+      <field name="arch" type="xml">
+        <list>
+          <field name="name"/>
+          <field name="value"/>
+          <field name="value2"/>
+        </list>
+      </field>
+    </record>
+-->
+
+    <!-- actions opening views on models -->
+<!--
+    <record model="ir.actions.act_window" id="second_market.action_window">
+      <field name="name">second_market window</field>
+      <field name="res_model">second_market.second_market</field>
+      <field name="view_mode">list,form</field>
+    </record>
+-->
+
+    <!-- server action to the one above -->
+<!--
+    <record model="ir.actions.server" id="second_market.action_server">
+      <field name="name">second_market server</field>
+      <field name="model_id" ref="model_second_market_second_market"/>
+      <field name="state">code</field>
+      <field name="code">
+        action = {
+          "type": "ir.actions.act_window",
+          "view_mode": "list,form",
+          "res_model": model._name,
+        }
+      </field>
+    </record>
+-->
+
+    <!-- Top menu item -->
+<!--
+    <menuitem name="second_market" id="second_market.menu_root"/>
+-->
+    <!-- menu categories -->
+<!--
+    <menuitem name="Menu 1" id="second_market.menu_1" parent="second_market.menu_root"/>
+    <menuitem name="Menu 2" id="second_market.menu_2" parent="second_market.menu_root"/>
+-->
+    <!-- actions -->
+<!--
+    <menuitem name="List" id="second_market.menu_1_list" parent="second_market.menu_1"
+              action="second_market.action_window"/>
+    <menuitem name="Server to list" id="second_market" parent="second_market.menu_2"
+              action="second_market.action_server"/>
+-->
+  </data>
+</odoo>
