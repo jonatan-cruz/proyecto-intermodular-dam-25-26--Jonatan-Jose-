@@ -1,14 +1,22 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields
+from odoo import models, fields, api
+from odoo.exceptions import ValidationError
 
 class SecondMarketUser(models.Model):
-    _inherit = 'res.partner'  
+    _name = 'second.market.user'
+    _description = 'Usuario de Second Market'
 
     id_usuario = fields.Char(
         string='ID Usuario', 
         size=7, 
         required=True, 
         help='ID de usuario de 7 dígitos'
+    )
+
+    name = fields.Char(
+        string='Nombre', 
+        size=50, 
+        required=True
     )
 
     contraseña = fields.Char(
@@ -37,24 +45,19 @@ class SecondMarketUser(models.Model):
         default=0
     )
 
-    is_second_market_user = fields.Boolean(
-        string="Usuario Second Market",
-        default=True
-    )
-
     # Validación para el ID de usuario (7 dígitos)
-    #@api.constrains('id_usuario')
-    #def _check_id_usuario(self):
-    #    for rec in self:
-    #        if not rec.id_usuario.isdigit() or len(rec.id_usuario) != 7:
-    #            raise ValidationError('El ID de usuario debe tener exactamente 7 dígitos numéricos.')
+    @api.constrains('id_usuario')
+    def _check_id_usuario(self):
+        for rec in self:
+            if not rec.id_usuario.isdigit() or len(rec.id_usuario) != 7:
+                raise ValidationError('El ID de usuario debe tener exactamente 7 dígitos numéricos.')
 
     # Validación para la contraseña (mínimo 8 caracteres)
-    #@api.constrains('contraseña')
-    #def _check_contraseña(self):
-    #    for rec in self:
-    #        if rec.contraseña and len(rec.contraseña) < 8:
-    #            raise ValidationError('La contraseña debe tener al menos 8 caracteres.')
+    @api.constrains('contraseña')
+    def _check_contraseña(self):
+        for rec in self:
+            if len(rec.contraseña) < 8:
+                raise ValidationError('La contraseña debe tener al menos 8 caracteres.')
             
     def action_eliminar_usuario(self):
         for record in self:
