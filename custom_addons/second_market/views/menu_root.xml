@@ -1,0 +1,10 @@
+<odoo>
+  <data>
+
+    <!-- Menú Principal -->
+    <menuitem id="menu_second_market_root"
+      name="Second Market"
+      sequence="10"
+      web_icon="second_market,static/description/icon.png" />
+  </data>
+</odoo>

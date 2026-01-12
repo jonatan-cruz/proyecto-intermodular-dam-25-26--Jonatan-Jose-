@@ -1,3 +1,4 @@
 # -*- coding: utf-8 -*-
 
-from . import models
+from . import second_market_articulo
+from . import second_market_categoria

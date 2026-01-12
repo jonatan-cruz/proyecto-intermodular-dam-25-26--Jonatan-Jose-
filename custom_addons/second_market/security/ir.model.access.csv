@@ -1,2 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_second_market_second_market,second_market.second_market,model_second_market_second_market,base.group_user,1,1,1,1
+access_second_market_article_user,second.market.article.user,model_second_market_article,base.group_user,1,1,1,1
+access_second_market_category_user,second.market.category.user,model_second_market_category,base.group_user,1,1,1,0
+access_second_market_category_manager,second.market.category.manager,model_second_market_category,base.group_system,1,1,1,1
