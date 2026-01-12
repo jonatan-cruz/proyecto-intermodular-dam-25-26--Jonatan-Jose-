@@ -1,0 +1,27 @@
+<odoo>
+    <record id="view_second_market_user_list" model="ir.ui.view">
+        <field name="name">second.market.user.list</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <tree string="Usuarios Second Market">
+                <field name="id_usuario"/>
+                <field name="name"/>
+                <field name="productos_en_venta"/>
+                <field name="productos_vendidos"/>
+                <field name="productos_comprados"/>
+                <field name="antiguedad"/>
+                <button name="action_eliminar_usuario" string="Eliminar" type="object" class="btn-danger"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_second_market_users" model="ir.actions.act_window">
+        <field name="name">Usuarios Second Market</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_second_market_user_list"/>
+        <field name="domain">[('is_second_market_user','=',True)]</field>
+        <field name="target">current</field>
+    </record>
+    <menuitem id="menu_second_market_users" name="Usuarios" parent="menu_second_market_root" action="action_second_market_users" sequence="10"/>
+</odoo>
