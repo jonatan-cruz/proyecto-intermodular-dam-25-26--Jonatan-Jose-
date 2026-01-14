@@ -7,3 +7,5 @@ access_second_market_article_user,second.market.article.user,model_second_market
 access_second_market_category_user,second.market.category.user,model_second_market_category,base.group_user,1,1,1,0
 access_second_market_category_manager,second.market.category.manager,model_second_market_category,base.group_system,1,1,1,
 access_second_market_user,second.market.user,model_second_market_user,base.group_user,1,1,1,1
+access_second_market_comment_user,second.market.comment.user,model_second_market_comment,base.group_user,1,1,1,1
+access_second_market_comment_public,second.market.comment.public,model_second_market_comment,base.group_public,1,0,0,0

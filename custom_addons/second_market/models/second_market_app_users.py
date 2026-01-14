@@ -19,8 +19,8 @@ class SecondMarketUser(models.Model):
         required=True
     )
 
-    contraseña = fields.Char(
-        string='Contraseña', 
+    contrasena = fields.Char(
+        string='Contrasena', 
         size=50, 
         required=True
     )
