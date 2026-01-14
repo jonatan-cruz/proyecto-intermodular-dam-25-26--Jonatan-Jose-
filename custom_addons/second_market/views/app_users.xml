@@ -1,0 +1,53 @@
+<odoo>
+    
+
+    <record id="view_second_market_user_list" model="ir.ui.view">
+        <field name="name">second.market.user.list</field>
+        <field name="model">second.market.user</field>
+        <field name="arch" type="xml">
+            <list string="Usuarios Second Market">
+                <field name="id_usuario"/>
+                <field name="name"/>
+                <field name="productos_en_venta"/>
+                <field name="productos_vendidos"/>
+                <field name="productos_comprados"/>
+                <field name="antiguedad"/>
+                <button name="action_eliminar_usuario" string="Eliminar" type="object" class="btn-danger"/>
+            </list>
+        </field>
+    </record>
+     <record id="view_second_market_user_form" model="ir.ui.view">
+        <field name="name">second.market.user.form</field>
+        <field name="model">second.market.user</field>
+        <field name="arch" type="xml">
+            <form string="Usuario Second Market">
+                <sheet>
+                    <group>
+                        <field name="id_usuario"/>
+                        <field name="name"/>
+                        <field name="antiguedad"/>
+                    </group>
+                    <group>
+                        <field name="productos_en_venta"/>
+                        <field name="productos_vendidos"/>
+                        <field name="productos_comprados"/>
+                    </group>
+                    <footer>
+                        <button name="action_eliminar_usuario" string="Eliminar" type="object" class="btn-danger"/>
+                        <button string="Cerrar" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_second_market_users" model="ir.actions.act_window">
+        <field name="name">Usuarios Second Market</field>
+        <field name="res_model">second.market.user</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_second_market_user_list"/>
+        <field name="target">current</field>
+    </record>
+    <menuitem id="menu_second_market_users" name="Usuarios" parent="menu_second_market_root" action="action_second_market_users" sequence="10"/>
+
+    
+</odoo>
