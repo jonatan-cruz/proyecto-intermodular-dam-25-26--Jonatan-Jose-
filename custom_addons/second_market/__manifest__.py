@@ -25,7 +25,9 @@ Long description of module's purpose
     'data': [
         'security/ir.model.access.csv',
         'views/menu_root.xml',
-        'views/views.xml',
+        'views/articulos_views.xml',
+        'views/categorias_views.xml',
+        'views/etiquetas_views.xml',
         'views/templates.xml',
         'views/app_users.xml',
     ],
