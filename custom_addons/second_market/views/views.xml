@@ -6,186 +6,82 @@
         <!-- VISTAS PARA ARTÍCULOS -->
         <!-- ========================================== -->
 
-        <!-- Vista list (lista) de Artículos -->
+        <!-- Vista List de Artículos -->
         <record id="view_second_market_article_list" model="ir.ui.view">
-            <field name="name">second.market.article.list</field>
-            <field name="model">second.market.article</field>
+            <field name="name">second_market.article.list</field>
+            <field name="model">second_market.article</field>
             <field name="arch" type="xml">
-                <list string="Artículos" decoration-success="estado_publicacion=='publicado'"
-                    decoration-muted="estado_publicacion=='vendido'"
-                    decoration-warning="estado_publicacion=='reservado'">
-                    <field name="codigo" />
+                <list string="Artículos">
+                    <field name="imagen_principal" widget="image" options="{'size': [64, 64]}"
+                        class="oe_avatar" string="Imagen" />
                     <field name="nombre" />
                     <field name="id_categoria" />
-                    <field name="precio" widget="monetary" />
-                    <field name="estado_producto" />
-                    <field name="estado_publicacion" />
+                    <field name="precio" />
                     <field name="id_propietario" />
                     <field name="localidad" />
-                    <field name="conteo_vistas" />
-                    <field name="create_date" />
                 </list>
             </field>
         </record>
 
-        <!-- Vista Form (formulario) de Artículos -->
+        <!-- Vista Form de Artículos -->
         <record id="view_second_market_article_form" model="ir.ui.view">
-            <field name="name">second.market.article.form</field>
-            <field name="model">second.market.article</field>
+            <field name="name">second_market.article.form</field>
+            <field name="model">second_market.article</field>
             <field name="arch" type="xml">
                 <form string="Artículo">
-                    <header>
-                        <field name="estado_publicacion" widget="statusbar"
-                            statusbar_visible="borrador,publicado,reservado,vendido" />
-                    </header>
                     <sheet>
-                        <div class="oe_button_box" name="button_box">
-                            <button name="toggle_active" type="object"
-                                class="oe_stat_button" icon="fa-archive">
-                                <field name="activo" widget="boolean_button"
-                                    options='{"terminology": "archive"}' />
-                            </button>
-                        </div>
-
                         <group>
                             <group>
-                                <field name="codigo" readonly="1" />
-                                <field name="nombre" />
-                                <field name="id_categoria" />
                                 <field name="id_propietario" />
+                                <field name="id_categoria" />
+                                <field name="nombre" />
+                                <field name="antiguedad" />
+                                <field name="estado_producto" />
                             </group>
                             <group>
                                 <field name="precio" />
-                                <field name="estado_producto" />
-                                <field name="antiguedad" />
-                                <field name="conteo_vistas" readonly="1" />
+                                <field name="localidad" />
                             </group>
                         </group>
-
-                        <notebook>
-                            <page string="Descripción">
-                                <field name="descripcion"
-                                    placeholder="Describe tu artículo (máx. 100 caracteres)" />
-                            </page>
-
-                            <page string="Ubicación">
-                                <group>
+                        <group string="Descripción">
+                            <field name="descripcion" />
+                        </group>
+                        <group string="Etiquetas">
+                            <field name="ids_etiquetas" widget="many2many_tags"
+                                options="{'color_field': 'color'}" />
+                        </group>
+                        <group string="Imágenes">
+                            <field name="ids_imagenes" mode="kanban">
+                                <kanban>
+                                    <field name="image" />
+                                    <field name="name" />
+                                    <templates>
+                                        <t t-name="kanban-box">
+                                            <div class="oe_kanban_global_click">
+                                                <div class="o_kanban_image">
+                                                    <field name="image" widget="image"
+                                                        style="max-width: 100px; max-height: 100px;" />
+                                                </div>
+                                                <div class="oe_kanban_details">
+                                                    <strong>
+                                                        <field name="name" />
+                                                    </strong>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </templates>
+                                </kanban>
+                                <form>
                                     <group>
-                                        <field name="localidad" />
-                                        <field name="latitud" />
+                                        <field name="image" widget="image" />
+                                        <field name="name" />
+                                        <field name="sequence" />
                                     </group>
-                                    <group>
-                                        <field name="longitud" />
-                                    </group>
-                                </group>
-                            </page>
-
-                            <page string="Estadísticas">
-                                <group>
-                                    <group>
-                                        <field name="conteo_vistas" readonly="1" />
-                                        <field name="conteo_favoritos" readonly="1" />
-                                    </group>
-                                    <group>
-                                        <field name="conteo_comentarios" readonly="1" />
-                                        <field name="reportado" readonly="1" />
-                                    </group>
-                                </group>
-                            </page>
-                        </notebook>
+                                </form>
+                            </field>
+                        </group>
                     </sheet>
-                    <div class="oe_chatter">
-                        <field name="message_follower_ids" widget="mail_followers" />
-                        <field name="activity_ids" widget="mail_activity" />
-                        <field name="message_ids" widget="mail_thread" />
-                    </div>
                 </form>
-            </field>
-        </record>
-
-        <!-- Vista Search de Artículos -->
-        <record id="view_second_market_article_search" model="ir.ui.view">
-            <field name="name">second.market.article.search</field>
-            <field name="model">second.market.article</field>
-            <field name="arch" type="xml">
-                <search string="Buscar Artículos">
-                    <field name="nombre" />
-                    <field name="codigo" />
-                    <field name="id_categoria" />
-                    <field name="id_propietario" />
-                    <field name="localidad" />
-
-                    <filter string="Mis Artículos" name="mis_articulos"
-                        domain="[('id_propietario.user_ids', 'in', uid)]" />
-                    <separator />
-                    <filter string="Borrador" name="borrador"
-                        domain="[('estado_publicacion', '=', 'borrador')]" />
-                    <filter string="Publicados" name="publicado"
-                        domain="[('estado_publicacion', '=', 'publicado')]" />
-                    <filter string="Reservados" name="reservado"
-                        domain="[('estado_publicacion', '=', 'reservado')]" />
-                    <filter string="Vendidos" name="vendido"
-                        domain="[('estado_publicacion', '=', 'vendido')]" />
-                    <separator />
-                    <filter string="Activos" name="activos"
-                        domain="[('activo', '=', True)]" />
-                    <filter string="Archivados" name="archivados"
-                        domain="[('activo', '=', False)]" />
-
-                    <group expand="0" string="Agrupar Por">
-                        <filter string="Categoría" name="group_categoria"
-                            context="{'group_by': 'id_categoria'}" />
-                        <filter string="Estado" name="group_estado"
-                            context="{'group_by': 'estado_publicacion'}" />
-                        <filter string="Propietario" name="group_propietario"
-                            context="{'group_by': 'id_propietario'}" />
-                        <filter string="Localidad" name="group_localidad"
-                            context="{'group_by': 'localidad'}" />
-                    </group>
-                </search>
-            </field>
-        </record>
-
-        <!-- Vista Kanban de Artículos -->
-        <record id="view_second_market_article_kanban" model="ir.ui.view">
-            <field name="name">second.market.article.kanban</field>
-            <field name="model">second.market.article</field>
-            <field name="arch" type="xml">
-                <kanban default_group_by="estado_publicacion">
-                    <field name="id" />
-                    <field name="nombre" />
-                    <field name="precio" />
-                    <field name="estado_publicacion" />
-                    <field name="id_categoria" />
-                    <field name="localidad" />
-                    <templates>
-                        <t t-name="kanban-box">
-                            <div class="oe_kanban_global_click">
-                                <div class="oe_kanban_details">
-                                    <strong class="o_kanban_record_title">
-                                        <field name="nombre" />
-                                    </strong>
-                                    <div class="o_kanban_record_subtitle">
-                                        <field name="id_categoria" />
-                                    </div>
-                                    <div class="o_kanban_record_body">
-                                        <div>Precio: <field name="precio" /> €</div>
-                                        <div>Ubicación: <field name="localidad" /></div>
-                                    </div>
-                                    <div class="o_kanban_record_bottom">
-                                        <div class="oe_kanban_bottom_left">
-                                            <field name="estado_producto" widget="badge" />
-                                        </div>
-                                        <div class="oe_kanban_bottom_right">
-                                            <field name="id_propietario"
-                                                widget="many2one_avatar_user" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </t>
-                    </templates>
-                </kanban>
             </field>
         </record>
 
@@ -193,63 +89,47 @@
         <!-- VISTAS PARA CATEGORÍAS -->
         <!-- ========================================== -->
 
-        <!-- Vista list de Categorías -->
+        <!-- Vista List de Categorías -->
         <record id="view_second_market_category_list" model="ir.ui.view">
-            <field name="name">second.market.category.list</field>
-            <field name="model">second.market.category</field>
+            <field name="name">second_market.category.list</field>
+            <field name="model">second_market.category</field>
             <field name="arch" type="xml">
                 <list string="Categorías">
                     <field name="name" />
                     <field name="descripcion" />
-                    <field name="conteo_articulos" />
-                    <field name="activo" />
                 </list>
             </field>
         </record>
 
         <!-- Vista Form de Categorías -->
         <record id="view_second_market_category_form" model="ir.ui.view">
-            <field name="name">second.market.category.form</field>
-            <field name="model">second.market.category</field>
+            <field name="name">second_market.category.form</field>
+            <field name="model">second_market.category</field>
             <field name="arch" type="xml">
                 <form string="Categoría">
                     <sheet>
-                        <div class="oe_button_box" name="button_box">
-                            <button name="toggle_active" type="object"
-                                class="oe_stat_button" icon="fa-archive">
-                                <field name="activo" widget="boolean_button"
-                                    options='{"terminology": "archive"}' />
-                            </button>
-                        </div>
-
                         <group>
-                            <group>
-                                <field name="name" />
-                                <field name="icono" placeholder="fa-laptop" />
-                            </group>
-                            <group>
-                                <field name="color" widget="color" />
-                                <field name="conteo_articulos" readonly="1" />
-                            </group>
+                            <field name="name" />
+                            <field name="descripcion" />
+                            <field name="imagen" widget="image" class="oe_avatar" />
                         </group>
-
-                        <group>
-                            <field name="descripcion" placeholder="Describe esta categoría" />
-                        </group>
-
-                        <notebook>
-                            <page string="Artículos">
-                                <field name="articulos_ids" readonly="1">
-                                    <list>
-                                        <field name="nombre" />
-                                        <field name="precio" />
-                                        <field name="estado_publicacion" />
-                                    </list>
-                                </field>
-                            </page>
-                        </notebook>
                     </sheet>
                 </form>
+            </field>
+        </record>
+
+        <!-- ========================================== -->
+        <!-- VISTAS PARA ETIQUETAS -->
+        <!-- ========================================== -->
+
+        <record id="view_second_market_tag_list" model="ir.ui.view">
+            <field name="name">second_market.tag.list</field>
+            <field name="model">second_market.tag</field>
+            <field name="arch" type="xml">
+                <list string="Etiquetas" editable="bottom">
+                    <field name="name" />
+                    <field name="color" widget="color_picker" />
+                </list>
             </field>
         </record>
 
@@ -257,66 +137,45 @@
         <!-- ACCIONES -->
         <!-- ========================================== -->
 
-        <!-- Acción para Artículos -->
         <record id="action_second_market_article" model="ir.actions.act_window">
             <field name="name">Artículos</field>
-            <field name="res_model">second.market.article</field>
-            <field name="view_mode">kanban,list,form</field>
-            <field name="context">{'search_default_publicado': 1}</field>
-            <field name="help" type="html">
-                <p class="o_view_nocontent_smiling_face">
-                    ¡Crea tu primer artículo!
-                </p>
-                <p>
-                    Publica artículos de segunda mano para vender o intercambiar.
-                </p>
-            </field>
+            <field name="res_model">second_market.article</field>
+            <field name="view_mode">list,form</field>
         </record>
 
-        <!-- Acción para Categorías -->
         <record id="action_second_market_category" model="ir.actions.act_window">
             <field name="name">Categorías</field>
-            <field name="res_model">second.market.category</field>
+            <field name="res_model">second_market.category</field>
             <field name="view_mode">list,form</field>
-            <field name="help" type="html">
-                <p class="o_view_nocontent_smiling_face">
-                    ¡Crea tu primera categoría!
-                </p>
-                <p>
-                    Organiza los artículos en categorías para facilitar su búsqueda.
-                </p>
-            </field>
+        </record>
+
+        <record id="action_second_market_tag" model="ir.actions.act_window">
+            <field name="name">Etiquetas</field>
+            <field name="res_model">second_market.tag</field>
+            <field name="view_mode">list,form</field>
         </record>
 
         <!-- ========================================== -->
-        <!-- MENÚS -->
+        <!-- SUBMENÚS -->
         <!-- ========================================== -->
 
-        <!-- Menú Principal -->
-        <menuitem id="menu_second_market_root"
-            name="Second Market"
-            sequence="10"
-            web_icon="second_market,static/description/icon.png" />
-
-        <!-- Submenú: Artículos -->
         <menuitem id="menu_second_market_articles"
             name="Artículos"
             parent="menu_second_market_root"
             action="action_second_market_article"
             sequence="10" />
 
-        <!-- Submenú: Categorías -->
         <menuitem id="menu_second_market_categories"
             name="Categorías"
             parent="menu_second_market_root"
             action="action_second_market_category"
             sequence="20" />
 
-        <!-- Submenú: Configuración -->
-        <menuitem id="menu_second_market_config"
-            name="Configuración"
+        <menuitem id="menu_second_market_tags"
+            name="Etiquetas"
             parent="menu_second_market_root"
-            sequence="100" />
+            action="action_second_market_tag"
+            sequence="30" />
 
     </data>
 </odoo>

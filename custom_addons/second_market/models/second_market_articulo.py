@@ -5,7 +5,7 @@ from odoo.exceptions import ValidationError, UserError
 
 
 class ArticuloSegundaMano(models.Model):
-    _name = 'second.market.article'
+    _name = 'second_market.article'
     _description = 'Artículo de Segunda Mano'
     _inherit = ['mail.thread', 'mail.activity.mixin'] 
     _order = 'create_date desc'
@@ -53,7 +53,7 @@ class ArticuloSegundaMano(models.Model):
     )
     
     id_categoria = fields.Many2one(
-        'second.market.category',
+        'second_market.category',
         string='Categoría',
         required=True,
         tracking=True,
@@ -115,18 +115,31 @@ class ArticuloSegundaMano(models.Model):
     )
     
     # ============================================
-    # IMÁGENES
+    # IMÁGENES Y ETIQUETAS
     # ============================================
     
-    # ids_imagenes = fields.Many2many(
-    #     'ir.attachment',
-    #     'second_market_article_image_rel',
-    #     'article_id',
-    #     'attachment_id',
-    #     string='Imágenes',
-    #     help='Entre 1 y 10 imágenes del producto'
-    # )
+    ids_imagenes = fields.One2many(
+        'second_market.image',
+        'article_id',
+        string='Imágenes',
+        help='Entre 1 y 10 imágenes del producto'
+    )
     
+    ids_etiquetas = fields.Many2many(
+        'second_market.tag',
+        'second_market_article_tag_rel', 
+        'article_id',
+        'tag_id',
+        string='Etiquetas',
+        help='Máximo 5 etiquetas'
+    )
+
+    # proyecto_integrador = fields.Char(
+    #     string='Proyecto Integrador 2',
+    #     default='PI 2',
+    #     readonly=True
+    # )
+
     conteo_imagenes = fields.Integer(
         string='Número de Imágenes',
         compute='_computar_conteo_imagenes',
@@ -138,19 +151,6 @@ class ArticuloSegundaMano(models.Model):
         compute='_computar_imagen_principal',
         store=False
     )
-    
-    # ============================================
-    # ETIQUETAS
-    # ============================================
-    
-    # ids_etiquetas = fields.Many2many(
-    #     'second.market.tag',
-    #     'second_market_article_tag_rel', 
-    #     'article_id',
-    #     'tag_id',
-    #     string='Etiquetas',
-    #     help='Máximo 5 etiquetas'
-    # )
     
     conteo_etiquetas = fields.Integer(
         string='Número de Etiquetas',
@@ -250,20 +250,24 @@ class ArticuloSegundaMano(models.Model):
     # CAMPOS COMPUTADOS
     # ============================================
     
+    @api.depends('ids_imagenes')
     def _computar_conteo_imagenes(self):
-        """Temporal: devuelve 0 hasta implementar imágenes"""
         for articulo in self:
-            articulo.conteo_imagenes = 0
+            articulo.conteo_imagenes = len(articulo.ids_imagenes)
     
+    @api.depends('ids_imagenes.image')
     def _computar_imagen_principal(self):
-        """Temporal: devuelve False hasta implementar imágenes"""
         for articulo in self:
-            articulo.imagen_principal = False
+            if articulo.ids_imagenes:
+                # Tomamos la imagen con menor secuencia o la primera creada
+                articulo.imagen_principal = articulo.ids_imagenes[0].image
+            else:
+                articulo.imagen_principal = False
     
+    @api.depends('ids_etiquetas')
     def _computar_conteo_etiquetas(self):
-        """Temporal: devuelve 0 hasta implementar etiquetas"""
         for articulo in self:
-            articulo.conteo_etiquetas = 0
+            articulo.conteo_etiquetas = len(articulo.ids_etiquetas)
     
     def _computar_conteo_comentarios(self):
         """Temporal: devuelve 0 hasta implementar comentarios"""
@@ -285,19 +289,19 @@ class ArticuloSegundaMano(models.Model):
     # CONSTRAINTS Y VALIDACIONES
     # ============================================
     
-    # @api.constrains('ids_imagenes')
-    # def _check_conteo_imagenes(self):
-    #     for articulo in self:
-    #         if len(articulo.ids_imagenes) < 1:
-    #             raise ValidationError(_('Debes subir al menos 1 imagen.'))
-    #         if len(articulo.ids_imagenes) > 10:
-    #             raise ValidationError(_('No puedes subir más de 10 imágenes.'))
+    @api.constrains('ids_imagenes')
+    def _check_conteo_imagenes(self):
+        for articulo in self:
+            if len(articulo.ids_imagenes) < 1:
+                raise ValidationError(_('Debes subir al menos 1 imagen.'))
+            if len(articulo.ids_imagenes) > 10:
+                raise ValidationError(_('No puedes subir más de 10 imágenes.'))
     
-    # @api.constrains('ids_etiquetas')
-    # def _check_conteo_etiquetas(self):
-    #     for articulo in self:
-    #         if len(articulo.ids_etiquetas) > 5:
-    #             raise ValidationError(_('No puedes asignar más de 5 etiquetas.'))
+    @api.constrains('ids_etiquetas')
+    def _check_conteo_etiquetas(self):
+        for articulo in self:
+            if len(articulo.ids_etiquetas) > 5:
+                raise ValidationError(_('No puedes asignar más de 5 etiquetas.'))
     
     @api.constrains('precio')
     def _check_precio(self):

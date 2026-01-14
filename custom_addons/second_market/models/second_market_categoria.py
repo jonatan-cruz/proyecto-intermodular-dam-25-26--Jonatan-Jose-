@@ -5,7 +5,7 @@ from odoo.exceptions import ValidationError
 
 
 class CategoriaSegundaMano(models.Model):
-    _name = 'second.market.category'
+    _name = 'second_market.category'
     _description = 'Categoría de Artículos de Segunda Mano'
     _order = 'name'
     
@@ -19,6 +19,11 @@ class CategoriaSegundaMano(models.Model):
     descripcion = fields.Text(
         string='Descripción',
         help='Descripción de la categoría'
+    )
+
+    imagen = fields.Binary(
+        string='Imagen',
+        help='Imagen representativa de la categoría'
     )
     
     activo = fields.Boolean(
@@ -39,7 +44,7 @@ class CategoriaSegundaMano(models.Model):
     
     # Relación con artículos
     articulos_ids = fields.One2many(
-        'second.market.article',
+        'second_market.article',
         'id_categoria',
         string='Artículos'
     )

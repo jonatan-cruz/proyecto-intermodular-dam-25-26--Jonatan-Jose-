@@ -1,6 +1,5 @@
 <odoo>
   <data>
-
     <!-- Menú Principal -->
     <menuitem id="menu_second_market_root"
       name="Second Market"
