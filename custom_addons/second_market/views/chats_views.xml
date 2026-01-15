@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- ========================================== -->
+        <!-- VISTAS PARA CHATS -->
+        <!-- ========================================== -->
+
+        <!-- Vista list de Chats -->
+        <record id="view_second_market_chat_list" model="ir.ui.view">
+            <field name="name">second_market.chat.list</field>
+            <field name="model">second_market.chat</field>
+            <field name="arch" type="xml">
+                <list string="Chats">
+                    <field name="id_articulo" />
+                    <field name="id_comprador" />
+                    <field name="id_vendedor" />
+                    <field name="ultimo_mensaje" />
+                    <field name="fecha_ultimo_mensaje" />
+                    <field name="conteo_mensajes" />
+                </list>
+            </field>
+        </record>
+
+        <!-- Vista Form de Chats -->
+        <record id="view_second_market_chat_form" model="ir.ui.view">
+            <field name="name">second_market.chat.form</field>
+            <field name="model">second_market.chat</field>
+            <field name="arch" type="xml">
+                <form string="Chat">
+                    <sheet>
+                        <group>
+                            <group string="Información del Chat">
+                                <field name="id_articulo" readonly="1" />
+                                <field name="id_comprador" readonly="1" />
+                                <field name="id_vendedor" readonly="1" />
+                            </group>
+                            <group string="Estadísticas">
+                                <field name="conteo_mensajes" readonly="1" />
+                                <field name="fecha_ultimo_mensaje" readonly="1" />
+                                <field name="activo" />
+                            </group>
+                        </group>
+
+                        <notebook>
+                            <page string="Mensajes">
+                                <field name="ids_mensajes" mode="list">
+                                    <list editable="bottom" create="true" delete="false">
+                                        <field name="id_usuario" readonly="1" />
+                                        <field name="contenido" />
+                                        <field name="fecha_envio" readonly="1" />
+                                        <field name="leido" />
+                                    </list>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Vista Search de Chats -->
+        <record id="view_second_market_chat_search" model="ir.ui.view">
+            <field name="name">second_market.chat.search</field>
+            <field name="model">second_market.chat</field>
+            <field name="arch" type="xml">
+                <search string="Buscar Chats">
+                    <field name="id_articulo" />
+                    <field name="id_comprador" />
+                    <field name="id_vendedor" />
+                    <filter string="Activos" name="activos" domain="[('activo', '=', True)]" />
+                    <filter string="Archivados" name="archivados" domain="[('activo', '=', False)]" />
+                    <group expand="0" string="Agrupar por">
+                        <filter string="Artículo" name="group_articulo"
+                            context="{'group_by': 'id_articulo'}" />
+                        <filter string="Comprador" name="group_comprador"
+                            context="{'group_by': 'id_comprador'}" />
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- ========================================== -->
+        <!-- ACCIONES -->
+        <!-- ========================================== -->
+
+        <record id="action_second_market_chat" model="ir.actions.act_window">
+            <field name="name">Chats</field>
+            <field name="res_model">second_market.chat</field>
+            <field name="view_mode">list,form</field>
+            <field name="context">{'search_default_activos': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Crear un nuevo chat
+                </p>
+                <p>
+                    Los chats permiten la conversación entre compradores y vendedores sobre
+                    artículos específicos.
+                </p>
+            </field>
+        </record>
+
+        <!-- ========================================== -->
+        <!-- MENÚS -->
+        <!-- ========================================== -->
+
+        <menuitem id="menu_second_market_chats"
+            name="Chats"
+            parent="menu_second_market_root"
+            action="action_second_market_chat"
+            sequence="40" />
+
+    </data>
+</odoo>

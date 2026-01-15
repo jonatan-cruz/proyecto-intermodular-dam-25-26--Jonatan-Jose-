@@ -3,10 +3,10 @@ access_second_market_article,second_market.article,model_second_market_article,b
 access_second_market_category,second_market.category,model_second_market_category,base.group_user,1,1,1,1
 access_second_market_tag,second_market.tag,model_second_market_tag,base.group_user,1,1,1,1
 access_second_market_image,second_market.image,model_second_market_image,base.group_user,1,1,1,1
-access_second_market_article_user,second.market.article.user,model_second_market_article,base.group_user,1,1,1,1
-access_second_market_category_user,second.market.category.user,model_second_market_category,base.group_user,1,1,1,0
-access_second_market_category_manager,second.market.category.manager,model_second_market_category,base.group_system,1,1,1,
 access_second_market_user,second.market.user,model_second_market_user,base.group_user,1,1,1,1
+access_second_market_chat,second_market.chat,model_second_market_chat,base.group_user,1,1,1,1
+access_second_market_message,second_market.message,model_second_market_message,base.group_user,1,1,1,1
+access_second_market_report,second_market.report,model_second_market_report,base.group_user,1,1,1,1
 access_second_market_comment_user,second.market.comment.user,model_second_market_comment,base.group_user,1,1,1,1
 access_second_market_comment_public,second.market.comment.public,model_second_market_comment,base.group_public,1,0,0,0
 access_second_market_user_user,second.market.user.user,model_second_market_user,base.group_user,1,1,1,0

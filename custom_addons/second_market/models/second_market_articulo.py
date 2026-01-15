@@ -204,11 +204,11 @@ class ArticuloSegundaMano(models.Model):
         store=True
     )
     
-    #conteo_chats = fields.Integer(  # ← FALTABA ESTE CAMPO
-    #    string='Chats',
-    #    compute='_computar_conteo_chats',
-    #    store=True
-    #)
+    conteo_chats = fields.Integer(
+        string='Chats',
+        compute='_computar_conteo_chats',
+        store=True
+    )
     
     # ============================================
     # RELACIONES CON OTROS MODELOS
@@ -220,11 +220,11 @@ class ArticuloSegundaMano(models.Model):
         string='Comentarios'
     )
     
-    # ids_chats = fields.One2many(
-    #     'second.market.chat',
-    #     'id_articulo',  # ← Campo que debe existir en second.market.chat
-    #     string='Conversaciones'
-    # )
+    ids_chats = fields.One2many(
+        'second_market.chat',
+        'id_articulo',
+        string='Conversaciones'
+    )
     
     # id_transaccion = fields.Many2one(
     #     'second.market.transaction',
@@ -284,6 +284,11 @@ class ArticuloSegundaMano(models.Model):
         """Temporal: devuelve 0 hasta implementar favoritos"""
         for articulo in self:
             articulo.conteo_favoritos = 0
+    
+    def _computar_conteo_chats(self):
+        """Contar chats activos del artículo"""
+        for articulo in self:
+            articulo.conteo_chats = len(articulo.ids_chats.filtered(lambda c: c.activo))
     
     
     # ============================================

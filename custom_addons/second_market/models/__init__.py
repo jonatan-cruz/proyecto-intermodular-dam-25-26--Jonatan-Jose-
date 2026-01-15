@@ -5,6 +5,9 @@ from . import second_market_categoria
 from . import second_market_articulo
 from . import second_market_imagen
 from . import second_market_app_users
+from . import second_market_chat
+from . import second_market_message
+from . import second_market_denuncia
 from . import second_market_comentarios
 from . import second_market_purchase
 from . import second_market_rating
