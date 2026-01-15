@@ -10,5 +10,5 @@ access_second_market_user,second.market.user,model_second_market_user,base.group
 access_second_market_comment_user,second.market.comment.user,model_second_market_comment,base.group_user,1,1,1,1
 access_second_market_comment_public,second.market.comment.public,model_second_market_comment,base.group_public,1,0,0,0
 access_second_market_user_user,second.market.user.user,model_second_market_user,base.group_user,1,1,1,0
-access_second_market_user_moderator,second.market.user.moderator,model_second_market_user,second_market.group_second_market_moderator,1,1,1,1
 access_second_market_user_public,second.market.user.public,model_second_market_user,base.group_public,1,0,0,0
+access_second_market_rating_user,access.second.market.rating.user,model_second_market_rating,base.group_user,1,0,0,0
