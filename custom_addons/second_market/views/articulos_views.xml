@@ -1,6 +1,6 @@
 <odoo>
     <data>
-          <!-- ========================================== -->
+        <!-- ========================================== -->
         <!-- VISTAS PARA ARTÍCULOS -->
         <!-- ========================================== -->
 
@@ -83,13 +83,24 @@
             </field>
         </record>
 
+        <!-- Vista Graph de Artículos -->
+        <record id="view_second_market_article_graph" model="ir.ui.view">
+            <field name="name">second_market.article.graph</field>
+            <field name="model">second_market.article</field>
+            <field name="arch" type="xml">
+                <graph string="Productos por categoría" type="bar" sample="1">
+                    <field name="id_categoria" type="row" />
+                </graph>
+            </field>
+        </record>
+
         <record id="action_second_market_article" model="ir.actions.act_window">
             <field name="name">Artículos</field>
             <field name="res_model">second_market.article</field>
-            <field name="view_mode">list,form</field>
+            <field name="view_mode">list,form,graph</field>
         </record>
 
-         <menuitem id="menu_second_market_articles"
+        <menuitem id="menu_second_market_articles"
             name="Artículos"
             parent="menu_second_market_root"
             action="action_second_market_article"
