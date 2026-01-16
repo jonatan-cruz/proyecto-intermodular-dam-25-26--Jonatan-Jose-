@@ -39,6 +39,22 @@
             <field name="view_mode">list,form</field>
         </record>
 
-        <menuitem id="menu_second_market_categories" name="Categorías" parent="menu_second_market_root" action="action_second_market_category" sequence="20" />
+        <!-- Vista de búsqueda/filtros de Categorías -->
+        <record id="view_second_market_category_search" model="ir.ui.view">
+            <field name="name">second_market.category.search</field>
+            <field name="model">second_market.category</field>
+            <field name="arch" type="xml">
+                <search string="Buscar Categorías">
+                    <field name="name" />
+                    <group expand="0" string="Agrupar Por">
+                        <filter string="Categorías con más artículos" name="group_conteo"
+                            context="{'group_by': 'conteo_articulos'}" />
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <menuitem id="menu_second_market_categories" name="Categorías"
+            parent="menu_second_market_root" action="action_second_market_category" sequence="20" />
     </data>
 </odoo>

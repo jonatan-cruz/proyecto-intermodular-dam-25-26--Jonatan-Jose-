@@ -6,8 +6,7 @@ from odoo.exceptions import ValidationError, UserError
 
 class Denuncia(models.Model):
     _name = 'second_market.report'
-    _description = 'Denuncia/Reporte de Artículo o Comentario'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _description = 'Denuncia/Reporte de Artículo'
     _order = 'create_date desc'
     
     # ============================================
@@ -55,6 +54,7 @@ class Denuncia(models.Model):
     ],
         string='Tipo de Denuncia',
         required=True,
+        default='articulo',
         help='Indica si la denuncia es sobre un artículo o un comentario'
     )
     
@@ -65,15 +65,6 @@ class Denuncia(models.Model):
         ondelete='cascade',
         tracking=True,
         help='Artículo sobre el que se realiza la denuncia'
-    )
-    
-    # Denuncia sobre comentario (para cuando implementes comentarios)
-    id_comentario = fields.Many2one(
-        'second_market.comment',
-        string='Comentario Denunciado',
-        ondelete='cascade',
-        tracking=True,
-        help='Comentario sobre el que se realiza la denuncia'
     )
     
     # ============================================
@@ -170,42 +161,17 @@ class Denuncia(models.Model):
     # CAMPOS COMPUTADOS
     # ============================================
     
-    nombre_denunciado = fields.Char(
-        string='Usuario Denunciado',
-        compute='_computar_nombre_denunciado',
-        store=True,
-        help='Propietario del artículo o autor del comentario denunciado'
-    )
-    
-    @api.depends('id_articulo', 'id_articulo.id_propietario', 'id_comentario')
-    def _computar_nombre_denunciado(self):
-        for denuncia in self:
-            if denuncia.tipo_denuncia == 'articulo' and denuncia.id_articulo:
-                # El propietario puede ser res.partner o second.market.user dependiendo de tu modelo de artículo
-                # Ajusta según corresponda
-                if hasattr(denuncia.id_articulo.id_propietario, 'name'):
-                    denuncia.nombre_denunciado = denuncia.id_articulo.id_propietario.name
-                else:
-                    denuncia.nombre_denunciado = str(denuncia.id_articulo.id_propietario)
-            elif denuncia.tipo_denuncia == 'comentario' and denuncia.id_comentario:
-                # Cuando implementes comentarios con second.market.user:
-                # denuncia.nombre_denunciado = denuncia.id_comentario.id_autor.name
-                denuncia.nombre_denunciado = 'Por implementar'
-            else:
-                denuncia.nombre_denunciado = False
     
     # ============================================
     # CONSTRAINTS Y VALIDACIONES
     # ============================================
     
-    @api.constrains('tipo_denuncia', 'id_articulo', 'id_comentario')
+    @api.constrains('id_articulo')
     def _check_tipo_denuncia(self):
-        """Verificar que haya relación con artículo o comentario según el tipo"""
+        """Verificar que haya relación con artículo"""
         for denuncia in self:
-            if denuncia.tipo_denuncia == 'articulo' and not denuncia.id_articulo:
+            if not denuncia.id_articulo:
                 raise ValidationError(_('Debes seleccionar un artículo para denunciar.'))
-            if denuncia.tipo_denuncia == 'comentario' and not denuncia.id_comentario:
-                raise ValidationError(_('Debes seleccionar un comentario para denunciar.'))
     
     @api.constrains('descripcion')
     def _check_descripcion_length(self):
@@ -218,9 +184,7 @@ class Denuncia(models.Model):
     def _check_no_auto_denuncia_articulo(self):
         """Evitar que un usuario denuncie su propio artículo"""
         for denuncia in self:
-            if denuncia.tipo_denuncia == 'articulo' and denuncia.id_articulo:
-                # Comparar IDs si ambos son second.market.user
-                # Ajusta según cómo esté definido id_propietario en tu modelo de artículo
+            if denuncia.id_articulo and denuncia.id_denunciante:
                 if denuncia.id_denunciante.id == denuncia.id_articulo.id_propietario.id:
                     raise ValidationError(_('No puedes denunciar tu propio artículo.'))
     
@@ -232,14 +196,10 @@ class Denuncia(models.Model):
     def create(self, vals):
         """Generar número de denuncia único"""
         if vals.get('nombre', _('Nueva')) == _('Nueva'):
-            # Generar secuencia: REP001, REP002, etc.
             vals['nombre'] = self.env['ir.sequence'].next_by_code('second_market.report') or _('Nueva')
         
         denuncia = super(Denuncia, self).create(vals)
-        
-        # Notificar a moderadores sobre nueva denuncia
         denuncia._notificar_nueva_denuncia()
-        
         return denuncia
     
     def write(self, vals):
@@ -250,7 +210,6 @@ class Denuncia(models.Model):
         
         result = super(Denuncia, self).write(vals)
         
-        # Notificar al denunciante si hay cambio de estado
         if 'estado' in vals:
             self._notificar_cambio_estado()
         
@@ -263,9 +222,6 @@ class Denuncia(models.Model):
     def accion_asignar_moderador(self):
         """Asignar moderador actual a la denuncia"""
         self.ensure_one()
-        
-
-        
         self.write({
             'id_moderador': self.env.user.id,
             'estado': 'en_revision'
@@ -285,9 +241,6 @@ class Denuncia(models.Model):
     def accion_resolver(self):
         """Resolver denuncia"""
         self.ensure_one()
-        
-
-        
         if not self.resolucion:
             raise UserError(_('Debes proporcionar una descripción de la resolución.'))
         
@@ -307,9 +260,6 @@ class Denuncia(models.Model):
     def accion_rechazar(self):
         """Rechazar denuncia"""
         self.ensure_one()
-        
-
-        
         if not self.resolucion:
             raise UserError(_('Debes proporcionar una razón para rechazar la denuncia.'))
         
@@ -354,8 +304,6 @@ class Denuncia(models.Model):
     def _notificar_nueva_denuncia(self):
         """Notificar a moderadores sobre nueva denuncia"""
         self.ensure_one()
-        # TODO: Enviar email o notificación a administradores
-        # Puedes usar el sistema de mensajería de Odoo
         self.message_post(
             body=_('Nueva denuncia creada por {}. Motivo: {}').format(
                 self.id_denunciante.name,
@@ -368,8 +316,6 @@ class Denuncia(models.Model):
         """Notificar al denunciante sobre cambio de estado"""
         for denuncia in self:
             if denuncia.id_denunciante:
-                # Notificación simple por ahora
-                # TODO: Implementar sistema de notificaciones para usuarios de la app
                 denuncia.message_post(
                     body=_('El estado de la denuncia de {} ha cambiado a: {}').format(
                         denuncia.id_denunciante.name,

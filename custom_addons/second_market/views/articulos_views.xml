@@ -100,6 +100,25 @@
             <field name="view_mode">list,form,graph</field>
         </record>
 
+        <!-- Vista de búsqueda/filtros de Artículos -->
+        <record id="view_second_market_article_search" model="ir.ui.view">
+            <field name="name">second_market.article.search</field>
+            <field name="model">second_market.article</field>
+            <field name="arch" type="xml">
+                <search string="Buscar Artículos">
+                    <field name="nombre" />
+                    <field name="id_categoria" />
+                    <field name="id_propietario" />
+                    <field name="localidad" />
+                    <separator />
+                    <group expand="0" string="Agrupar Por">
+                        <filter string="Productos más comentados" name="group_comentarios"
+                            context="{'group_by': 'conteo_comentarios'}" />
+                    </group>
+                </search>
+            </field>
+        </record>
+
         <menuitem id="menu_second_market_articles"
             name="Artículos"
             parent="menu_second_market_root"

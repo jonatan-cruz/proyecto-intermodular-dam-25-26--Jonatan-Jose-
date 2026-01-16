@@ -19,10 +19,11 @@ class SecondMarketUser(models.Model):
         required=True
     )
 
-    contraseña = fields.Char(
+    password = fields.Char(
         string='Contraseña', 
         size=50, 
-        required=True
+        required=True,
+        password=True
     )
 
     productos_en_venta = fields.Integer(
@@ -45,18 +46,16 @@ class SecondMarketUser(models.Model):
         default=0
     )
 
-    # Validación para el ID de usuario (7 dígitos)
     @api.constrains('id_usuario')
     def _check_id_usuario(self):
         for rec in self:
             if not rec.id_usuario.isdigit() or len(rec.id_usuario) != 7:
                 raise ValidationError('El ID de usuario debe tener exactamente 7 dígitos numéricos.')
 
-    # Validación para la contraseña (mínimo 8 caracteres)
-    @api.constrains('contraseña')
-    def _check_contraseña(self):
+    @api.constrains('password')
+    def _check_password(self):
         for rec in self:
-            if len(rec.contraseña) < 8:
+            if len(rec.password) < 8:
                 raise ValidationError('La contraseña debe tener al menos 8 caracteres.')
             
     def action_eliminar_usuario(self):
