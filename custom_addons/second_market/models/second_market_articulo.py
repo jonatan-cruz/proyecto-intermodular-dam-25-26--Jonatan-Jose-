@@ -9,6 +9,7 @@ class ArticuloSegundaMano(models.Model):
     _description = 'Artículo de Segunda Mano'
     _inherit = ['mail.thread', 'mail.activity.mixin'] 
     _order = 'create_date desc'
+    _rec_name = 'nombre'
     
     # ============================================
     # CAMPOS BÁSICOS
@@ -134,12 +135,6 @@ class ArticuloSegundaMano(models.Model):
         help='Máximo 5 etiquetas'
     )
 
-    # proyecto_integrador = fields.Char(
-    #     string='Proyecto Integrador 2',
-    #     default='PI 2',
-    #     readonly=True
-    # )
-
     conteo_imagenes = fields.Integer(
         string='Número de Imágenes',
         compute='_computar_conteo_imagenes',
@@ -225,19 +220,6 @@ class ArticuloSegundaMano(models.Model):
         'id_articulo',
         string='Conversaciones'
     )
-    
-    # id_transaccion = fields.Many2one(
-    #     'second.market.transaction',
-    #     string='Transacción',
-    #     readonly=True,
-    #     help='Transacción de venta asociada'
-    # )
-    
-    # ids_denuncias = fields.One2many(
-    #     'second.market.report',  # ← CORREGIDO: estaba duplicado "secondsecond"
-    #     'id_articulo',  # ← Campo que debe existir en second.market.report
-    #     string='Denuncias'
-    # )
     
     reportado = fields.Boolean(
         string='Reportado',
@@ -334,154 +316,3 @@ class ArticuloSegundaMano(models.Model):
         for articulo in self:
             if articulo.descripcion and len(articulo.descripcion) > 100:
                 raise ValidationError(_('La descripción no puede tener más de 100 caracteres.'))
-    
-    # ============================================
-    # MÉTODOS CREATE Y WRITE
-    # ============================================
-    
-    # @api.model
-    # def create(self, vals):
-    #     # Generar código único de 7 dígitos
-    #     if vals.get('codigo', _('Nuevo')) == _('Nuevo'):
-    #         vals['codigo'] = self.env['ir.sequence'].next_by_code('second.market.article') or _('Nuevo')
-        
-    #     # Establecer estado inicial
-    #     if not vals.get('estado_publicacion'):
-    #         vals['estado_publicacion'] = 'borrador'
-        
-    #     articulo = super(ArticuloSegundaMano, self).create(vals)
-        
-    #     # Enviar notificación si se publica directamente
-    #     if articulo.estado_publicacion == 'publicado':
-    #         articulo._notificar_seguidores()
-        
-    #     return articulo
-    
-    # def write(self, vals):
-    #     # Tracking de cambio de estado
-    #     if 'estado_publicacion' in vals:
-    #         for articulo in self:
-    #             if vals['estado_publicacion'] == 'publicado' and articulo.estado_publicacion == 'borrador':
-    #                 articulo._notificar_seguidores()
-    #             elif vals['estado_publicacion'] == 'vendido' and articulo.estado_publicacion != 'vendido':
-    #                 articulo._notificar_venta()
-        
-    #     return super(ArticuloSegundaMano, self).write(vals)
-    
-    # ============================================
-    # MÉTODOS DE ACCIÓN
-    # ============================================
-    
-    # def accion_publicar(self):
-    #     """Publicar artículo"""
-    #     self.ensure_one()
-    #     if self.estado_publicacion != 'borrador':
-    #         raise UserError(_('Solo puedes publicar artículos en borrador.'))
-        
-    #     # Validar que tenga al menos una imagen
-    #     if not self.ids_imagenes:
-    #         raise UserError(_('Debes subir al menos una imagen antes de publicar.'))
-        
-    #     self.write({'estado_publicacion': 'publicado'})
-        
-    #     return {
-    #         'type': 'ir.actions.client',
-    #         'tag': 'display_notification',
-    #         'params': {
-    #             'title': _('¡Artículo Publicado!'),
-    #             'message': _('Tu artículo está ahora visible para otros usuarios.'),
-    #             'type': 'success',
-    #             'sticky': False,
-    #         }
-    #     }
-    
-    # def accion_despublicar(self):
-    #     """Despublicar artículo (volver a borrador)"""
-    #     self.ensure_one()
-    #     if self.estado_publicacion not in ['publicado', 'reservado']:
-    #         raise UserError(_('Solo puedes despublicar artículos publicados o reservados.'))
-        
-    #     self.write({'estado_publicacion': 'borrador'})
-    #     return True
-    
-    # def accion_marcar_vendido(self):
-    #     """Marcar como vendido"""
-    #     self.ensure_one()
-    #     if self.estado_publicacion == 'vendido':
-    #         raise UserError(_('El artículo ya está marcado como vendido.'))
-        
-    #     self.write({'estado_publicacion': 'vendido'})
-        
-    #     # Actualizar estadísticas del propietario
-    #     # TODO: Implementar cuando extiendas res.partner
-        
-    #     return True
-    
-    # def accion_eliminar(self):
-    #     """Eliminar artículo (solo moderadores)"""
-    #     self.ensure_one()
-        
-    #     # Verificar permisos
-    #     if not self.env.user.has_group('second_market.group_second_market_moderator'):
-    #         raise UserError(_('No tienes permisos para eliminar artículos.'))
-        
-    #     self.write({
-    #         'estado_publicacion': 'eliminado',
-    #         'activo': False
-    #     })
-        
-    #     # Notificar al propietario
-    #     self._notificar_eliminacion()
-        
-    #     return True
-    
-    # def accion_ver_chats(self):
-    #     """Abrir vista de chats del artículo"""
-    #     self.ensure_one()
-    #     return {
-    #         'name': _('Chats del Artículo'),
-    #         'type': 'ir.actions.act_window',
-    #         'res_model': 'second.market.chat',
-    #         'view_mode': 'tree,form',
-    #         'domain': [('id_articulo', '=', self.id)],
-    #         'context': {'default_id_articulo': self.id}
-    #     }
-    
-    def accion_ver_comentarios(self):
-        """Abrir vista de comentarios del artículo"""
-        self.ensure_one()
-        return {
-            'name': _('Comentarios del Artículo'),
-            'type': 'ir.actions.act_window',
-            'res_model': 'second.market.comment',
-            'view_mode': 'tree,form',
-            'domain': [('id_articulo', '=', self.id), ('activo', '=', True)],
-            'context': {'default_id_articulo': self.id}
-        }
-    
-    # def accion_incrementar_vistas(self):
-    #     """Incrementar contador de visualizaciones"""
-    #     self.ensure_one()
-    #     self.conteo_vistas += 1
-    
-    # ============================================
-    # MÉTODOS AUXILIARES
-    # ============================================
-    
-    # def _notificar_seguidores(self):
-    #     """Notificar a seguidores cuando se publica"""
-    #     self.ensure_one()
-    #     # TODO: implementar sistema de followers/notificaciones
-    #     pass
-    
-    # def _notificar_venta(self):
-    #     """Notificar venta del artículo"""
-    #     self.ensure_one()
-    #     # TODO: enviar emails a interesados
-    #     pass
-    
-    # def _notificar_eliminacion(self):
-    #     """Notificar al propietario que su artículo fue eliminado"""
-    #     self.ensure_one()
-    #     # TODO: enviar email al propietario
-    #     pass

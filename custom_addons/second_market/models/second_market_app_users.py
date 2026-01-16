@@ -32,6 +32,12 @@ class SecondMarketUser(models.Model):
         tracking=True,
         help='Nombre del usuario (máx 50 caracteres)'
     )
+
+    password = fields.Char(
+        string='Contraseña', 
+        size=50, 
+        required=True,
+        password=True)
     
     login = fields.Char(
         string='Login/Email',
@@ -78,6 +84,22 @@ class SecondMarketUser(models.Model):
         store=True,
         help='Años desde el registro del usuario'
     )
+
+    @api.constrains('id_usuario')
+    def _check_id_usuario(self):
+        for rec in self:
+            if not rec.id_usuario.isdigit() or len(rec.id_usuario) != 7:
+                raise ValidationError('El ID de usuario debe tener exactamente 7 dígitos numéricos.')
+
+    @api.constrains('password')
+    def _check_password(self):
+        for rec in self:
+            if len(rec.password) < 8:
+                raise ValidationError('La contraseña debe tener al menos 8 caracteres.')
+            
+    def action_eliminar_usuario(self):
+        for record in self:
+            record.unlink()
     
     # ============================================
     # RELACIONES CON OTROS MODELOS
