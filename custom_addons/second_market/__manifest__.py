@@ -31,6 +31,7 @@ Long description of module's purpose
         'views/chats_views.xml',
         'views/templates.xml',
         'views/app_users.xml',
+        'views/comentarios.xml',
         'views/denuncias_views.xml',
     ],
     # only loaded in demonstration mode

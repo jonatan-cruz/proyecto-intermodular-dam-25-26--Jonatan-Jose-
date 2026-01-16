@@ -73,7 +73,7 @@ class Denuncia(models.Model):
     
     # Usuario que crea la denuncia (usuario de la app)
     id_denunciante = fields.Many2one(
-        'second.market.user',
+        'second_market.user',
         string='Denunciante',
         required=True,
         ondelete='restrict',

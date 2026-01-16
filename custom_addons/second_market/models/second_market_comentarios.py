@@ -6,7 +6,7 @@ from datetime import datetime
 
 
 class SecondMarketComment(models.Model):
-    _name = 'second.market.comment'
+    _name = 'second_market.comment'
     _description = 'Comentario de Second Market'
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'fecha_hora desc'
@@ -26,7 +26,7 @@ class SecondMarketComment(models.Model):
     )
     
     id_emisor = fields.Many2one(
-        'second.market.user',
+        'second_market.user',
         string='Emisor',
         required=True,
         ondelete='cascade',
@@ -35,7 +35,7 @@ class SecondMarketComment(models.Model):
     )
     
     id_receptor = fields.Many2one(
-        'second.market.user',
+        'second_market.user',
         string='Receptor',
         required=True,
         ondelete='cascade',
@@ -147,7 +147,7 @@ class SecondMarketComment(models.Model):
     def create(self, vals):
         """Generar ID único al crear"""
         if vals.get('id_mensaje', _('Nuevo')) == _('Nuevo'):
-            vals['id_mensaje'] = self.env['ir.sequence'].next_by_code('second.market.comment') or _('Nuevo')
+            vals['id_mensaje'] = self.env['ir.sequence'].next_by_code('second_market.comment') or _('Nuevo')
         
         comentario = super(SecondMarketComment, self).create(vals)
         
@@ -280,7 +280,7 @@ class SecondMarketComment(models.Model):
         return {
             'name': _('Responder Comentario'),
             'type': 'ir.actions.act_window',
-            'res_model': 'second.market.comment',
+            'res_model': 'second_market.comment',
             'view_mode': 'form',
             'target': 'new',
             'context': {

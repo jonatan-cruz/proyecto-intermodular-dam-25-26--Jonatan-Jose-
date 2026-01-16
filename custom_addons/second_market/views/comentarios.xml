@@ -1,172 +1,170 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    
+
     <!-- ============================================ -->
     <!-- VISTA ÁRBOL/LISTA DE COMENTARIOS -->
     <!-- ============================================ -->
-    
+
     <record id="view_second_market_comment_list" model="ir.ui.view">
-        <field name="name">second.market.comment.list</field>
-        <field name="model">second.market.comment</field>
+        <field name="name">second_market.comment.list</field>
+        <field name="model">second_market.comment</field>
         <field name="arch" type="xml">
             <list string="Comentarios" decoration-muted="not activo" decoration-info="not leido">
-                <field name="id_mensaje"/>
-                <field name="nombre_emisor"/>
-                <field name="nombre_receptor"/>
-                <field name="nombre_articulo"/>
-                <field name="texto" string="Comentario"/>
-                <field name="fecha_hora"/>
-                <field name="leido" widget="boolean_toggle"/>
-                <field name="activo" invisible="1"/>
+                <field name="id_mensaje" />
+                <field name="nombre_emisor" />
+                <field name="nombre_receptor" />
+                <field name="nombre_articulo" />
+                <field name="texto" string="Comentario" />
+                <field name="fecha_hora" />
+                <field name="leido" widget="boolean_toggle" />
+                <field name="activo" invisible="1" />
             </list>
         </field>
     </record>
-    
+
     <!-- ============================================ -->
     <!-- VISTA FORMULARIO DE COMENTARIO -->
     <!-- ============================================ -->
-    
+
     <record id="view_second_market_comment_form" model="ir.ui.view">
-        <field name="name">second.market.comment.form</field>
-        <field name="model">second.market.comment</field>
+        <field name="name">second_market.comment.form</field>
+        <field name="model">second_market.comment</field>
         <field name="arch" type="xml">
             <form string="Comentario">
                 <header>
-                    <button name="enviar" 
-                            string="Enviar" 
-                            type="object" 
-                            class="oe_highlight"
-                            invisible="leido or not activo"/>
-                    <button name="leer" 
-                            string="Marcar como Leído" 
-                            type="object"
-                            invisible="leido or not activo"/>
-                    <button name="eliminar" 
-                            string="Eliminar" 
-                            type="object" 
-                            confirm="¿Estás seguro de eliminar este comentario?"
-                            invisible="not activo"/>
-                    <button name="action_responder" 
-                            string="Responder" 
-                            type="object"
-                            invisible="not activo"/>
-                    <button name="action_ver_articulo" 
-                            string="Ver Artículo" 
-                            type="object" 
-                            icon="fa-external-link"/>
-                    <field name="activo" widget="boolean_button" 
-                           options="{'terminology': 'active'}"/>
+                    <button name="enviar"
+                        string="Enviar"
+                        type="object"
+                        class="oe_highlight"
+                        invisible="leido or not activo" />
+                    <button name="leer"
+                        string="Marcar como Leído"
+                        type="object"
+                        invisible="leido or not activo" />
+                    <button name="eliminar"
+                        string="Eliminar"
+                        type="object"
+                        confirm="¿Estás seguro de eliminar este comentario?"
+                        invisible="not activo" />
+                    <button name="action_responder"
+                        string="Responder"
+                        type="object"
+                        invisible="not activo" />
+                    <button name="action_ver_articulo"
+                        string="Ver Artículo"
+                        type="object"
+                        icon="fa-external-link" />
+                    <field name="activo" widget="boolean_button"
+                        options="{'terminology': 'active'}" />
                 </header>
-                
+
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <!-- Aquí puedes agregar smart buttons si los necesitas -->
                     </div>
-                    
+
                     <group>
                         <group name="info_basica" string="Información del Mensaje">
-                            <field name="id_mensaje" readonly="1"/>
-                            <field name="fecha_hora" readonly="1"/>
-                            <field name="leido" readonly="1"/>
-                            <field name="fecha_lectura" readonly="1" invisible="not leido"/>
+                            <field name="id_mensaje" readonly="1" />
+                            <field name="fecha_hora" readonly="1" />
+                            <field name="leido" readonly="1" />
+                            <field name="fecha_lectura" readonly="1" invisible="not leido" />
                         </group>
-                        
+
                         <group name="participantes" string="Participantes">
-                            <field name="id_emisor" options="{'no_create': True, 'no_open': True}"/>
-                            <field name="id_receptor" options="{'no_create': True, 'no_open': True}"/>
-                            <field name="id_articulo" options="{'no_create': True}"/>
+                            <field name="id_emisor" options="{'no_create': True, 'no_open': True}" />
+                            <field name="id_receptor" options="{'no_create': True, 'no_open': True}" />
+                            <field name="id_articulo" options="{'no_create': True}" />
                         </group>
                     </group>
-                    
+
                     <group name="contenido" string="Contenido del Comentario">
-                        <field name="texto" nolabel="1" placeholder="Escribe tu comentario aquí..."/>
+                        <field name="texto" nolabel="1" placeholder="Escribe tu comentario aquí..." />
                     </group>
-                    
+
                 </sheet>
-                
-                <div class="oe_chatter">
-                    <field name="message_follower_ids" groups="base.group_user"/>
-                    <field name="activity_ids"/>
-                    <field name="message_ids"/>
-                </div>
             </form>
         </field>
     </record>
-    
+
     <!-- ============================================ -->
     <!-- VISTA DE BÚSQUEDA -->
     <!-- ============================================ -->
-    
+
     <record id="view_second_market_comment_search" model="ir.ui.view">
-        <field name="name">second.market.comment.search</field>
-        <field name="model">second.market.comment</field>
+        <field name="name">second_market.comment.search</field>
+        <field name="model">second_market.comment</field>
         <field name="arch" type="xml">
             <search string="Buscar Comentarios">
-                <field name="id_mensaje"/>
-                <field name="id_emisor"/>
-                <field name="id_receptor"/>
-                <field name="id_articulo"/>
-                <field name="texto" string="Comentario" filter_domain="[('texto', 'ilike', self)]"/>
-                
-                <filter string="No Leídos" name="no_leidos" domain="[('leido', '=', False)]"/>
-                <filter string="Leídos" name="leidos" domain="[('leido', '=', True)]"/>
-                <separator/>
-                <filter string="Activos" name="activos" domain="[('activo', '=', True)]"/>
-                <filter string="Eliminados" name="eliminados" domain="[('activo', '=', False)]"/>
-                <separator/>
-                <filter string="Hoy" name="hoy" 
-                        domain="[('fecha_hora', '&gt;=', datetime.datetime.now().replace(hour=0, minute=0, second=0)), 
-                                 ('fecha_hora', '&lt;=', datetime.datetime.now().replace(hour=23, minute=59, second=59))]"/>
-                <filter string="Últimos 7 días" name="ultimos_7_dias" 
-                        domain="[('fecha_hora', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]"/>
-                
+                <field name="id_mensaje" />
+                <field name="id_emisor" />
+                <field name="id_receptor" />
+                <field name="id_articulo" />
+                <field name="texto" string="Comentario" filter_domain="[('texto', 'ilike', self)]" />
+
+                <filter string="No Leídos" name="no_leidos" domain="[('leido', '=', False)]" />
+                <filter string="Leídos" name="leidos" domain="[('leido', '=', True)]" />
+                <separator />
+                <filter string="Activos" name="activos" domain="[('activo', '=', True)]" />
+                <filter string="Eliminados" name="eliminados" domain="[('activo', '=', False)]" />
+                <separator />
+                <filter string="Hoy" name="hoy"
+                    domain="[('fecha_hora', '&gt;=', datetime.datetime.now().replace(hour=0, minute=0, second=0)), 
+                                 ('fecha_hora', '&lt;=', datetime.datetime.now().replace(hour=23, minute=59, second=59))]" />
+                <filter string="Últimos 7 días" name="ultimos_7_dias"
+                    domain="[('fecha_hora', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]" />
+
                 <group expand="0" string="Agrupar por">
-                    <filter string="Emisor" name="group_emisor" context="{'group_by': 'id_emisor'}"/>
-                    <filter string="Receptor" name="group_receptor" context="{'group_by': 'id_receptor'}"/>
-                    <filter string="Artículo" name="group_articulo" context="{'group_by': 'id_articulo'}"/>
-                    <filter string="Estado" name="group_leido" context="{'group_by': 'leido'}"/>
-                    <filter string="Fecha" name="group_fecha" context="{'group_by': 'fecha_hora'}"/>
+                    <filter string="Emisor" name="group_emisor" context="{'group_by': 'id_emisor'}" />
+                    <filter string="Receptor" name="group_receptor"
+                        context="{'group_by': 'id_receptor'}" />
+                    <filter string="Artículo" name="group_articulo"
+                        context="{'group_by': 'id_articulo'}" />
+                    <filter string="Estado" name="group_leido" context="{'group_by': 'leido'}" />
+                    <filter string="Fecha" name="group_fecha" context="{'group_by': 'fecha_hora'}" />
                 </group>
             </search>
         </field>
     </record>
-    
+
     <!-- ============================================ -->
     <!-- VISTA KANBAN (OPCIONAL) -->
     <!-- ============================================ -->
-    
+
     <record id="view_second_market_comment_kanban" model="ir.ui.view">
-        <field name="name">second.market.comment.kanban</field>
-        <field name="model">second.market.comment</field>
+        <field name="name">second_market.comment.kanban</field>
+        <field name="model">second_market.comment</field>
         <field name="arch" type="xml">
             <kanban class="o_kanban_mobile">
-                <field name="id_mensaje"/>
-                <field name="nombre_emisor"/>
-                <field name="nombre_receptor"/>
-                <field name="texto"/>
-                <field name="fecha_hora"/>
-                <field name="leido"/>
-                <field name="activo"/>
+                <field name="id_mensaje" />
+                <field name="nombre_emisor" />
+                <field name="nombre_receptor" />
+                <field name="texto" />
+                <field name="fecha_hora" />
+                <field name="leido" />
+                <field name="activo" />
                 <templates>
                     <t t-name="kanban-box">
-                        <div t-attf-class="oe_kanban_card oe_kanban_global_click #{record.leido.raw_value ? '' : 'oe_kanban_color_2'}">
+                        <div
+                            t-attf-class="oe_kanban_card oe_kanban_global_click #{record.leido.raw_value ? '' : 'oe_kanban_color_2'}">
                             <div class="o_kanban_record_top">
                                 <div class="o_kanban_record_headings">
                                     <strong class="o_kanban_record_title">
-                                        <field name="nombre_emisor"/> → <field name="nombre_receptor"/>
+                                        <field name="nombre_emisor" /> → <field
+                                            name="nombre_receptor" />
                                     </strong>
                                 </div>
                                 <span t-if="!record.leido.raw_value" class="badge badge-info">Nuevo</span>
                             </div>
                             <div class="o_kanban_record_body">
-                                <field name="texto"/>
+                                <field name="texto" />
                             </div>
                             <div class="o_kanban_record_bottom">
                                 <div class="oe_kanban_bottom_left">
-                                    <field name="fecha_hora" widget="date"/>
+                                    <field name="fecha_hora" widget="date" />
                                 </div>
                                 <div class="oe_kanban_bottom_right">
-                                    <field name="id_articulo"/>
+                                    <field name="id_articulo" />
                                 </div>
                             </div>
                         </div>
@@ -175,14 +173,14 @@
             </kanban>
         </field>
     </record>
-    
+
     <!-- ============================================ -->
     <!-- ACCIÓN DE VENTANA -->
     <!-- ============================================ -->
-    
+
     <record id="action_second_market_comment" model="ir.actions.act_window">
         <field name="name">Comentarios</field>
-        <field name="res_model">second.market.comment</field>
+        <field name="res_model">second_market.comment</field>
         <field name="view_mode">list,kanban,form</field>
         <field name="context">{'search_default_activos': 1, 'search_default_no_leidos': 1}</field>
         <field name="help" type="html">
@@ -190,19 +188,20 @@
                 ¡Crea tu primer comentario!
             </p>
             <p>
-                Los comentarios te permiten comunicarte con otros usuarios sobre los artículos publicados.
+                Los comentarios te permiten comunicarte con otros usuarios sobre los artículos
+                publicados.
             </p>
         </field>
     </record>
-    
+
     <!-- ============================================ -->
     <!-- MENÚ -->
     <!-- ============================================ -->
-    
+
     <menuitem id="menu_second_market_comment"
-              name="Comentarios"
-              parent="menu_second_market_root"
-              action="action_second_market_comment"
-              sequence="30"/>
+        name="Comentarios"
+        parent="menu_second_market_root"
+        action="action_second_market_comment"
+        sequence="30" />
 
 </odoo>

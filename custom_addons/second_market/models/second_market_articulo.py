@@ -210,7 +210,7 @@ class ArticuloSegundaMano(models.Model):
     # ============================================
     
     ids_comentarios = fields.One2many(
-        'second.market.comment',
+        'second_market.comment',
         'id_articulo',  # ← Campo que debe existir en second.market.comment
         string='Comentarios'
     )

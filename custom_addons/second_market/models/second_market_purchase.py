@@ -5,7 +5,7 @@ from odoo.exceptions import ValidationError, UserError
 
 
 class SecondMarketPurchase(models.Model):
-    _name = 'second.market.purchase'
+    _name = 'second_market.purchase'
     _description = 'Compra/Transacción'
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'fecha_hora desc'
@@ -25,7 +25,7 @@ class SecondMarketPurchase(models.Model):
     )
     
     id_comprador = fields.Many2one(
-        'second.market.user',
+        'second_market.user',
         string='Comprador',
         required=True,
         ondelete='restrict',
@@ -34,7 +34,7 @@ class SecondMarketPurchase(models.Model):
     )
     
     id_vendedor = fields.Many2one(
-        'second.market.user',
+        'second_market.user',
         string='Vendedor',
         required=True,
         ondelete='restrict',
@@ -141,7 +141,7 @@ class SecondMarketPurchase(models.Model):
     def create(self, vals):
         """Generar ID único al crear"""
         if vals.get('id_compra', _('Nuevo')) == _('Nuevo'):
-            vals['id_compra'] = self.env['ir.sequence'].next_by_code('second.market.purchase') or _('Nuevo')
+            vals['id_compra'] = self.env['ir.sequence'].next_by_code('second_market.purchase') or _('Nuevo')
         
         compra = super(SecondMarketPurchase, self).create(vals)
         

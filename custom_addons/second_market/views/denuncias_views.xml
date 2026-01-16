@@ -3,7 +3,7 @@
 
     <!-- Vista de árbol (lista) -->
     <record id="view_second_market_report_list" model="ir.ui.view">
-        <field name="name">second.market.report.list</field>
+        <field name="name">second_market.report.list</field>
         <field name="model">second_market.report</field>
         <field name="arch" type="xml">
             <list string="Denuncias" decoration-danger="prioridad=='urgente'"
@@ -26,7 +26,7 @@
 
     <!-- Vista de formulario -->
     <record id="view_second_market_report_form" model="ir.ui.view">
-        <field name="name">second.market.report.form</field>
+        <field name="name">second_market.report.form</field>
         <field name="model">second_market.report</field>
         <field name="arch" type="xml">
             <form string="Denuncia">
@@ -78,6 +78,12 @@
                             placeholder="Describe el motivo de la denuncia..."
                             readonly="estado != 'pendiente'" />
                     </group>
+
+                    <group string="Resolución y Acciones" invisible="estado == 'pendiente'">
+                        <field name="accion_tomada" readonly="estado not in ['en_revision']" />
+                        <field name="resolucion" readonly="estado not in ['en_revision']"
+                            required="estado == 'en_revision'" />
+                    </group>
                 </sheet>
             </form>
         </field>
@@ -85,7 +91,7 @@
 
     <!-- Vista de búsqueda/filtros -->
     <!-- <record id="view_second_market_report_search" model="ir.ui.view">
-        <field name="name">second.market.report.search</field>
+        <field name="name">second_market.report.search</field>
         <field name="model">second_market.report</field>
         <field name="arch" type="xml">
             <search string="Buscar Denuncias">
@@ -133,7 +139,7 @@
 
     <!-- Vista Graph de Denuncias -->
     <record id="view_second_market_report_graph" model="ir.ui.view">
-        <field name="name">second.market.report.graph</field>
+        <field name="name">second_market.report.graph</field>
         <field name="model">second_market.report</field>
         <field name="arch" type="xml">
             <graph string="Denuncias por tipo" type="bar" sample="1">

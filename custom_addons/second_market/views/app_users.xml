@@ -1,196 +1,196 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    
+
     <!-- ============================================ -->
     <!-- VISTA FORMULARIO DE USUARIO -->
     <!-- ============================================ -->
-    
+
     <record id="view_second_market_user_form" model="ir.ui.view">
-        <field name="name">second.market.user.form</field>
-        <field name="model">second.market.user</field>
+        <field name="name">second_market.user.form</field>
+        <field name="model">second_market.user</field>
         <field name="arch" type="xml">
             <form string="Usuario">
                 <header>
-                    <button name="action_eliminar_usuario" 
-                            string="Desactivar Usuario" 
-                            type="object"
-                            groups="second_market.group_second_market_moderator"
-                            confirm="¿Estás seguro de desactivar este usuario?"
-                            invisible="not activo"/>
-                    <field name="activo" widget="boolean_button" 
-                           options="{'terminology': 'active'}"/>
+                    <button name="action_eliminar_usuario"
+                        string="Desactivar Usuario"
+                        type="object"
+                        groups="second_market.group_second_market_moderator"
+                        confirm="¿Estás seguro de desactivar este usuario?"
+                        invisible="not activo" />
+                    <field name="activo" widget="boolean_button"
+                        options="{'terminology': 'active'}" />
                 </header>
-                
+
                 <sheet>
                     <!-- Smart Buttons -->
                     <div class="oe_button_box" name="button_box">
-                        <button name="action_ver_articulos" 
-                                type="object" 
-                                class="oe_stat_button" 
-                                icon="fa-shopping-bag">
-                            <field name="productos_en_venta" widget="statinfo" string="En Venta"/>
+                        <button name="action_ver_articulos"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-shopping-bag">
+                            <field name="productos_en_venta" widget="statinfo" string="En Venta" />
                         </button>
-                        <button name="action_ver_ventas" 
-                                type="object" 
-                                class="oe_stat_button" 
-                                icon="fa-dollar">
-                            <field name="productos_vendidos" widget="statinfo" string="Vendidos"/>
+                        <button name="action_ver_ventas"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-dollar">
+                            <field name="productos_vendidos" widget="statinfo" string="Vendidos" />
                         </button>
-                        <button name="action_ver_compras" 
-                                type="object" 
-                                class="oe_stat_button" 
-                                icon="fa-shopping-cart">
-                            <field name="productos_comprados" widget="statinfo" string="Comprados"/>
+                        <button name="action_ver_compras"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-shopping-cart">
+                            <field name="productos_comprados" widget="statinfo" string="Comprados" />
                         </button>
-                        <button name="action_ver_valoraciones" 
-                                type="object" 
-                                class="oe_stat_button" 
-                                icon="fa-star">
+                        <button name="action_ver_valoraciones"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-star">
                             <div class="o_field_widget o_stat_info">
                                 <span class="o_stat_value">
-                                    <field name="calificacion_promedio" widget="float" 
-                                           options="{'precision': 2}"/>
+                                    <field name="calificacion_promedio" widget="float"
+                                        options="{'precision': 2}" />
                                     <small> / 5</small>
                                 </span>
                                 <span class="o_stat_text">Calificación</span>
                             </div>
                         </button>
                     </div>
-                    
+
                     <!-- Avatar -->
-                    <field name="avatar" widget="image" class="oe_avatar"/>
-                    
+                    <field name="avatar" widget="image" class="oe_avatar" />
+
                     <div class="oe_title">
                         <h1>
-                            <field name="name" placeholder="Nombre del usuario..."/>
+                            <field name="name" placeholder="Nombre del usuario..." />
                         </h1>
                         <h3>
-                            <field name="id_usuario" readonly="1"/>
+                            <field name="id_usuario" readonly="1" />
                         </h3>
                     </div>
-                    
+
                     <group>
                         <group name="informacion_acceso" string="Información de Acceso">
-                            <field name="login" placeholder="email@ejemplo.com"/>
-                            <field name="contrasena" password="True"/>
-                            <field name="fecha_registro" readonly="1"/>
-                            <field name="antiguedad" readonly="1"/>
+                            <field name="login" placeholder="email@ejemplo.com" />
+                            <field name="contrasena" password="True" />
+                            <field name="fecha_registro" readonly="1" />
+                            <field name="antiguedad" readonly="1" />
                         </group>
-                        
+
                         <group name="informacion_contacto" string="Información de Contacto">
-                            <field name="telefono" placeholder="+34 123 456 789"/>
-                            <field name="ubicacion" placeholder="Ciudad, País"/>
+                            <field name="telefono" placeholder="+34 123 456 789" />
+                            <field name="ubicacion" placeholder="Ciudad, País" />
                         </group>
                     </group>
-                    
+
                     <group name="biografia" string="Biografía">
-                        <field name="biografia" nolabel="1" 
-                               placeholder="Cuéntanos algo sobre ti... (máx 200 caracteres)"/>
+                        <field name="biografia" nolabel="1"
+                            placeholder="Cuéntanos algo sobre ti... (máx 200 caracteres)" />
                     </group>
-                    
+
                     <!-- Notebook con pestañas -->
                     <notebook>
                         <!-- Pestaña de Estadísticas -->
                         <page string="Estadísticas" name="estadisticas">
                             <group>
                                 <group string="Actividad de Ventas">
-                                    <field name="productos_en_venta" readonly="1"/>
-                                    <field name="productos_vendidos" readonly="1"/>
+                                    <field name="productos_en_venta" readonly="1" />
+                                    <field name="productos_vendidos" readonly="1" />
                                 </group>
                                 <group string="Actividad de Compras">
-                                    <field name="productos_comprados" readonly="1"/>
+                                    <field name="productos_comprados" readonly="1" />
                                 </group>
                             </group>
                             <group>
                                 <group string="Valoraciones">
-                                    <field name="calificacion_promedio" readonly="1" 
-                                           widget="float" options="{'precision': 2}"/>
-                                    <field name="total_valoraciones" readonly="1"/>
+                                    <field name="calificacion_promedio" readonly="1"
+                                        widget="float" options="{'precision': 2}" />
+                                    <field name="total_valoraciones" readonly="1" />
                                 </group>
                             </group>
                         </page>
-                        
+
                         <!-- Pestaña de Artículos -->
                         <page string="Artículos" name="articulos">
                             <field name="ids_articulos_venta">
                                 <list string="Artículos en Venta">
-                                    <field name="codigo"/>
-                                    <field name="nombre"/>
-                                    <field name="id_categoria"/>
-                                    <field name="precio" widget="monetary"/>
-                                    <field name="estado_publicacion" widget="badge"/>
-                                    <field name="conteo_vistas"/>
-                                    <field name="conteo_comentarios"/>
+                                    <field name="codigo" />
+                                    <field name="nombre" />
+                                    <field name="id_categoria" />
+                                    <field name="precio" widget="monetary" />
+                                    <field name="estado_publicacion" widget="badge" />
+                                    <field name="conteo_vistas" />
+                                    <field name="conteo_comentarios" />
                                 </list>
                             </field>
                         </page>
-                        
+
                         <!-- Pestaña de Comentarios Enviados -->
                         <page string="Comentarios Enviados" name="comentarios_enviados">
                             <field name="ids_comentarios_enviados">
                                 <list string="Comentarios Enviados" create="false">
-                                    <field name="id_mensaje"/>
-                                    <field name="fecha_hora"/>
-                                    <field name="nombre_receptor"/>
-                                    <field name="nombre_articulo"/>
-                                    <field name="texto"/>
-                                    <field name="leido" widget="boolean_toggle"/>
+                                    <field name="id_mensaje" />
+                                    <field name="fecha_hora" />
+                                    <field name="nombre_receptor" />
+                                    <field name="nombre_articulo" />
+                                    <field name="texto" />
+                                    <field name="leido" widget="boolean_toggle" />
                                 </list>
                             </field>
                         </page>
-                        
+
                         <!-- Pestaña de Comentarios Recibidos -->
                         <page string="Comentarios Recibidos" name="comentarios_recibidos">
                             <field name="ids_comentarios_recibidos">
-                                <list string="Comentarios Recibidos" create="false" 
-                                      decoration-info="not leido">
-                                    <field name="id_mensaje"/>
-                                    <field name="fecha_hora"/>
-                                    <field name="nombre_emisor"/>
-                                    <field name="nombre_articulo"/>
-                                    <field name="texto"/>
-                                    <field name="leido" widget="boolean_toggle"/>
-                                    <button name="leer" 
-                                            string="Marcar Leído" 
-                                            type="object" 
-                                            icon="fa-check"
-                                            invisible="leido"/>
+                                <list string="Comentarios Recibidos" create="false"
+                                    decoration-info="not leido">
+                                    <field name="id_mensaje" />
+                                    <field name="fecha_hora" />
+                                    <field name="nombre_emisor" />
+                                    <field name="nombre_articulo" />
+                                    <field name="texto" />
+                                    <field name="leido" widget="boolean_toggle" />
+                                    <button name="leer"
+                                        string="Marcar Leído"
+                                        type="object"
+                                        icon="fa-check"
+                                        invisible="leido" />
                                 </list>
                             </field>
                         </page>
-                        
+
                         <!-- Pestaña de Valoraciones -->
                         <page string="Valoraciones Recibidas" name="valoraciones">
                             <field name="ids_valoraciones">
                                 <list string="Valoraciones" create="false">
-                                    <field name="fecha_hora"/>
-                                    <field name="calificacion" widget="priority"/>
-                                    <field name="comentario"/>
+                                    <field name="fecha_hora" />
+                                    <field name="calificacion" widget="priority" />
+                                    <field name="comentario" />
                                 </list>
                             </field>
                         </page>
-                        
+
                     </notebook>
-                    
+
                 </sheet>
-                
+
                 <!-- Chatter -->
                 <div class="oe_chatter">
-                    <field name="message_follower_ids" groups="base.group_user"/>
-                    <field name="activity_ids"/>
-                    <field name="message_ids"/>
+                    <field name="message_follower_ids" groups="base.group_user" />
+                    <field name="activity_ids" />
+                    <field name="message_ids" />
                 </div>
             </form>
         </field>
     </record>
-    
+
     <!-- ============================================ -->
     <!-- VISTA ÁRBOL DE USUARIOS -->
     <!-- ============================================ -->
-    
+
     <record id="view_second_market_user_list" model="ir.ui.view">
-        <field name="name">second.market.user.list</field>
-        <field name="model">second.market.user</field>
+        <field name="name">second_market.user.list</field>
+        <field name="model">second_market.user</field>
         <field name="arch" type="xml">
             <list string="Usuarios Second Market">
                 <field name="id_usuario" />
@@ -205,8 +205,8 @@
         </field>
     </record>
     <record id="view_second_market_user_form" model="ir.ui.view">
-        <field name="name">second.market.user.form</field>
-        <field name="model">second.market.user</field>
+        <field name="name">second_market.user.form</field>
+        <field name="model">second_market.user</field>
         <field name="arch" type="xml">
             <form string="Usuario Second Market">
                 <sheet>
@@ -232,7 +232,7 @@
     </record>
     <record id="action_second_market_users" model="ir.actions.act_window">
         <field name="name">Usuarios Second Market</field>
-        <field name="res_model">second.market.user</field>
+        <field name="res_model">second_market.user</field>
         <field name="view_mode">list</field>
         <field name="view_id" ref="view_second_market_user_list" />
         <field name="target">current</field>

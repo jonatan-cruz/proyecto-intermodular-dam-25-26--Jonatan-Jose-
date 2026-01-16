@@ -6,7 +6,7 @@ import re
 
 
 class SecondMarketUser(models.Model):
-    _name = 'second.market.user'
+    _name = 'second_market.user'
     _description = 'Usuario de Second Market'
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'create_date desc'
@@ -116,35 +116,35 @@ class SecondMarketUser(models.Model):
     
     # Comentarios enviados
     ids_comentarios_enviados = fields.One2many(
-        'second.market.comment',
+        'second_market.comment',
         'id_emisor',
         string='Comentarios Enviados'
     )
     
     # Comentarios recibidos
     ids_comentarios_recibidos = fields.One2many(
-        'second.market.comment',
+        'second_market.comment',
         'id_receptor',
         string='Comentarios Recibidos'
     )
     
     # Compras realizadas (como comprador)
     ids_compras = fields.One2many(
-        'second.market.purchase',
+        'second_market.purchase',
         'id_comprador',
         string='Compras Realizadas'
     )
     
     # Ventas realizadas (como vendedor)
     ids_ventas = fields.One2many(
-        'second.market.purchase',
+        'second_market.purchase',
         'id_vendedor',
         string='Ventas Realizadas'
     )
     
     # Valoraciones recibidas
     ids_valoraciones = fields.One2many(
-        'second.market.rating',
+        'second_market.rating',
         'id_usuario',
         string='Valoraciones Recibidas'
     )
@@ -342,7 +342,7 @@ class SecondMarketUser(models.Model):
     def create(self, vals):
         """Generar ID único al crear usuario"""
         if vals.get('id_usuario', _('Nuevo')) == _('Nuevo'):
-            vals['id_usuario'] = self.env['ir.sequence'].next_by_code('second.market.user') or _('Nuevo')
+            vals['id_usuario'] = self.env['ir.sequence'].next_by_code('second_market.user') or _('Nuevo')
         
         usuario = super(SecondMarketUser, self).create(vals)
         
@@ -427,7 +427,7 @@ class SecondMarketUser(models.Model):
         if not self.activo:
             raise UserError(_('Tu cuenta está deshabilitada.'))
         
-        destinatario = self.env['second.market.user'].browse(destinatario_id)
+        destinatario = self.env['second_market.user'].browse(destinatario_id)
         
         if not destinatario.exists() or not destinatario.activo:
             raise UserError(_('El destinatario no existe o está deshabilitado.'))
@@ -447,7 +447,7 @@ class SecondMarketUser(models.Model):
         if not self.activo:
             raise UserError(_('Tu cuenta está deshabilitada.'))
         
-        usuario_valorado = self.env['second.market.user'].browse(usuario_id)
+        usuario_valorado = self.env['second_market.user'].browse(usuario_id)
         
         if not usuario_valorado.exists():
             raise UserError(_('El usuario no existe.'))
@@ -456,7 +456,7 @@ class SecondMarketUser(models.Model):
             raise UserError(_('No puedes valorarte a ti mismo.'))
         
         # Crear valoración
-        valoracion = self.env['second.market.rating'].create({
+        valoracion = self.env['second_market.rating'].create({
             'id_usuario': usuario_valorado.id,
             'id_valorador': self.id,
             'calificacion': calificacion,
@@ -478,7 +478,7 @@ class SecondMarketUser(models.Model):
             raise UserError(_('El artículo no existe.'))
         
         # Crear comentario dirigido al propietario del artículo
-        comentario = self.env['second.market.comment'].create({
+        comentario = self.env['second_market.comment'].create({
             'id_articulo': articulo.id,
             'id_emisor': self.id,
             'id_receptor': articulo.id_propietario.id,
@@ -522,7 +522,7 @@ class SecondMarketUser(models.Model):
         return {
             'name': _('Compras de %s') % self.name,
             'type': 'ir.actions.act_window',
-            'res_model': 'second.market.purchase',
+            'res_model': 'second_market.purchase',
             'view_mode': 'list,form',
             'domain': [('id_comprador', '=', self.id)]
         }
@@ -533,7 +533,7 @@ class SecondMarketUser(models.Model):
         return {
             'name': _('Ventas de %s') % self.name,
             'type': 'ir.actions.act_window',
-            'res_model': 'second.market.purchase',
+            'res_model': 'second_market.purchase',
             'view_mode': 'list,form',
             'domain': [('id_vendedor', '=', self.id)]
         }
@@ -544,7 +544,7 @@ class SecondMarketUser(models.Model):
         return {
             'name': _('Valoraciones de %s') % self.name,
             'type': 'ir.actions.act_window',
-            'res_model': 'second.market.rating',
+            'res_model': 'second_market.rating',
             'view_mode': 'list,form',
             'domain': [('id_usuario', '=', self.id)]
         }

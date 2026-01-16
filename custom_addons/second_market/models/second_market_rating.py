@@ -5,7 +5,7 @@ from odoo.exceptions import ValidationError, UserError
 
 
 class SecondMarketRating(models.Model):
-    _name = 'second.market.rating'
+    _name = 'second_market.rating'
     _description = 'Valoración de Usuario'
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'fecha_hora desc'
@@ -22,7 +22,7 @@ class SecondMarketRating(models.Model):
     )
     
     id_usuario = fields.Many2one(
-        'second.market.user',
+        'second_market.user',
         string='Usuario Valorado',
         required=True,
         ondelete='cascade',
@@ -31,7 +31,7 @@ class SecondMarketRating(models.Model):
     )
     
     id_valorador = fields.Many2one(
-        'second.market.user',
+        'second_market.user',
         string='Valorador',
         required=True,
         ondelete='cascade',
