@@ -209,6 +209,12 @@ class ArticuloSegundaMano(models.Model):
     # RELACIONES CON OTROS MODELOS
     # ============================================
     
+    ids_comentarios = fields.One2many(
+        'second.market.comment',
+        'id_articulo',  # ← Campo que debe existir en second.market.comment
+        string='Comentarios'
+    )
+    
     ids_chats = fields.One2many(
         'second_market.chat',
         'id_articulo',
@@ -245,10 +251,11 @@ class ArticuloSegundaMano(models.Model):
         for articulo in self:
             articulo.conteo_etiquetas = len(articulo.ids_etiquetas)
     
+    @api.depends('ids_comentarios')
     def _computar_conteo_comentarios(self):
-        """Temporal: devuelve 0 hasta implementar comentarios"""
+        """Contar comentarios del artículo"""
         for articulo in self:
-            articulo.conteo_comentarios = 0
+            articulo.conteo_comentarios = len(articulo.ids_comentarios.filtered(lambda c: c.activo))
     
     def _computar_reportado(self):
         """Temporal: devuelve False hasta implementar denuncias"""
