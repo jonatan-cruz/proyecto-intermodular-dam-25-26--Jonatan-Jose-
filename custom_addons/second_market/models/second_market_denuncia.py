@@ -177,28 +177,25 @@ class Denuncia(models.Model):
         help='Propietario del artículo o autor del comentario denunciado'
     )
     
-    @api.depends('id_articulo', 'id_articulo.id_propietario', 'id_comentario')
+    @api.depends('id_articulo', 'id_comentario', 'tipo_denuncia')
     def _computar_nombre_denunciado(self):
         for denuncia in self:
-            try:
-                if denuncia.tipo_denuncia == 'articulo' and denuncia.id_articulo and denuncia.id_articulo.exists():
-                    # Verificar que el artículo y su propietario existan
-                    if denuncia.id_articulo.id_propietario and denuncia.id_articulo.id_propietario.exists():
-                        if hasattr(denuncia.id_articulo.id_propietario, 'name'):
-                            denuncia.nombre_denunciado = denuncia.id_articulo.id_propietario.name
-                        else:
-                            denuncia.nombre_denunciado = str(denuncia.id_articulo.id_propietario.id)
-                    else:
-                        denuncia.nombre_denunciado = 'Usuario eliminado'
-                elif denuncia.tipo_denuncia == 'comentario' and denuncia.id_comentario and denuncia.id_comentario.exists():
-                    # Cuando implementes comentarios con second.market.user:
-                    # denuncia.nombre_denunciado = denuncia.id_comentario.id_autor.name
-                    denuncia.nombre_denunciado = 'Por implementar'
+            nombre = False
+
+            if denuncia.tipo_denuncia == 'articulo' and denuncia.id_articulo:
+                articulo = denuncia.id_articulo
+                propietario = articulo.id_propietario
+
+                if propietario:
+                    nombre = propietario.name or str(propietario.id)
                 else:
-                    denuncia.nombre_denunciado = False
-            except Exception as e:
-                # Si hay cualquier error al leer las relaciones, asignar valor por defecto
-                denuncia.nombre_denunciado = 'Información no disponible'
+                    nombre = 'Usuario eliminado'
+
+            elif denuncia.tipo_denuncia == 'comentario' and denuncia.id_comentario:
+                nombre = 'Por implementar'
+
+            denuncia.nombre_denunciado = nombre
+
     
     # ============================================
     # CONSTRAINTS Y VALIDACIONES
@@ -227,8 +224,10 @@ class Denuncia(models.Model):
             if denuncia.tipo_denuncia == 'articulo' and denuncia.id_articulo:
                 # Comparar IDs si ambos son second.market.user
                 # Ajusta según cómo esté definido id_propietario en tu modelo de artículo
-                if denuncia.id_denunciante.id == denuncia.id_articulo.id_propietario.id:
+                propietario = denuncia.id_articulo.id_propietario
+                if propietario and denuncia.id_denunciante == propietario:
                     raise ValidationError(_('No puedes denunciar tu propio artículo.'))
+
     
     # ============================================
     # MÉTODOS CREATE Y WRITE
@@ -275,7 +274,7 @@ class Denuncia(models.Model):
 
         
         self.write({
-            'id_moderador': self.env.user.id,
+            'id_moderador': self.env.user,
             'estado': 'en_revision'
         })
         
