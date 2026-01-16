@@ -161,6 +161,32 @@ class Denuncia(models.Model):
     # CAMPOS COMPUTADOS
     # ============================================
     
+    nombre_denunciado = fields.Char(
+        string='Usuario Denunciado',
+        compute='_computar_nombre_denunciado',
+        store=True,
+        help='Propietario del artículo o autor del comentario denunciado'
+    )
+    
+    @api.depends('id_articulo', 'id_comentario', 'tipo_denuncia')
+    def _computar_nombre_denunciado(self):
+        for denuncia in self:
+            nombre = False
+
+            if denuncia.tipo_denuncia == 'articulo' and denuncia.id_articulo:
+                articulo = denuncia.id_articulo
+                propietario = articulo.id_propietario
+
+                if propietario:
+                    nombre = propietario.name or str(propietario.id)
+                else:
+                    nombre = 'Usuario eliminado'
+
+            elif denuncia.tipo_denuncia == 'comentario' and denuncia.id_comentario:
+                nombre = 'Por implementar'
+
+            denuncia.nombre_denunciado = nombre
+
     
     # ============================================
     # CONSTRAINTS Y VALIDACIONES
@@ -187,13 +213,14 @@ class Denuncia(models.Model):
             if denuncia.id_articulo and denuncia.id_denunciante:
                 if denuncia.id_denunciante.id == denuncia.id_articulo.id_propietario.id:
                     raise ValidationError(_('No puedes denunciar tu propio artículo.'))
+
     
     # ============================================
     # MÉTODOS CREATE Y WRITE
     # ============================================
     
-    @api.model
-    def create(self, vals):
+    @api.model_create_multi
+    def create(self, vals_list):
         """Generar número de denuncia único"""
         if vals.get('nombre', _('Nueva')) == _('Nueva'):
             vals['nombre'] = self.env['ir.sequence'].next_by_code('second_market.report') or _('Nueva')
@@ -223,7 +250,7 @@ class Denuncia(models.Model):
         """Asignar moderador actual a la denuncia"""
         self.ensure_one()
         self.write({
-            'id_moderador': self.env.user.id,
+            'id_moderador': self.env.user,
             'estado': 'en_revision'
         })
         

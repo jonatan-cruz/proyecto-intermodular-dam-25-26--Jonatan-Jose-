@@ -143,18 +143,19 @@ class SecondMarketComment(models.Model):
     # MÉTODOS CREATE Y WRITE
     # ============================================
     
-    @api.model
-    def create(self, vals):
+    @api.model_create_multi
+    def create(self, vals_list):
         """Generar ID único al crear"""
         if vals.get('id_mensaje', _('Nuevo')) == _('Nuevo'):
             vals['id_mensaje'] = self.env['ir.sequence'].next_by_code('second_market.comment') or _('Nuevo')
         
-        comentario = super(SecondMarketComment, self).create(vals)
+        comentarios = super(SecondMarketComment, self).create(vals_list)
         
         # Notificar al receptor (opcional)
-        comentario._notificar_nuevo_comentario()
+        for comentario in comentarios:
+            comentario._notificar_nuevo_comentario()
         
-        return comentario
+        return comentarios
     
     def write(self, vals):
         """Tracking de cambios importantes"""
