@@ -180,19 +180,25 @@ class Denuncia(models.Model):
     @api.depends('id_articulo', 'id_articulo.id_propietario', 'id_comentario')
     def _computar_nombre_denunciado(self):
         for denuncia in self:
-            if denuncia.tipo_denuncia == 'articulo' and denuncia.id_articulo:
-                # El propietario puede ser res.partner o second.market.user dependiendo de tu modelo de artículo
-                # Ajusta según corresponda
-                if hasattr(denuncia.id_articulo.id_propietario, 'name'):
-                    denuncia.nombre_denunciado = denuncia.id_articulo.id_propietario.name
+            try:
+                if denuncia.tipo_denuncia == 'articulo' and denuncia.id_articulo and denuncia.id_articulo.exists():
+                    # Verificar que el artículo y su propietario existan
+                    if denuncia.id_articulo.id_propietario and denuncia.id_articulo.id_propietario.exists():
+                        if hasattr(denuncia.id_articulo.id_propietario, 'name'):
+                            denuncia.nombre_denunciado = denuncia.id_articulo.id_propietario.name
+                        else:
+                            denuncia.nombre_denunciado = str(denuncia.id_articulo.id_propietario.id)
+                    else:
+                        denuncia.nombre_denunciado = 'Usuario eliminado'
+                elif denuncia.tipo_denuncia == 'comentario' and denuncia.id_comentario and denuncia.id_comentario.exists():
+                    # Cuando implementes comentarios con second.market.user:
+                    # denuncia.nombre_denunciado = denuncia.id_comentario.id_autor.name
+                    denuncia.nombre_denunciado = 'Por implementar'
                 else:
-                    denuncia.nombre_denunciado = str(denuncia.id_articulo.id_propietario)
-            elif denuncia.tipo_denuncia == 'comentario' and denuncia.id_comentario:
-                # Cuando implementes comentarios con second.market.user:
-                # denuncia.nombre_denunciado = denuncia.id_comentario.id_autor.name
-                denuncia.nombre_denunciado = 'Por implementar'
-            else:
-                denuncia.nombre_denunciado = False
+                    denuncia.nombre_denunciado = False
+            except Exception as e:
+                # Si hay cualquier error al leer las relaciones, asignar valor por defecto
+                denuncia.nombre_denunciado = 'Información no disponible'
     
     # ============================================
     # CONSTRAINTS Y VALIDACIONES
@@ -228,19 +234,21 @@ class Denuncia(models.Model):
     # MÉTODOS CREATE Y WRITE
     # ============================================
     
-    @api.model
-    def create(self, vals):
+    @api.model_create_multi
+    def create(self, vals_list):
         """Generar número de denuncia único"""
-        if vals.get('nombre', _('Nueva')) == _('Nueva'):
-            # Generar secuencia: REP001, REP002, etc.
-            vals['nombre'] = self.env['ir.sequence'].next_by_code('second_market.report') or _('Nueva')
-        
-        denuncia = super(Denuncia, self).create(vals)
-        
+        for vals in vals_list:
+            if vals.get('nombre', _('Nueva')) == _('Nueva'):
+                # Generar secuencia: REP001, REP002, etc.
+                vals['nombre'] = self.env['ir.sequence'].next_by_code('second_market.report') or _('Nueva')
+    
+        denuncias = super(Denuncia, self).create(vals_list)
+    
         # Notificar a moderadores sobre nueva denuncia
-        denuncia._notificar_nueva_denuncia()
-        
-        return denuncia
+        for denuncia in denuncias:
+            denuncia._notificar_nueva_denuncia()
+    
+        return denuncias
     
     def write(self, vals):
         """Registrar fecha de resolución cuando cambia el estado"""
