@@ -146,8 +146,9 @@ class SecondMarketComment(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         """Generar ID único al crear"""
-        if vals.get('id_mensaje', _('Nuevo')) == _('Nuevo'):
-            vals['id_mensaje'] = self.env['ir.sequence'].next_by_code('second_market.comment') or _('Nuevo')
+        for vals in vals_list:
+            if vals.get('id_mensaje', _('Nuevo')) == _('Nuevo'):
+                vals['id_mensaje'] = self.env['ir.sequence'].next_by_code('second_market.comment') or _('Nuevo')
         
         comentarios = super(SecondMarketComment, self).create(vals_list)
         

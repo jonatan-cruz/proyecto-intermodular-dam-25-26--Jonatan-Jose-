@@ -22,7 +22,7 @@ class ChatSegundaMano(models.Model):
     )
     
     id_comprador = fields.Many2one(
-        'res.partner',
+        'second_market.user',
         string='Comprador Interesado',
         required=True,
         ondelete='cascade',
@@ -30,7 +30,7 @@ class ChatSegundaMano(models.Model):
     )
     
     id_vendedor = fields.Many2one(
-        'res.partner',
+        'second_market.user',
         string='Vendedor',
         related='id_articulo.id_propietario',
         store=True,

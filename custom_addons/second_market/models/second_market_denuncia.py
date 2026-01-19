@@ -7,18 +7,20 @@ from odoo.exceptions import ValidationError, UserError
 class Denuncia(models.Model):
     _name = 'second_market.report'
     _description = 'Denuncia/Reporte de Artículo'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'create_date desc'
+    _rec_name = 'num_denuncia'
     
     # ============================================
     # CAMPOS BÁSICOS
     # ============================================
     
-    nombre = fields.Char(
+    num_denuncia = fields.Char(
         string='Número de Denuncia',
         required=True,
         copy=False,
         readonly=True,
-        default=lambda self: _('Nueva'),
+        default=lambda self: _('REP-0000X'),
         help='Identificador único de la denuncia'
     )
     
@@ -56,6 +58,14 @@ class Denuncia(models.Model):
         required=True,
         default='articulo',
         help='Indica si la denuncia es sobre un artículo o un comentario'
+    )
+    
+    id_comentario = fields.Many2one(
+        'second_market.comment',
+        string='Comentario Denunciado',
+        ondelete='cascade',
+        tracking=True,
+        help='Comentario sobre el que se realiza la denuncia'
     )
     
     # Denuncia sobre artículo
@@ -172,32 +182,34 @@ class Denuncia(models.Model):
     def _computar_nombre_denunciado(self):
         for denuncia in self:
             nombre = False
-
+ 
             if denuncia.tipo_denuncia == 'articulo' and denuncia.id_articulo:
                 articulo = denuncia.id_articulo
                 propietario = articulo.id_propietario
-
+ 
                 if propietario:
                     nombre = propietario.name or str(propietario.id)
                 else:
                     nombre = 'Usuario eliminado'
-
+ 
             elif denuncia.tipo_denuncia == 'comentario' and denuncia.id_comentario:
                 nombre = 'Por implementar'
-
+ 
             denuncia.nombre_denunciado = nombre
-
+ 
     
     # ============================================
     # CONSTRAINTS Y VALIDACIONES
     # ============================================
     
-    @api.constrains('id_articulo')
+    @api.constrains('id_articulo', 'id_comentario', 'tipo_denuncia')
     def _check_tipo_denuncia(self):
-        """Verificar que haya relación con artículo"""
+        """Verificar que haya relación con lo denunciado según el tipo"""
         for denuncia in self:
-            if not denuncia.id_articulo:
+            if denuncia.tipo_denuncia == 'articulo' and not denuncia.id_articulo:
                 raise ValidationError(_('Debes seleccionar un artículo para denunciar.'))
+            if denuncia.tipo_denuncia == 'comentario' and not denuncia.id_comentario:
+                raise ValidationError(_('Debes seleccionar un comentario para denunciar.'))
     
     @api.constrains('descripcion')
     def _check_descripcion_length(self):
@@ -213,7 +225,7 @@ class Denuncia(models.Model):
             if denuncia.id_articulo and denuncia.id_denunciante:
                 if denuncia.id_denunciante.id == denuncia.id_articulo.id_propietario.id:
                     raise ValidationError(_('No puedes denunciar tu propio artículo.'))
-
+ 
     
     # ============================================
     # MÉTODOS CREATE Y WRITE
@@ -222,12 +234,14 @@ class Denuncia(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         """Generar número de denuncia único"""
-        if vals.get('nombre', _('Nueva')) == _('Nueva'):
-            vals['nombre'] = self.env['ir.sequence'].next_by_code('second_market.report') or _('Nueva')
+        for vals in vals_list:
+            if vals.get('num_denuncia', _('Nueva')) == _('Nueva'):
+                vals['num_denuncia'] = self.env['ir.sequence'].next_by_code('second_market.report') or _('Nueva')
         
-        denuncia = super(Denuncia, self).create(vals)
-        denuncia._notificar_nueva_denuncia()
-        return denuncia
+        denuncias = super(Denuncia, self).create(vals_list)
+        for denuncia in denuncias:
+            denuncia._notificar_nueva_denuncia()
+        return denuncias
     
     def write(self, vals):
         """Registrar fecha de resolución cuando cambia el estado"""
@@ -336,7 +350,7 @@ class Denuncia(models.Model):
                 self.id_denunciante.name,
                 dict(self._fields['motivo'].selection).get(self.motivo)
             ),
-            subject=_('Nueva Denuncia: {}').format(self.nombre)
+            subject=_('Nueva Denuncia: {}').format(self.num_denuncia)
         )
     
     def _notificar_cambio_estado(self):
@@ -348,5 +362,5 @@ class Denuncia(models.Model):
                         denuncia.id_denunciante.name,
                         dict(self._fields['estado'].selection).get(denuncia.estado)
                     ),
-                    subject=_('Actualización de Denuncia: {}').format(denuncia.nombre)
+                    subject=_('Actualización de Denuncia: {}').format(denuncia.num_denuncia)
                 )

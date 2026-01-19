@@ -22,10 +22,9 @@ class MensajeChat(models.Model):
     )
     
     id_usuario = fields.Many2one(
-        'res.partner',
+        'second_market.user',
         string='Usuario',
         required=True,
-        default=lambda self: self.env.user.partner_id,
         help='Usuario que envía el mensaje'
     )
     
@@ -82,9 +81,8 @@ class MensajeChat(models.Model):
             result.append((mensaje.id, name))
         return result
     
-    @api.model
-    def create(self, vals):
-        """Al crear un mensaje, actualizar el campo de último mensaje del chat"""
-        mensaje = super(MensajeChat, self).create(vals)
-        # El campo computado se actualizará automáticamente por el @api.depends
-        return mensaje
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Al crear mensajes, el campo de último mensaje del chat se actualizará automáticamente"""
+        mensajes = super(MensajeChat, self).create(vals_list)
+        return mensajes

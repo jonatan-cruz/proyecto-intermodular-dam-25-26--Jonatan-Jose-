@@ -152,7 +152,7 @@ class SecondMarketRating(models.Model):
     def obtener_promedio(self):
         """Obtener promedio de calificaciones de un usuario"""
         # Este método se llama desde el usuario
-        # Ver _computar_calificacion_promedio en second.market.user
+        # Ver _computar_calificacion_promedio en second_market.user
         pass
     
     def _notificar_nueva_valoracion(self):

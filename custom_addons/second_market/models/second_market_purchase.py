@@ -269,7 +269,7 @@ class SecondMarketPurchase(models.Model):
         return {
             'name': _('Comprador'),
             'type': 'ir.actions.act_window',
-            'res_model': 'second.market.user',
+            'res_model': 'second_market.user',
             'view_mode': 'form',
             'res_id': self.id_comprador.id,
             'target': 'current',
@@ -281,7 +281,7 @@ class SecondMarketPurchase(models.Model):
         return {
             'name': _('Vendedor'),
             'type': 'ir.actions.act_window',
-            'res_model': 'second.market.user',
+            'res_model': 'second_market.user',
             'view_mode': 'form',
             'res_id': self.id_vendedor.id,
             'target': 'current',

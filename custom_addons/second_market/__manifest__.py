@@ -24,11 +24,13 @@ Long description of module's purpose
     # always loaded
     'data': [
         'security/ir.model.access.csv',
+        'data/ir_sequence_data.xml',
         'views/menu_root.xml',
         'views/articulos_views.xml',
         'views/categorias_views.xml',
         'views/etiquetas_views.xml',
         'views/chats_views.xml',
+        'report/user_report.xml',
         'views/templates.xml',
         'views/app_users.xml',
         'views/comentarios.xml',

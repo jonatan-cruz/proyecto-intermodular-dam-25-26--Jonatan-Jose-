@@ -8,13 +8,12 @@
         <field name="arch" type="xml">
             <list string="Denuncias" decoration-danger="prioridad=='urgente'"
                 decoration-warning="prioridad=='alta'" decoration-info="estado=='pendiente'">
-                <field name="nombre" />
+                <field name="num_denuncia" />
                 <field name="tipo_denuncia" />
                 <field name="id_denunciante" />
                 <field name="motivo" />
                 <field name="prioridad" widget="badge" />
-                <field name="estado" widget="badge"
-                    decoration-success="estado=='resuelta'"
+                <field name="estado" widget="badge" decoration-success="estado=='resuelta'"
                     decoration-danger="estado=='pendiente'"
                     decoration-warning="estado=='en_revision'"
                     decoration-muted="estado=='rechazada' or estado=='cerrada'" />
@@ -31,38 +30,33 @@
         <field name="arch" type="xml">
             <form string="Denuncia">
                 <header>
-                    <button name="accion_asignar_moderador" string="Asignarme"
-                        type="object" class="oe_highlight"
-                        invisible="estado not in ['pendiente']" />
-                    <button name="accion_resolver" string="Resolver"
-                        type="object" class="oe_highlight"
+                    <button name="accion_asignar_moderador" string="Asignarme" type="object"
+                        class="oe_highlight" invisible="estado not in ['pendiente']" />
+                    <button name="accion_resolver" string="Resolver" type="object"
+                        class="oe_highlight" invisible="estado != 'en_revision'" />
+                    <button name="accion_rechazar" string="Rechazar" type="object"
                         invisible="estado != 'en_revision'" />
-                    <button name="accion_rechazar" string="Rechazar"
-                        type="object"
-                        invisible="estado != 'en_revision'" />
-                    <button name="accion_cerrar" string="Cerrar"
-                        type="object"
+                    <button name="accion_cerrar" string="Cerrar" type="object"
                         invisible="estado not in ['resuelta', 'rechazada']" />
-                    <button name="accion_ver_articulo" string="Ver Artículo"
-                        type="object" class="btn-link"
-                        invisible="tipo_denuncia != 'articulo'" />
+                    <button name="accion_ver_articulo" string="Ver Artículo" type="object"
+                        class="btn-link" invisible="tipo_denuncia != 'articulo'" />
                     <field name="estado" widget="statusbar"
                         statusbar_visible="pendiente,en_revision,resuelta" />
                 </header>
 
                 <sheet>
-                    <div class="oe_title">
-                        <h1>
-                            <field name="nombre" />
-                        </h1>
-                    </div>
 
                     <group>
                         <group>
+                            <field name="num_denuncia" readonly="1" force_save="1" />
                             <field name="id_denunciante" readonly="estado != 'pendiente'"
                                 required="True" />
                             <field name="id_articulo" readonly="estado != 'pendiente'"
-                                required="True" />
+                                invisible="tipo_denuncia != 'articulo'"
+                                required="tipo_denuncia == 'articulo'" />
+                            <field name="id_comentario" readonly="estado != 'pendiente'"
+                                invisible="tipo_denuncia != 'comentario'"
+                                required="tipo_denuncia == 'comentario'" />
                             <field name="motivo" readonly="estado != 'pendiente'" />
                             <field name="prioridad" />
                         </group>
@@ -95,43 +89,33 @@
         <field name="model">second_market.report</field>
         <field name="arch" type="xml">
             <search string="Buscar Denuncias">
-                <field name="nombre" />
+                <field name="num_denuncia" />
                 <field name="id_denunciante" />
                 <field name="id_articulo" />
                 <field name="motivo" />
 
-                <filter string="Pendientes" name="pendientes"
-                    domain="[('estado', '=', 'pendiente')]" />
-                <filter string="En Revisión" name="en_revision"
-                    domain="[('estado', '=', 'en_revision')]" />
-                <filter string="Mis Denuncias" name="mis_denuncias"
-                    domain="[('id_moderador', '=', uid)]" />
+                <filter string="Pendientes" name="pendientes" domain="[('estado', '=', 'pendiente')]" />
+                <filter string="En Revisión" name="en_revision" domain="[('estado', '=', 'en_revision')]" />
+                <filter string="Mis Denuncias" name="mis_denuncias" domain="[('id_moderador', '=', uid)]" />
 
                 <separator />
-                <filter string="Prioridad Alta" name="prioridad_alta"
-                    domain="[('prioridad', 'in', ['alta', 'urgente'])]" />
-                <filter string="Sobre Artículos" name="sobre_articulos"
-                    domain="[('tipo_denuncia', '=', 'articulo')]" />
-                <filter string="Sobre Comentarios" name="sobre_comentarios"
-                    domain="[('tipo_denuncia', '=', 'comentario')]" />
+                <filter string="Prioridad Alta" name="prioridad_alta" domain="[('prioridad', 'in', ['alta',
+    'urgente'])]" />
+                <filter string="Sobre Artículos" name="sobre_articulos" domain="[('tipo_denuncia', '=',
+    'articulo')]" />
+                <filter string="Sobre Comentarios" name="sobre_comentarios" domain="[('tipo_denuncia', '=',
+    'comentario')]" />
 
                 <separator />
-                <filter string="Activas" name="activas"
-                    domain="[('activo', '=', True)]" />
-                <filter string="Archivadas" name="archivadas"
-                    domain="[('activo', '=', False)]" />
+                <filter string="Activas" name="activas" domain="[('activo', '=', True)]" />
+                <filter string="Archivadas" name="archivadas" domain="[('activo', '=', False)]" />
 
                 <group expand="0" string="Agrupar Por">
-                    <filter string="Estado" name="group_estado"
-                        context="{'group_by': 'estado'}" />
-                    <filter string="Prioridad" name="group_prioridad"
-                        context="{'group_by': 'prioridad'}" />
-                    <filter string="Tipo" name="group_tipo"
-                        context="{'group_by': 'tipo_denuncia'}" />
-                    <filter string="Moderador" name="group_moderador"
-                        context="{'group_by': 'id_moderador'}" />
-                    <filter string="Motivo" name="group_motivo"
-                        context="{'group_by': 'motivo'}" />
+                    <filter string="Estado" name="group_estado" context="{'group_by': 'estado'}" />
+                    <filter string="Prioridad" name="group_prioridad" context="{'group_by': 'prioridad'}" />
+                    <filter string="Tipo" name="group_tipo" context="{'group_by': 'tipo_denuncia'}" />
+                    <filter string="Moderador" name="group_moderador" context="{'group_by': 'id_moderador'}" />
+                    <filter string="Motivo" name="group_motivo" context="{'group_by': 'motivo'}" />
                 </group>
             </search>
         </field>
@@ -166,10 +150,7 @@
     </record>
 
     <!-- Menú -->
-    <menuitem id="menu_second_market_reports"
-        name="Denuncias"
-        parent="menu_second_market_root"
-        action="action_second_market_report"
-        sequence="50" />
+    <menuitem id="menu_second_market_reports" name="Denuncias" parent="menu_second_market_root"
+        action="action_second_market_report" sequence="50" />
 
 </odoo>

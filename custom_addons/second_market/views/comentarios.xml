@@ -88,46 +88,6 @@
     </record>
 
     <!-- ============================================ -->
-    <!-- VISTA DE BÚSQUEDA -->
-    <!-- ============================================ -->
-
-    <record id="view_second_market_comment_search" model="ir.ui.view">
-        <field name="name">second_market.comment.search</field>
-        <field name="model">second_market.comment</field>
-        <field name="arch" type="xml">
-            <search string="Buscar Comentarios">
-                <field name="id_mensaje" />
-                <field name="id_emisor" />
-                <field name="id_receptor" />
-                <field name="id_articulo" />
-                <field name="texto" string="Comentario" filter_domain="[('texto', 'ilike', self)]" />
-
-                <filter string="No Leídos" name="no_leidos" domain="[('leido', '=', False)]" />
-                <filter string="Leídos" name="leidos" domain="[('leido', '=', True)]" />
-                <separator />
-                <filter string="Activos" name="activos" domain="[('activo', '=', True)]" />
-                <filter string="Eliminados" name="eliminados" domain="[('activo', '=', False)]" />
-                <separator />
-                <filter string="Hoy" name="hoy"
-                    domain="[('fecha_hora', '&gt;=', datetime.datetime.now().replace(hour=0, minute=0, second=0)), 
-                                 ('fecha_hora', '&lt;=', datetime.datetime.now().replace(hour=23, minute=59, second=59))]" />
-                <filter string="Últimos 7 días" name="ultimos_7_dias"
-                    domain="[('fecha_hora', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]" />
-
-                <group expand="0" string="Agrupar por">
-                    <filter string="Emisor" name="group_emisor" context="{'group_by': 'id_emisor'}" />
-                    <filter string="Receptor" name="group_receptor"
-                        context="{'group_by': 'id_receptor'}" />
-                    <filter string="Artículo" name="group_articulo"
-                        context="{'group_by': 'id_articulo'}" />
-                    <filter string="Estado" name="group_leido" context="{'group_by': 'leido'}" />
-                    <filter string="Fecha" name="group_fecha" context="{'group_by': 'fecha_hora'}" />
-                </group>
-            </search>
-        </field>
-    </record>
-
-    <!-- ============================================ -->
     <!-- VISTA KANBAN (OPCIONAL) -->
     <!-- ============================================ -->
 

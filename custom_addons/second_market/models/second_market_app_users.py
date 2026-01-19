@@ -20,8 +20,6 @@ class SecondMarketUser(models.Model):
         size=7,
         required=True,
         copy=False,
-        readonly=True,
-        default=lambda self: _('Nuevo'),
         help='ID único de usuario de 7 dígitos'
     )
     
@@ -34,10 +32,12 @@ class SecondMarketUser(models.Model):
     )
 
     password = fields.Char(
-        string='Contraseña', 
-        size=50, 
+        string='Contraseña',
+        size=50,
         required=True,
-        password=True)
+        password=True,
+        help='Contraseña (8-50 caracteres)'
+    )
     
     login = fields.Char(
         string='Login/Email',
@@ -46,12 +46,6 @@ class SecondMarketUser(models.Model):
         help='Email o nombre de usuario para iniciar sesión'
     )
     
-    contrasena = fields.Char(
-        string='Contraseña',
-        size=50,
-        required=True,
-        help='Contraseña (8-50 caracteres)'
-    )
     
     # ============================================
     # ESTADÍSTICAS DEL USUARIO
@@ -93,9 +87,12 @@ class SecondMarketUser(models.Model):
 
     @api.constrains('password')
     def _check_password(self):
+        """Validar contraseña (8-50 caracteres)"""
         for rec in self:
             if len(rec.password) < 8:
-                raise ValidationError('La contraseña debe tener al menos 8 caracteres.')
+                raise ValidationError(_('La contraseña debe tener al menos 8 caracteres.'))
+            if len(rec.password) > 50:
+                raise ValidationError(_('La contraseña no puede tener más de 50 caracteres.'))
             
     def action_eliminar_usuario(self):
         for record in self:
@@ -151,7 +148,7 @@ class SecondMarketUser(models.Model):
     
     # Chats del usuario
     # ids_chats = fields.Many2many(
-    #     'second.market.chat',
+    #     'second_market.chat',
     #     'second_market_user_chat_rel',
     #     'user_id',
     #     'chat_id',
@@ -160,7 +157,7 @@ class SecondMarketUser(models.Model):
     
     # Reportes realizados por el usuario
     # ids_reportes_enviados = fields.One2many(
-    #     'second.market.report',
+    #     'second_market.report',
     #     'id_reportador',
     #     string='Reportes Enviados'
     # )
@@ -280,14 +277,6 @@ class SecondMarketUser(models.Model):
                 if not usuario.id_usuario.isdigit() or len(usuario.id_usuario) != 7:
                     raise ValidationError(_('El ID de usuario debe tener exactamente 7 dígitos numéricos.'))
     
-    @api.constrains('contrasena')
-    def _check_contrasena(self):
-        """Validar contraseña (8-50 caracteres)"""
-        for usuario in self:
-            if len(usuario.contrasena) < 8:
-                raise ValidationError(_('La contraseña debe tener al menos 8 caracteres.'))
-            if len(usuario.contrasena) > 50:
-                raise ValidationError(_('La contraseña no puede tener más de 50 caracteres.'))
     
     @api.constrains('name')
     def _check_nombre_length(self):
@@ -338,23 +327,20 @@ class SecondMarketUser(models.Model):
     # MÉTODOS CREATE Y WRITE
     # ============================================
     
-    @api.model
-    def create(self, vals):
+    @api.model_create_multi
+    def create(self, vals_list):
         """Generar ID único al crear usuario"""
-        if vals.get('id_usuario', _('Nuevo')) == _('Nuevo'):
-            vals['id_usuario'] = self.env['ir.sequence'].next_by_code('second_market.user') or _('Nuevo')
+        for vals in vals_list:
+            if vals.get('id_usuario', _('Nuevo')) == _('Nuevo'):
+                vals['id_usuario'] = self.env['ir.sequence'].next_by_code('second_market.user') or _('Nuevo')
         
-        usuario = super(SecondMarketUser, self).create(vals)
-        
-        # Enviar email de bienvenida (opcional)
-        # usuario._enviar_email_bienvenida()
-        
-        return usuario
+        usuarios = super(SecondMarketUser, self).create(vals_list)
+        return usuarios
     
     def write(self, vals):
         """Tracking de cambios importantes"""
         # Validar cambios de contraseña
-        if 'contrasena' in vals:
+        if 'password' in vals:
             # Aquí podrías agregar hash de contraseña
             pass
         
@@ -383,7 +369,7 @@ class SecondMarketUser(models.Model):
             raise UserError(_('Este artículo no está disponible para compra.'))
         
         # Crear registro de compra
-        compra = self.env['second.market.purchase'].create({
+        compra = self.env['second_market.purchase'].create({
             'id_comprador': self.id,
             'id_vendedor': articulo.id_propietario.id,
             'id_articulo': articulo.id,

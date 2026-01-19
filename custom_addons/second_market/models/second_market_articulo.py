@@ -44,10 +44,9 @@ class ArticuloSegundaMano(models.Model):
     # ============================================
     
     id_propietario = fields.Many2one(
-        'res.partner',
+        'second_market.user',
         string='Propietario',
         required=True,
-        default=lambda self: self.env.user.partner_id,
         tracking=True,
         ondelete='restrict',
         help='Usuario que publica el artículo'
@@ -62,6 +61,7 @@ class ArticuloSegundaMano(models.Model):
         help='Categoría del producto'
     )
     
+    #proyecto-intermodular-dam-25-26--jonatan-jose--db-1
     # ============================================
     # INFORMACIÓN DEL PRODUCTO
     # ============================================
@@ -211,7 +211,7 @@ class ArticuloSegundaMano(models.Model):
     
     ids_comentarios = fields.One2many(
         'second_market.comment',
-        'id_articulo',  # ← Campo que debe existir en second.market.comment
+        'id_articulo',  # ← Campo que debe existir en second_market.comment
         string='Comentarios'
     )
     

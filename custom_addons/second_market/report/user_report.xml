@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Acción de Informe Global -->
+    <record id="action_report_user_list" model="ir.actions.report">
+        <field name="name">Listado Global de Usuarios</field>
+        <field name="model">second_market.user</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">second_market.report_user_list_template</field>
+        <field name="report_file">second_market.report_user_list</field>
+        <field name="print_report_name">'Listado_Usuarios_' + time.strftime('%Y-%m-%d')</field>
+        <field name="binding_model_id" ref="model_second_market_user" />
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Plantilla del Informe Global -->
+    <template id="report_user_list_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <div class="oe_structure" />
+
+                    <div class="text-center mb-4">
+                        <h2>Listado de Usuarios de Second Market</h2>
+                        <p class="text-muted">Fecha del reporte: <span
+                                t-esc="context_timestamp(datetime.datetime.now()).strftime('%d/%m/%Y %H:%M')" /></p>
+                    </div>
+
+                    <table class="table table-sm table-striped mt-4">
+                        <thead style="background-color: #f2f2f2;">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Email/Login</th>
+                                <th>Ubicación</th>
+                                <th class="text-center">Venta</th>
+                                <th class="text-center">Vendidos</th>
+                                <th class="text-center">Antigüedad</th>
+                                <th class="text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="docs" t-as="user">
+                                <tr>
+                                    <td>
+                                        <span t-field="user.id_usuario" />
+                                    </td>
+                                    <td>
+                                        <strong>
+                                            <span t-field="user.name" />
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <span t-field="user.login" />
+                                    </td>
+                                    <td>
+                                        <span t-esc="user.ubicacion or '-'" />
+                                    </td>
+                                    <td class="text-center">
+                                        <span t-field="user.productos_en_venta" />
+                                    </td>
+                                    <td class="text-center">
+                                        <span t-field="user.productos_vendidos" />
+                                    </td>
+                                    <td class="text-center"><span t-field="user.antiguedad" /> años</td>
+                                    <td class="text-center">
+                                        <span
+                                            t-attf-class="badge #{'bg-success' if user.activo else 'bg-danger'}"
+                                            style="padding: 3px 8px; border-radius: 4px; color: white; border: 1px solid transparent;">
+                                            <t t-esc="'Activo' if user.activo else 'Inactivo'" />
+                                        </span>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+
+                    <div class="mt-4 text-right">
+                        <p>
+                            <strong>Total de usuarios en este reporte:</strong>
+                            <t t-esc="len(docs)" />
+                        </p>
+                    </div>
+
+                    <div class="oe_structure" />
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>
