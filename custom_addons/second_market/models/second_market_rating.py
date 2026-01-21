@@ -14,12 +14,18 @@ class SecondMarketRating(models.Model):
     # CAMPOS PRINCIPALES
     # ============================================
     
-    calificacion = fields.Integer(
-        string='Calificación',
-        required=True,
-        tracking=True,
-        help='Calificación de 1 a 5 estrellas'
-    )
+    calificacion = fields.Selection(
+    selection=[
+        ('1', '1'),
+        ('2', '2'),
+        ('3', '3'),
+        ('4', '4'),
+        ('5', '5'),
+    ],
+    string='Calificación',
+    required=True,
+    tracking=True,
+)
     
     id_usuario = fields.Many2one(
         'second_market.user',
@@ -85,8 +91,10 @@ class SecondMarketRating(models.Model):
     def _check_calificacion(self):
         """Validar que la calificación esté entre 1 y 5"""
         for valoracion in self:
-            if valoracion.calificacion < 1 or valoracion.calificacion > 5:
+            cal = int(valoracion.calificacion)  # <-- convertir a int
+            if cal < 1 or cal > 5:
                 raise ValidationError(_('La calificación debe estar entre 1 y 5 estrellas.'))
+
     
     @api.constrains('id_usuario', 'id_valorador')
     def _check_autovaloracion(self):

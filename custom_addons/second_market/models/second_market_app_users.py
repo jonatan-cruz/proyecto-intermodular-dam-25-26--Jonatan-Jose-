@@ -258,9 +258,9 @@ class SecondMarketUser(models.Model):
     def _computar_calificacion_promedio(self):
         """Calcular promedio de calificaciones"""
         for usuario in self:
-            valoraciones = usuario.ids_valoraciones.filtered(lambda v: v.calificacion > 0)
+            valoraciones = usuario.ids_valoraciones.filtered(lambda v: int(v.calificacion) > 0)
             if valoraciones:
-                usuario.calificacion_promedio = sum(valoraciones.mapped('calificacion')) / len(valoraciones)
+                usuario.calificacion_promedio = round(sum(int(v.calificacion) for v in valoraciones) / len(valoraciones),2)
             else:
                 usuario.calificacion_promedio = 0.0
     
@@ -541,6 +541,24 @@ class SecondMarketUser(models.Model):
             'view_mode': 'list,form',
             'domain': [('id_usuario', '=', self.id)]
         }
+    
+    def action_ver_grafico_valoraciones(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Gráfico de Valoraciones',
+            'res_model': 'second_market.rating',
+            'view_mode': 'graph',
+            'view_id': self.env.ref(
+                'second_market.view_second_market_rating_graph'
+            ).id,
+            'domain': [('id_usuario', '=', self.id)],
+            'context': {
+                'group_by': 'calificacion',
+            },
+            'target': 'current',
+        }
+
     
     def action_eliminar_usuario(self):
         """Eliminar (desactivar) usuario"""

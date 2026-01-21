@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <record id="view_second_market_rating_graph" model="ir.ui.view">
+        <field name="name">second.market.rating.graph</field>
+        <field name="model">second_market.rating</field>
+        <field name="arch" type="xml">
+            <graph string="Distribución de Valoraciones" type="bar">
+                <field name="calificacion" type="row"/>
+                <field name="id" type="measure"/>
+            </graph>
+        </field>
+</record>
+
+
     <!-- ============================================ -->
     <!-- VISTA FORMULARIO DE USUARIO -->
     <!-- ============================================ -->
@@ -160,14 +172,24 @@
 
                         <!-- Pestaña de Valoraciones -->
                         <page string="Valoraciones Recibidas" name="valoraciones">
+                            <group>
+                                <button
+                                    name="action_ver_grafico_valoraciones"
+                                    type="object"
+                                    string="Ver gráfico de valoraciones"
+                                    icon="fa-bar-chart"
+                                    class="btn-primary"/>
+                            </group>
+                        
                             <field name="ids_valoraciones">
                                 <list string="Valoraciones" create="false">
-                                    <field name="fecha_hora" />
-                                    <field name="calificacion" widget="priority" />
-                                    <field name="comentario" />
+                                    <field name="fecha_hora"/>
+                                    <field name="calificacion" widget="priority"/>
+                                    <field name="comentario"/>
                                 </list>
                             </field>
                         </page>
+
 
                     </notebook>
 
