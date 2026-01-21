@@ -1,18 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="view_second_market_rating_graph" model="ir.ui.view">
-        <field name="name">second.market.rating.graph</field>
-        <field name="model">second_market.rating</field>
-        <field name="arch" type="xml">
-            <graph string="Distribución de Valoraciones" type="bar">
-                <field name="calificacion" type="row"/>
-                <field name="id" type="measure"/>
-            </graph>
-        </field>
-</record>
-
-
     <!-- ============================================ -->
     <!-- VISTA FORMULARIO DE USUARIO -->
     <!-- ============================================ -->
@@ -23,40 +11,28 @@
         <field name="arch" type="xml">
             <form string="Usuario">
                 <header>
-                    <button name="action_eliminar_usuario"
-                        string="Desactivar Usuario"
-                        type="object"
+                    <button name="action_eliminar_usuario" string="Desactivar Usuario" type="object"
                         groups="second_market.group_second_market_moderator"
-                        confirm="¿Estás seguro de desactivar este usuario?"
-                        invisible="not activo" />
-                    <field name="activo" widget="boolean_button"
-                        options="{'terminology': 'active'}" />
+                        confirm="¿Estás seguro de desactivar este usuario?" invisible="not activo" />
+                    <field name="activo" widget="boolean_button" options="{'terminology': 'active'}" />
                 </header>
 
                 <sheet>
                     <!-- Smart Buttons -->
                     <div class="oe_button_box" name="button_box">
-                        <button name="action_ver_articulos"
-                            type="object"
-                            class="oe_stat_button"
+                        <button name="action_ver_articulos" type="object" class="oe_stat_button"
                             icon="fa-shopping-bag">
                             <field name="productos_en_venta" widget="statinfo" string="En Venta" />
                         </button>
-                        <button name="action_ver_ventas"
-                            type="object"
-                            class="oe_stat_button"
+                        <button name="action_ver_ventas" type="object" class="oe_stat_button"
                             icon="fa-dollar">
                             <field name="productos_vendidos" widget="statinfo" string="Vendidos" />
                         </button>
-                        <button name="action_ver_compras"
-                            type="object"
-                            class="oe_stat_button"
+                        <button name="action_ver_compras" type="object" class="oe_stat_button"
                             icon="fa-shopping-cart">
                             <field name="productos_comprados" widget="statinfo" string="Comprados" />
                         </button>
-                        <button name="action_ver_valoraciones"
-                            type="object"
-                            class="oe_stat_button"
+                        <button name="action_ver_valoraciones" type="object" class="oe_stat_button"
                             icon="fa-star">
                             <div class="o_field_widget o_stat_info">
                                 <span class="o_stat_value">
@@ -114,8 +90,8 @@
                             </group>
                             <group>
                                 <group string="Valoraciones">
-                                    <field name="calificacion_promedio" readonly="1"
-                                        widget="float" options="{'precision': 2}" />
+                                    <field name="calificacion_promedio" readonly="1" widget="float"
+                                        options="{'precision': 2}" />
                                     <field name="total_valoraciones" readonly="1" />
                                 </group>
                             </group>
@@ -161,11 +137,8 @@
                                     <field name="nombre_articulo" />
                                     <field name="texto" />
                                     <field name="leido" widget="boolean_toggle" />
-                                    <button name="leer"
-                                        string="Marcar Leído"
-                                        type="object"
-                                        icon="fa-check"
-                                        invisible="leido" />
+                                    <button name="leer" string="Marcar Leído" type="object"
+                                        icon="fa-check" invisible="leido" />
                                 </list>
                             </field>
                         </page>
@@ -173,19 +146,16 @@
                         <!-- Pestaña de Valoraciones -->
                         <page string="Valoraciones Recibidas" name="valoraciones">
                             <group>
-                                <button
-                                    name="action_ver_grafico_valoraciones"
-                                    type="object"
-                                    string="Ver gráfico de valoraciones"
-                                    icon="fa-bar-chart"
-                                    class="btn-primary"/>
+                                <button name="action_ver_grafico_valoraciones" type="object"
+                                    string="Ver gráfico de valoraciones" icon="fa-bar-chart"
+                                    class="btn-primary" />
                             </group>
-                        
+
                             <field name="ids_valoraciones">
                                 <list string="Valoraciones" create="false">
-                                    <field name="fecha_hora"/>
-                                    <field name="calificacion" widget="priority"/>
-                                    <field name="comentario"/>
+                                    <field name="fecha_hora" />
+                                    <field name="calificacion" widget="priority" />
+                                    <field name="comentario" />
                                 </list>
                             </field>
                         </page>
@@ -218,6 +188,50 @@
             </list>
         </field>
     </record>
+
+    <!-- ============================================ -->
+    <!-- VISTA DE BÚSQUEDA DE USUARIOS -->
+    <!-- ============================================ -->
+
+    <record id="view_second_market_user_search" model="ir.ui.view">
+        <field name="name">second_market.user.search</field>
+        <field name="model">second_market.user</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Usuarios">
+                <field name="name" />
+                <field name="id_usuario" />
+                <field name="login" />
+                <field name="ubicacion" />
+
+                <separator />
+                <filter string="Activos" name="activos" domain="[('activo', '=', True)]" />
+                <filter string="Inactivos" name="inactivos" domain="[('activo', '=', False)]" />
+
+                <separator />
+                <filter string="Con Productos en Venta" name="con_productos"
+                    domain="[('productos_en_venta', '>', 0)]" />
+                <filter string="Vendedores Activos" name="vendedores"
+                    domain="[('productos_vendidos', '>', 0)]" />
+                <filter string="Compradores Activos" name="compradores"
+                    domain="[('productos_comprados', '>', 0)]" />
+
+                <separator />
+                <filter string="Bien Valorados (≥4)" name="bien_valorados"
+                    domain="[('calificacion_promedio', '>=', 4.0)]" />
+                <filter string="Nuevos (último mes)" name="nuevos"
+                    domain="[('create_date', '>=', (context_today() - datetime.timedelta(days=30)).strftime('%Y-%m-%d'))]" />
+
+                <group expand="0" string="Agrupar Por">
+                    <filter string="Estado" name="group_by_activo" context="{'group_by': 'activo'}" />
+                    <filter string="Ubicación" name="group_by_ubicacion"
+                        context="{'group_by': 'ubicacion'}" />
+                    <filter string="Antigüedad" name="group_by_antiguedad"
+                        context="{'group_by': 'antiguedad'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
     <record id="action_second_market_users" model="ir.actions.act_window">
         <field name="name">Usuarios Second Market</field>
         <field name="res_model">second_market.user</field>

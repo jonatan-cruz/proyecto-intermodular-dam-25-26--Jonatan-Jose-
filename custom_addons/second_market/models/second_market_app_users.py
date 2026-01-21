@@ -260,7 +260,7 @@ class SecondMarketUser(models.Model):
         for usuario in self:
             valoraciones = usuario.ids_valoraciones.filtered(lambda v: int(v.calificacion) > 0)
             if valoraciones:
-                usuario.calificacion_promedio = round(sum(int(v.calificacion) for v in valoraciones) / len(valoraciones),2)
+                usuario.calificacion_promedio = round(sum(int(v.calificacion) for v in valoraciones) / len(valoraciones), 2)
             else:
                 usuario.calificacion_promedio = 0.0
     
@@ -532,29 +532,30 @@ class SecondMarketUser(models.Model):
         }
     
     def action_ver_valoraciones(self):
-        """Ver valoraciones recibidas"""
+        """Ver valoraciones recibidas (lista, formulario y gráfico)"""
         self.ensure_one()
         return {
             'name': _('Valoraciones de %s') % self.name,
             'type': 'ir.actions.act_window',
             'res_model': 'second_market.rating',
-            'view_mode': 'list,form',
-            'domain': [('id_usuario', '=', self.id)]
+            'view_mode': 'list,form,graph',
+            'domain': [('id_usuario', '=', self.id)],
+            'context': {'default_id_usuario': self.id}
         }
     
     def action_ver_grafico_valoraciones(self):
+        """Abrir directamente la vista de gráfico de valoraciones"""
         self.ensure_one()
         return {
+            'name': _('Gráfico de Valoraciones: %s') % self.name,
             'type': 'ir.actions.act_window',
-            'name': 'Gráfico de Valoraciones',
             'res_model': 'second_market.rating',
             'view_mode': 'graph',
-            'view_id': self.env.ref(
-                'second_market.view_second_market_rating_graph'
-            ).id,
+            'view_id': self.env.ref('second_market.view_second_market_rating_graph').id,
             'domain': [('id_usuario', '=', self.id)],
             'context': {
-                'group_by': 'calificacion',
+                'default_id_usuario': self.id,
+                'search_default_group_by_calificacion': 1,
             },
             'target': 'current',
         }

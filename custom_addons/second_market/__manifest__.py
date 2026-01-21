@@ -33,6 +33,7 @@ Long description of module's purpose
         'report/user_report.xml',
         'views/templates.xml',
         'views/app_users.xml',
+        'views/rating_views.xml',
         'views/comentarios.xml',
         'views/denuncias_views.xml',
         'views/purchase_views.xml',

@@ -83,8 +83,9 @@
         </field>
     </record>
 
+
     <!-- Vista de búsqueda/filtros -->
-    <!-- <record id="view_second_market_report_search" model="ir.ui.view">
+    <record id="view_second_market_report_search" model="ir.ui.view">
         <field name="name">second_market.report.search</field>
         <field name="model">second_market.report</field>
         <field name="arch" type="xml">
@@ -92,34 +93,31 @@
                 <field name="num_denuncia" />
                 <field name="id_denunciante" />
                 <field name="id_articulo" />
+                <field name="id_comentario" />
                 <field name="motivo" />
-
-                <filter string="Pendientes" name="pendientes" domain="[('estado', '=', 'pendiente')]" />
-                <filter string="En Revisión" name="en_revision" domain="[('estado', '=', 'en_revision')]" />
-                <filter string="Mis Denuncias" name="mis_denuncias" domain="[('id_moderador', '=', uid)]" />
+                <field name="id_moderador" />
 
                 <separator />
-                <filter string="Prioridad Alta" name="prioridad_alta" domain="[('prioridad', 'in', ['alta',
-    'urgente'])]" />
-                <filter string="Sobre Artículos" name="sobre_articulos" domain="[('tipo_denuncia', '=',
-    'articulo')]" />
-                <filter string="Sobre Comentarios" name="sobre_comentarios" domain="[('tipo_denuncia', '=',
-    'comentario')]" />
-
-                <separator />
-                <filter string="Activas" name="activas" domain="[('activo', '=', True)]" />
-                <filter string="Archivadas" name="archivadas" domain="[('activo', '=', False)]" />
+                <filter string="Pendientes" name="pendientes"
+                    domain="[('estado', '=', 'pendiente')]" />
+                <filter string="En Revisión" name="en_revision"
+                    domain="[('estado', '=', 'en_revision')]" />
+                <filter string="Resueltas" name="resueltas" domain="[('estado', '=', 'resuelta')]" />
+                <filter string="Rechazadas" name="rechazadas"
+                    domain="[('estado', '=', 'rechazada')]" />
 
                 <group expand="0" string="Agrupar Por">
                     <filter string="Estado" name="group_estado" context="{'group_by': 'estado'}" />
-                    <filter string="Prioridad" name="group_prioridad" context="{'group_by': 'prioridad'}" />
+                    <filter string="Prioridad" name="group_prioridad"
+                        context="{'group_by': 'prioridad'}" />
                     <filter string="Tipo" name="group_tipo" context="{'group_by': 'tipo_denuncia'}" />
-                    <filter string="Moderador" name="group_moderador" context="{'group_by': 'id_moderador'}" />
+                    <filter string="Moderador" name="group_moderador"
+                        context="{'group_by': 'id_moderador'}" />
                     <filter string="Motivo" name="group_motivo" context="{'group_by': 'motivo'}" />
                 </group>
             </search>
         </field>
-    </record> -->
+    </record>
 
     <!-- Vista Graph de Denuncias -->
     <record id="view_second_market_report_graph" model="ir.ui.view">

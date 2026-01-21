@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Vista Gráfico (Soluciona el error RPC_ERROR) -->
+    <record id="view_second_market_rating_graph" model="ir.ui.view">
+        <field name="name">second.market.rating.graph</field>
+        <field name="model">second_market.rating</field>
+        <field name="arch" type="xml">
+            <graph string="Distribución de Valoraciones" type="bar">
+                <field name="calificacion" type="row" />
+                <field name="id" type="measure" />
+            </graph>
+        </field>
+    </record>
+
+    <!-- Vista de Lista (Tree/List) -->
+    <record id="view_second_market_rating_list" model="ir.ui.view">
+        <field name="name">second.market.rating.list</field>
+        <field name="model">second_market.rating</field>
+        <field name="arch" type="xml">
+            <list string="Valoraciones">
+                <field name="fecha_hora" />
+                <field name="id_valorador" />
+                <field name="id_usuario" string="Usuario Valorado" />
+                <field name="calificacion" widget="priority" options="{'max_value': 5}" readonly="1" />
+                <field name="comentario" />
+                <field name="activo" widget="boolean_toggle" />
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista Formulario -->
+    <record id="view_second_market_rating_form" model="ir.ui.view">
+        <field name="name">second.market.rating.form</field>
+        <field name="model">second_market.rating</field>
+        <field name="arch" type="xml">
+            <form string="Valoración">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="id_valorador" />
+                            <field name="id_usuario" readonly="1" />
+                            <field name="fecha_hora" readonly="1" />
+                        </group>
+                        <group>
+                            <field name="calificacion" widget="priority" options="{'max_value': 5}" />
+                            <field name="activo" />
+                        </group>
+                    </group>
+                    <group string="Comentario">
+                        <field name="comentario" placeholder="Escribe aquí tu valoración..." />
+                    </group>
+                </sheet>
+                <chatter>
+                    <field name="message_follower_ids" />
+                    <field name="activity_ids" />
+                    <field name="message_ids" />
+                </chatter>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Búsqueda -->
+    <record id="view_second_market_rating_search" model="ir.ui.view">
+        <field name="name">second.market.rating.search</field>
+        <field name="model">second_market.rating</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Valoraciones">
+                <field name="id_usuario" />
+                <field name="id_valorador" />
+                <field name="calificacion" />
+                <separator />
+                <filter string="Mis Valoraciones" name="my_ratings"
+                    domain="[('id_usuario.id', '=', uid)]" />
+                <group expand="0" string="Agrupar Por">
+                    <filter string="Calificación" name="group_by_calificacion"
+                        context="{'group_by': 'calificacion'}" />
+                    <filter string="Usuario" name="group_by_usuario"
+                        context="{'group_by': 'id_usuario'}" />
+                    <filter string="Fecha" name="group_by_fecha"
+                        context="{'group_by': 'fecha_hora'}" />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción para Valoraciones -->
+    <record id="action_second_market_rating" model="ir.actions.act_window">
+        <field name="name">Valoraciones</field>
+        <field name="res_model">second_market.rating</field>
+        <field name="view_mode">list,form,graph</field>
+        <field name="search_view_id" ref="view_second_market_rating_search" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay valoraciones registradas.
+            </p>
+        </field>
+    </record>
+
+</odoo>
