@@ -35,6 +35,7 @@ Long description of module's purpose
         'views/app_users.xml',
         'views/comentarios.xml',
         'views/denuncias_views.xml',
+        'views/purchase_views.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

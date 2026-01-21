@@ -27,6 +27,15 @@
             <field name="model">second_market.article</field>
             <field name="arch" type="xml">
                 <form string="Artículo">
+                    <header>
+                        <button name="action_publicar"
+                            string="Publicar"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="estado_publicacion != 'borrador'" />
+                        <field name="estado_publicacion" widget="statusbar"
+                            statusbar_visible="borrador,publicado,vendido" />
+                    </header>
                     <sheet>
                         <group>
                             <group>

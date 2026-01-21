@@ -228,6 +228,15 @@ class ArticuloSegundaMano(models.Model):
         help='El artículo tiene denuncias pendientes'
     )
     
+    def action_publicar(self):
+        """Pasar el artículo a estado publicado"""
+        for articulo in self:
+            if articulo.estado_publicacion == 'borrador':
+                articulo.write({'estado_publicacion': 'publicado'})
+            else:
+                raise UserError(_('Solo se pueden publicar artículos en estado borrador.'))
+        return True
+
     # ============================================
     # CAMPOS COMPUTADOS
     # ============================================

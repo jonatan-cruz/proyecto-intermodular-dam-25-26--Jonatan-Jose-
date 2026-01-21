@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Vista list (Lista) -->
+        <record id="view_second_market_purchase_list" model="ir.ui.view">
+            <field name="name">second_market.purchase.list</field>
+            <field name="model">second_market.purchase</field>
+            <field name="arch" type="xml">
+                <list string="Compras y Transacciones"
+                    decoration-info="estado == 'confirmada'"
+                    decoration-success="estado == 'completada'"
+                    decoration-muted="estado == 'cancelada'">
+                    <field name="id_compra" />
+                    <field name="id_articulo" />
+                    <field name="id_comprador" />
+                    <field name="id_vendedor" />
+                    <field name="precio" />
+                    <field name="fecha_hora" />
+                    <field name="estado" widget="badge"
+                        decoration-info="estado == 'confirmada'"
+                        decoration-success="estado == 'completada'"
+                        decoration-warning="estado == 'pendiente'" />
+                </list>
+            </field>
+        </record>
+
+        <!-- Vista Form (Formulario) -->
+        <record id="view_second_market_purchase_form" model="ir.ui.view">
+            <field name="name">second_market.purchase.form</field>
+            <field name="model">second_market.purchase</field>
+            <field name="arch" type="xml">
+                <form string="Resumen de Compra">
+                    <header>
+                        <button name="realizar_compra"
+                            string="Confirmar Compra"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="estado != 'pendiente'" />
+
+                        <button name="confirmar_transaccion"
+                            string="Completar Transaccion"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="estado != 'confirmada'" />
+
+                        <button name="cancelar_compra"
+                            string="Cancelar"
+                            type="object"
+                            invisible="estado in ['completada', 'cancelada']"
+                            confirm="Estas seguro de que quieres cancelar esta compra?" />
+
+                        <field name="estado" widget="statusbar"
+                            statusbar_visible="pendiente,confirmada,completada" />
+                    </header>
+                    <sheet>
+                        <div class="oe_title">
+                            <h1>
+                                <field name="id_compra" readonly="1" />
+                            </h1>
+                        </div>
+                        <group>
+                            <group string="Informacion del Articulo">
+                                <field name="id_articulo" options="{'no_create': True}" />
+                                <field name="precio" widget="monetary" />
+                                <field name="fecha_hora" />
+                            </group>
+                            <group string="Participantes">
+                                <field name="id_comprador" options="{'no_create': True}" />
+                                <field name="id_vendedor" options="{'no_create': True}" />
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Accion de Ventana -->
+        <record id="action_second_market_purchase" model="ir.actions.act_window">
+            <field name="name">Compras</field>
+            <field name="res_model">second_market.purchase</field>
+            <field name="view_mode">list,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No hay compras registradas aun.
+                </p>
+            </field>
+        </record>
+
+        <menuitem id="menu_second_market_purchase"
+            name="Compras"
+            parent="menu_second_market_root"
+            action="action_second_market_purchase"
+            sequence="20" />
+    </data>
+</odoo>

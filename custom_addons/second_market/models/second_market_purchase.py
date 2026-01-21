@@ -8,6 +8,7 @@ class SecondMarketPurchase(models.Model):
     _name = 'second_market.purchase'
     _description = 'Compra/Transacción'
     _inherit = ['mail.thread', 'mail.activity.mixin']
+    _rec_name = 'id_compra'
     _order = 'fecha_hora desc'
     
     # ============================================
@@ -132,6 +133,13 @@ class SecondMarketPurchase(models.Model):
         for compra in self:
             if compra.precio <= 0:
                 raise ValidationError(_('El precio debe ser mayor que 0.'))
+
+    @api.constrains('id_articulo', 'id_vendedor')
+    def _check_vendedor_articulo(self):
+        """Validar que el vendedor sea el dueño del artículo"""
+        for compra in self:
+            if compra.id_articulo.id_propietario != compra.id_vendedor:
+                raise ValidationError(_('El vendedor debe ser el propietario del artículo.'))
     
     # ============================================
     # MÉTODOS CREATE Y WRITE
@@ -163,16 +171,22 @@ class SecondMarketPurchase(models.Model):
         
         if self.estado != 'pendiente':
             raise UserError(_('Esta compra ya ha sido procesada.'))
+            
+        if self.id_articulo.estado_publicacion != 'publicado':
+            raise UserError(_('El artículo ya no está disponible (Estado: %s).') % self.id_articulo.estado_publicacion)
         
-        # Cambiar estado
+        # Cambiar estado de la compra
         self.write({'estado': 'confirmada'})
+        
+        # Cambiar estado del artículo a reservado
+        self.id_articulo.write({'estado_publicacion': 'reservado'})
         
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': _('¡Compra Confirmada!'),
-                'message': _('La compra ha sido confirmada. Pendiente de pago.'),
+                'message': _('La compra ha sido confirmada. El artículo ha quedado reservado.'),
                 'type': 'success',
                 'sticky': False,
             }
@@ -242,14 +256,16 @@ class SecondMarketPurchase(models.Model):
     def _notificar_nueva_compra(self):
         """Notificar a comprador y vendedor"""
         self.ensure_one()
-        # TODO: Implementar notificación
-        pass
+        mensaje = _("Nueva compra creada para el artículo <b>%s</b> por <b>%.2f€</b>.") % (
+            self.id_articulo.nombre, self.precio
+        )
+        self.message_post(body=mensaje, subtype_xmlid='mail.mt_note')
     
     def _notificar_transaccion_completada(self):
         """Notificar que la transacción se completó"""
         self.ensure_one()
-        # TODO: Implementar notificación
-        pass
+        mensaje = _("Transacción completada exitosamente el %s.") % fields.Datetime.now()
+        self.message_post(body=mensaje, subtype_xmlid='mail.mt_note')
     
     def action_ver_articulo(self):
         """Ver el artículo de la compra"""

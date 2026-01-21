@@ -3,6 +3,10 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError, UserError
 import re
+from passlib.context import CryptContext
+
+# Configuración de hashing (estándar de Odoo)
+crypt_context = CryptContext(schemes=["pbkdf2_sha512", "plaintext"], deprecated="auto")
 
 
 class SecondMarketUser(models.Model):
@@ -33,7 +37,6 @@ class SecondMarketUser(models.Model):
 
     password = fields.Char(
         string='Contraseña',
-        size=50,
         required=True,
         password=True,
         help='Contraseña (8-50 caracteres)'
@@ -85,14 +88,16 @@ class SecondMarketUser(models.Model):
             if not rec.id_usuario.isdigit() or len(rec.id_usuario) != 7:
                 raise ValidationError('El ID de usuario debe tener exactamente 7 dígitos numéricos.')
 
-    @api.constrains('password')
-    def _check_password(self):
-        """Validar contraseña (8-50 caracteres)"""
-        for rec in self:
-            if len(rec.password) < 8:
-                raise ValidationError(_('La contraseña debe tener al menos 8 caracteres.'))
-            if len(rec.password) > 50:
-                raise ValidationError(_('La contraseña no puede tener más de 50 caracteres.'))
+    def _validar_password_segura(self, password):
+        """Validar longitud de la contraseña en texto plano (8-50 caracteres)"""
+        if not password or len(password) < 8:
+            raise ValidationError(_('La contraseña debe tener al menos 8 caracteres.'))
+        if len(password) > 50:
+            raise ValidationError(_('La contraseña no puede tener más de 50 caracteres.'))
+
+    def _hash_password(self, password):
+        """Hashear contraseña usando CryptContext"""
+        return crypt_context.hash(password)
             
     def action_eliminar_usuario(self):
         for record in self:
@@ -329,20 +334,25 @@ class SecondMarketUser(models.Model):
     
     @api.model_create_multi
     def create(self, vals_list):
-        """Generar ID único al crear usuario"""
+        """Generar ID único y hashear contraseñas al crear usuario"""
         for vals in vals_list:
+            # Generar ID
             if vals.get('id_usuario', _('Nuevo')) == _('Nuevo'):
                 vals['id_usuario'] = self.env['ir.sequence'].next_by_code('second_market.user') or _('Nuevo')
+            
+            # Validar y hashear password
+            if vals.get('password'):
+                self._validar_password_segura(vals['password'])
+                vals['password'] = self._hash_password(vals['password'])
         
         usuarios = super(SecondMarketUser, self).create(vals_list)
         return usuarios
     
     def write(self, vals):
-        """Tracking de cambios importantes"""
-        # Validar cambios de contraseña
+        """Hashear contraseña si se modifica"""
         if 'password' in vals:
-            # Aquí podrías agregar hash de contraseña
-            pass
+            self._validar_password_segura(vals['password'])
+            vals['password'] = self._hash_password(vals['password'])
         
         return super(SecondMarketUser, self).write(vals)
     
@@ -368,7 +378,7 @@ class SecondMarketUser(models.Model):
         if articulo.estado_publicacion != 'publicado':
             raise UserError(_('Este artículo no está disponible para compra.'))
         
-        # Crear registro de compra
+        # Crear registro de compra (en estado pendiente por defecto)
         compra = self.env['second_market.purchase'].create({
             'id_comprador': self.id,
             'id_vendedor': articulo.id_propietario.id,
@@ -377,15 +387,12 @@ class SecondMarketUser(models.Model):
             'fecha_hora': fields.Datetime.now()
         })
         
-        # Actualizar estado del artículo
-        articulo.write({'estado_publicacion': 'vendido'})
-        
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': _('¡Compra Realizada!'),
-                'message': _('Has comprado "%s" por %.2f€') % (articulo.nombre, articulo.precio),
+                'title': _('¡Compra Iniciada!'),
+                'message': _('Has iniciado la compra de "%s" por %.2f€. Confirma la transacción para reservarlo.') % (articulo.nombre, articulo.precio),
                 'type': 'success',
                 'sticky': False,
             }
