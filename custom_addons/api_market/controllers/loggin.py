@@ -5,6 +5,10 @@ from odoo.http import request
 import jwt
 import datetime
 import logging
+from passlib.context import CryptContext
+
+# Configuración de hashing (mismo que en second_market.user)
+crypt_context = CryptContext(schemes=["pbkdf2_sha512", "plaintext"], deprecated="auto")
 
 # Importar configuración
 try:
@@ -78,9 +82,8 @@ class SecondMarketAuthController(http.Controller):
                     'error_code': ERROR_CODES.get('ACCOUNT_DISABLED', 'ACCOUNT_DISABLED')
                 }, 403
             
-            # Validar la contraseña
-            # NOTA: En producción, las contraseñas deberían estar hasheadas
-            if user.password != password:
+            # Validar la contraseña usando verificación de hash
+            if not crypt_context.verify(password, user.password):
                 return {
                     'success': False,
                     'message': RESPONSE_MESSAGES.get('LOGIN_FAILED', 'Credenciales inválidas'),
@@ -189,10 +192,11 @@ class SecondMarketAuthController(http.Controller):
                 }, 409
             
             # Crear el nuevo usuario
+            # NOTA: La contraseña se hashea automáticamente en el método create() del modelo
             user_vals = {
                 'name': data.get('name'),
                 'login': data.get('login'),
-                'password': data.get('password'),  # TODO: Hashear en producción
+                'password': data.get('password'),
                 'telefono': data.get('telefono'),
                 'ubicacion': data.get('ubicacion'),
                 'biografia': data.get('biografia'),
