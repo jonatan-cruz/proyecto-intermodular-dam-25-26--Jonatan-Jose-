@@ -224,26 +224,54 @@ class SecondMarketUser(models.Model):
     # CAMPOS COMPUTADOS
     # ============================================
     
-    @api.depends('ids_articulos_venta.estado_publicacion')
+    @api.depends('ids_articulos_venta', 'ids_articulos_venta.estado_publicacion', 'ids_articulos_venta.activo')
     def _computar_productos_en_venta(self):
         """Contar productos actualmente en venta"""
         for usuario in self:
-            usuario.productos_en_venta = len(usuario.ids_articulos_venta.filtered(
-                lambda a: a.estado_publicacion in ['publicado', 'reservado'] and a.activo
-            ))
-    
+            try:
+                # Verificar que existan artículos antes de filtrar
+                if usuario.ids_articulos_venta:
+                    articulos_venta = usuario.ids_articulos_venta.filtered(
+                        lambda a: a.estado_publicacion in ['publicado', 'reservado'] and a.activo
+                    )
+                    usuario.productos_en_venta = len(articulos_venta)
+                else:
+                    usuario.productos_en_venta = 0
+            except Exception as e:
+                # Si hay un error en la transacción, asignar 0 y loguear
+                import logging
+                _logger = logging.getLogger(__name__)
+                _logger.warning(f"Error calculando productos en venta para usuario {usuario.id}: {str(e)}")
+                usuario.productos_en_venta = 0
+
+
+    # También arregla los otros métodos computados para consistencia:
+
     @api.depends('ids_ventas')
     def _computar_productos_vendidos(self):
         """Contar productos vendidos"""
         for usuario in self:
-            usuario.productos_vendidos = len(usuario.ids_ventas)
-    
+            try:
+                usuario.productos_vendidos = len(usuario.ids_ventas) if usuario.ids_ventas else 0
+            except Exception as e:
+                import logging
+                _logger = logging.getLogger(__name__)
+                _logger.warning(f"Error calculando productos vendidos para usuario {usuario.id}: {str(e)}")
+                usuario.productos_vendidos = 0
+
     @api.depends('ids_compras')
     def _computar_productos_comprados(self):
         """Contar productos comprados"""
         for usuario in self:
-            usuario.productos_comprados = len(usuario.ids_compras)
-    
+            try:
+                usuario.productos_comprados = len(usuario.ids_compras) if usuario.ids_compras else 0
+            except Exception as e:
+                import logging
+                _logger = logging.getLogger(__name__)
+                _logger.warning(f"Error calculando productos comprados para usuario {usuario.id}: {str(e)}")
+                usuario.productos_comprados = 0
+
+
     @api.depends('fecha_registro')
     def _computar_antiguedad(self):
         """Calcular años de antigüedad"""
@@ -254,21 +282,36 @@ class SecondMarketUser(models.Model):
             else:
                 usuario.antiguedad = 0
     
-    @api.depends('ids_valoraciones.calificacion')
+    @api.depends('ids_valoraciones', 'ids_valoraciones.calificacion')
     def _computar_calificacion_promedio(self):
         """Calcular promedio de calificaciones"""
         for usuario in self:
-            valoraciones = usuario.ids_valoraciones.filtered(lambda v: int(v.calificacion) > 0)
-            if valoraciones:
-                usuario.calificacion_promedio = round(sum(int(v.calificacion) for v in valoraciones) / len(valoraciones), 2)
-            else:
+            try:
+                if usuario.ids_valoraciones:
+                    valoraciones = usuario.ids_valoraciones.filtered(lambda v: int(v.calificacion) > 0)
+                    if valoraciones:
+                        usuario.calificacion_promedio = round(sum(int(v.calificacion) for v in valoraciones) / len(valoraciones), 2)
+                    else:
+                        usuario.calificacion_promedio = 0.0
+                else:
+                    usuario.calificacion_promedio = 0.0
+            except Exception as e:
+                import logging
+                _logger = logging.getLogger(__name__)
+                _logger.warning(f"Error calculando calificación promedio para usuario {usuario.id}: {str(e)}")
                 usuario.calificacion_promedio = 0.0
     
     @api.depends('ids_valoraciones')
     def _computar_total_valoraciones(self):
         """Contar total de valoraciones recibidas"""
         for usuario in self:
-            usuario.total_valoraciones = len(usuario.ids_valoraciones)
+            try:
+                usuario.total_valoraciones = len(usuario.ids_valoraciones) if usuario.ids_valoraciones else 0
+            except Exception as e:
+                import logging
+                _logger = logging.getLogger(__name__)
+                _logger.warning(f"Error calculando total valoraciones para usuario {usuario.id}: {str(e)}")
+                usuario.total_valoraciones = 0
     
     # ============================================
     # CONSTRAINTS Y VALIDACIONES

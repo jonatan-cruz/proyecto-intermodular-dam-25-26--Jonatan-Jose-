@@ -296,7 +296,23 @@ class SecondMarketArticleController(http.Controller):
             
             # Agregar etiquetas si existen
             if data.get('etiquetas_ids'):
-                article.sudo().write({'ids_etiquetas': [(6, 0, data.get('etiquetas_ids'))]})
+                etiquetas_ids = data.get('etiquetas_ids')
+                # Validar que todas las etiquetas existan
+                existing_tags = request.env['second_market.tag'].sudo().search([
+                    ('id', 'in', etiquetas_ids)
+                ])
+                existing_tag_ids = existing_tags.ids
+                
+                # Filtrar solo las etiquetas que existen
+                valid_tag_ids = [tag_id for tag_id in etiquetas_ids if tag_id in existing_tag_ids]
+                
+                if valid_tag_ids:
+                    article.sudo().write({'ids_etiquetas': [(6, 0, valid_tag_ids)]})
+                
+                # Advertir si algunas etiquetas no existen
+                invalid_tags = set(etiquetas_ids) - set(existing_tag_ids)
+                if invalid_tags:
+                    _logger.warning(f"Etiquetas no encontradas (ignoradas): {invalid_tags}")
             
             _logger.info(f"Artículo creado: {article.codigo} por usuario {user_data['user_id']}")
             
@@ -371,7 +387,21 @@ class SecondMarketArticleController(http.Controller):
             
             # Actualizar etiquetas si se envían
             if 'etiquetas_ids' in data:
-                article.sudo().write({'ids_etiquetas': [(6, 0, data['etiquetas_ids'])]})
+                etiquetas_ids = data['etiquetas_ids']
+                # Validar que todas las etiquetas existan
+                existing_tags = request.env['second_market.tag'].sudo().search([
+                    ('id', 'in', etiquetas_ids)
+                ])
+                existing_tag_ids = existing_tags.ids
+                
+                # Filtrar solo las etiquetas que existen
+                valid_tag_ids = [tag_id for tag_id in etiquetas_ids if tag_id in existing_tag_ids]
+                article.sudo().write({'ids_etiquetas': [(6, 0, valid_tag_ids)]})
+                
+                # Advertir si algunas etiquetas no existen
+                invalid_tags = set(etiquetas_ids) - set(existing_tag_ids)
+                if invalid_tags:
+                    _logger.warning(f"Etiquetas no encontradas al actualizar (ignoradas): {invalid_tags}")
             
             return {
                 'success': True,

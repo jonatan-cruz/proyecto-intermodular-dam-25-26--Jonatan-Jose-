@@ -55,12 +55,24 @@ class CategoriaSegundaMano(models.Model):
         store=True
     )
     
-    @api.depends('articulos_ids')
+    @api.depends('articulos_ids', 'articulos_ids.estado_publicacion', 'articulos_ids.activo')
     def _compute_conteo_articulos(self):
+        """Contar artículos publicados en la categoría"""
         for categoria in self:
-            categoria.conteo_articulos = len(categoria.articulos_ids.filtered(
-                lambda a: a.estado_publicacion == 'publicado'
-            ))
+            try:
+                if categoria.articulos_ids:
+                    articulos_publicados = categoria.articulos_ids.filtered(
+                        lambda a: a.estado_publicacion == 'publicado'
+                    )
+                    categoria.conteo_articulos = len(articulos_publicados)
+                else:
+                    categoria.conteo_articulos = 0
+            except Exception as e:
+                # Si hay un error en la transacción, asignar 0 y loguear
+                import logging
+                _logger = logging.getLogger(__name__)
+                _logger.warning(f"Error calculando conteo de artículos para categoría {categoria.id}: {str(e)}")
+                categoria.conteo_articulos = 0
     
     @api.constrains('name')
     def _check_name_unique(self):
