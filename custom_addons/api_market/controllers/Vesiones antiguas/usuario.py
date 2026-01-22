@@ -1,0 +1,454 @@
+# -*- coding: utf-8 -*-
+
+from odoo import http, _
+from odoo.http import request
+import logging
+
+from .auth_controller import verify_jwt_token, get_token_from_request
+
+_logger = logging.getLogger(__name__)
+
+
+class SecondMarketUserController(http.Controller):
+    """Controlador para gestión de perfiles de usuario"""
+
+    def _get_authenticated_user(self):
+        """Obtener usuario autenticado desde el token"""
+        token = get_token_from_request()
+        if not token:
+            return None
+        return verify_jwt_token(token)
+
+    @http.route('/api/users/profile', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    def get_my_profile(self, **kwargs):
+        """Obtener perfil del usuario autenticado"""
+        try:
+            user_data = self._get_authenticated_user()
+            if not user_data:
+                return {
+                    'success': False,
+                    'message': 'No autenticado',
+                    'error_code': 'UNAUTHORIZED'
+                }
+            
+            user = request.env['second_market.user'].sudo().browse(user_data['user_id'])
+            
+            if not user.exists():
+                return {
+                    'success': False,
+                    'message': 'Usuario no encontrado',
+                    'error_code': 'USER_NOT_FOUND'
+                }
+            
+            profile_data = {
+                'id': user.id,
+                'id_usuario': user.id_usuario,
+                'name': user.name,
+                'login': user.login,
+                'telefono': user.telefono,
+                'ubicacion': user.ubicacion,
+                'biografia': user.biografia,
+                'avatar': user.avatar.decode('utf-8') if user.avatar else None,
+                'calificacion_promedio': user.calificacion_promedio,
+                'total_valoraciones': user.total_valoraciones,
+                'productos_en_venta': user.productos_en_venta,
+                'productos_vendidos': user.productos_vendidos,
+                'productos_comprados': user.productos_comprados,
+                'antiguedad': user.antiguedad,
+                'fecha_registro': user.fecha_registro.isoformat() if user.fecha_registro else None,
+                'activo': user.activo
+            }
+            
+            return {
+                'success': True,
+                'data': profile_data
+            }
+            
+        except Exception as e:
+            _logger.error(f"Error al obtener perfil: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'message': 'Error al obtener perfil',
+                'error_code': 'GET_PROFILE_ERROR'
+            }
+
+    @http.route('/api/users/profile', type='json', auth='public', methods=['PUT'], csrf=False, cors='*')
+    def update_profile(self, **kwargs):
+        """
+        Actualizar perfil del usuario autenticado
+        
+        Parámetros opcionales:
+        - name: str
+        - telefono: str
+        - ubicacion: str
+        - biografia: str
+        - avatar: str (base64)
+        """
+        try:
+            user_data = self._get_authenticated_user()
+            if not user_data:
+                return {
+                    'success': False,
+                    'message': 'No autenticado',
+                    'error_code': 'UNAUTHORIZED'
+                }
+            
+            user = request.env['second_market.user'].sudo().browse(user_data['user_id'])
+            
+            if not user.exists():
+                return {
+                    'success': False,
+                    'message': 'Usuario no encontrado',
+                    'error_code': 'USER_NOT_FOUND'
+                }
+            
+            data = request.httprequest.get_json(force=True) or {}
+            
+            # Campos actualizables
+            update_vals = {}
+            updatable_fields = ['name', 'telefono', 'ubicacion', 'biografia', 'avatar']
+            
+            for field in updatable_fields:
+                if field in data and data[field] is not None:
+                    update_vals[field] = data[field]
+            
+            if update_vals:
+                user.sudo().write(update_vals)
+                _logger.info(f"Perfil actualizado para usuario {user.id}")
+            
+            return {
+                'success': True,
+                'message': 'Perfil actualizado exitosamente'
+            }
+            
+        except Exception as e:
+            _logger.error(f"Error al actualizar perfil: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'message': 'Error al actualizar perfil',
+                'error_code': 'UPDATE_PROFILE_ERROR',
+                'error_detail': str(e)
+            }
+
+    @http.route('/api/users/change-password', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
+    def change_password(self, **kwargs):
+        """
+        Cambiar contraseña del usuario
+        
+        Parámetros requeridos:
+        - current_password: str
+        - new_password: str
+        """
+        try:
+            user_data = self._get_authenticated_user()
+            if not user_data:
+                return {
+                    'success': False,
+                    'message': 'No autenticado',
+                    'error_code': 'UNAUTHORIZED'
+                }
+            
+            data = request.httprequest.get_json(force=True) or {}
+            
+            if not data.get('current_password') or not data.get('new_password'):
+                return {
+                    'success': False,
+                    'message': 'Se requiere la contraseña actual y la nueva',
+                    'error_code': 'MISSING_FIELD'
+                }
+            
+            user = request.env['second_market.user'].sudo().browse(user_data['user_id'])
+            
+            if not user.exists():
+                return {
+                    'success': False,
+                    'message': 'Usuario no encontrado',
+                    'error_code': 'USER_NOT_FOUND'
+                }
+            
+            # Verificar contraseña actual
+            if user.password != data['current_password']:
+                return {
+                    'success': False,
+                    'message': 'Contraseña actual incorrecta',
+                    'error_code': 'INVALID_PASSWORD'
+                }
+            
+            # Validar nueva contraseña
+            if len(data['new_password']) < 8:
+                return {
+                    'success': False,
+                    'message': 'La nueva contraseña debe tener al menos 8 caracteres',
+                    'error_code': 'PASSWORD_TOO_SHORT'
+                }
+            
+            # Actualizar contraseña
+            user.sudo().write({'password': data['new_password']})
+            
+            _logger.info(f"Contraseña cambiada para usuario {user.id}")
+            
+            return {
+                'success': True,
+                'message': 'Contraseña actualizada exitosamente'
+            }
+            
+        except Exception as e:
+            _logger.error(f"Error al cambiar contraseña: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'message': 'Error al cambiar contraseña',
+                'error_code': 'CHANGE_PASSWORD_ERROR'
+            }
+
+    @http.route('/api/users/<int:user_id>', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    def get_user_profile(self, user_id, **kwargs):
+        """Obtener perfil público de un usuario"""
+        try:
+            user = request.env['second_market.user'].sudo().browse(user_id)
+            
+            if not user.exists() or not user.activo:
+                return {
+                    'success': False,
+                    'message': 'Usuario no encontrado',
+                    'error_code': 'USER_NOT_FOUND'
+                }
+            
+            profile_data = {
+                'id': user.id,
+                'id_usuario': user.id_usuario,
+                'name': user.name,
+                'ubicacion': user.ubicacion,
+                'biografia': user.biografia,
+                'avatar': user.avatar.decode('utf-8') if user.avatar else None,
+                'calificacion_promedio': user.calificacion_promedio,
+                'total_valoraciones': user.total_valoraciones,
+                'productos_en_venta': user.productos_en_venta,
+                'productos_vendidos': user.productos_vendidos,
+                'antiguedad': user.antiguedad,
+                'fecha_registro': user.fecha_registro.isoformat() if user.fecha_registro else None
+            }
+            
+            return {
+                'success': True,
+                'data': profile_data
+            }
+            
+        except Exception as e:
+            _logger.error(f"Error al obtener perfil de usuario: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'message': 'Error al obtener perfil',
+                'error_code': 'GET_USER_PROFILE_ERROR'
+            }
+
+    @http.route('/api/users/<int:user_id>/articles', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    def get_user_articles(self, user_id, **kwargs):
+        """Obtener artículos publicados de un usuario"""
+        try:
+            data = request.httprequest.get_json(force=True) or {}
+            limit = data.get('limit', 20)
+            offset = data.get('offset', 0)
+            
+            articles = request.env['second_market.article'].sudo().search([
+                ('id_propietario', '=', user_id),
+                ('estado_publicacion', '=', 'publicado'),
+                ('activo', '=', True)
+            ], limit=limit, offset=offset, order='create_date desc')
+            
+            articles_data = []
+            for article in articles:
+                articles_data.append({
+                    'id': article.id,
+                    'codigo': article.codigo,
+                    'nombre': article.nombre,
+                    'descripcion': article.descripcion,
+                    'precio': article.precio,
+                    'estado_producto': article.estado_producto,
+                    'localidad': article.localidad,
+                    'imagen_principal': article.imagen_principal.decode('utf-8') if article.imagen_principal else None,
+                    'conteo_vistas': article.conteo_vistas,
+                    'create_date': article.create_date.isoformat() if article.create_date else None
+                })
+            
+            return {
+                'success': True,
+                'data': {'articles': articles_data}
+            }
+            
+        except Exception as e:
+            _logger.error(f"Error al obtener artículos de usuario: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'message': 'Error al obtener artículos',
+                'error_code': 'GET_USER_ARTICLES_ERROR'
+            }
+
+    @http.route('/api/users/<int:user_id>/ratings', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    def get_user_ratings(self, user_id, **kwargs):
+        """Obtener valoraciones de un usuario"""
+        try:
+            data = request.httprequest.get_json(force=True) or {}
+            limit = data.get('limit', 10)
+            offset = data.get('offset', 0)
+            
+            ratings = request.env['second_market.rating'].sudo().search([
+                ('id_usuario', '=', user_id),
+                ('activo', '=', True)
+            ], limit=limit, offset=offset, order='fecha_hora desc')
+            
+            ratings_data = []
+            for rating in ratings:
+                ratings_data.append({
+                    'id': rating.id,
+                    'calificacion': rating.calificacion,
+                    'comentario': rating.comentario,
+                    'fecha_hora': rating.fecha_hora.isoformat() if rating.fecha_hora else None,
+                    'valorador': {
+                        'id': rating.id_valorador.id,
+                        'nombre': rating.id_valorador.name
+                    }
+                })
+            
+            return {
+                'success': True,
+                'data': {
+                    'ratings': ratings_data,
+                    'calificacion_promedio': request.env['second_market.user'].sudo().browse(user_id).calificacion_promedio
+                }
+            }
+            
+        except Exception as e:
+            _logger.error(f"Error al obtener valoraciones de usuario: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'message': 'Error al obtener valoraciones',
+                'error_code': 'GET_USER_RATINGS_ERROR'
+            }
+
+    @http.route('/api/users/statistics', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    def get_my_statistics(self, **kwargs):
+        """Obtener estadísticas del usuario autenticado"""
+        try:
+            user_data = self._get_authenticated_user()
+            if not user_data:
+                return {
+                    'success': False,
+                    'message': 'No autenticado',
+                    'error_code': 'UNAUTHORIZED'
+                }
+            
+            user = request.env['second_market.user'].sudo().browse(user_data['user_id'])
+            
+            if not user.exists():
+                return {
+                    'success': False,
+                    'message': 'Usuario no encontrado',
+                    'error_code': 'USER_NOT_FOUND'
+                }
+            
+            # Estadísticas detalladas
+            stats = {
+                'productos_en_venta': user.productos_en_venta,
+                'productos_vendidos': user.productos_vendidos,
+                'productos_comprados': user.productos_comprados,
+                'calificacion_promedio': user.calificacion_promedio,
+                'total_valoraciones': user.total_valoraciones,
+                'antiguedad': user.antiguedad,
+                
+                # Estadísticas adicionales
+                'total_vistas': sum(user.ids_articulos_venta.mapped('conteo_vistas')),
+                'comentarios_recibidos': len(user.ids_comentarios_recibidos.filtered(lambda c: c.activo)),
+                'comentarios_enviados': len(user.ids_comentarios_enviados.filtered(lambda c: c.activo)),
+                
+                # Ventas por estado
+                'ventas_pendientes': len(user.ids_ventas.filtered(lambda v: v.estado == 'pendiente')),
+                'ventas_confirmadas': len(user.ids_ventas.filtered(lambda v: v.estado == 'confirmada')),
+                'ventas_completadas': len(user.ids_ventas.filtered(lambda v: v.estado == 'completada')),
+                
+                # Compras por estado
+                'compras_pendientes': len(user.ids_compras.filtered(lambda c: c.estado == 'pendiente')),
+                'compras_confirmadas': len(user.ids_compras.filtered(lambda c: c.estado == 'confirmada')),
+                'compras_completadas': len(user.ids_compras.filtered(lambda c: c.estado == 'completada')),
+                
+                # Artículos por estado
+                'articulos_borradores': len(user.ids_articulos_venta.filtered(lambda a: a.estado_publicacion == 'borrador')),
+                'articulos_publicados': len(user.ids_articulos_venta.filtered(lambda a: a.estado_publicacion == 'publicado')),
+                'articulos_vendidos': len(user.ids_articulos_venta.filtered(lambda a: a.estado_publicacion == 'vendido'))
+            }
+            
+            return {
+                'success': True,
+                'data': stats
+            }
+            
+        except Exception as e:
+            _logger.error(f"Error al obtener estadísticas: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'message': 'Error al obtener estadísticas',
+                'error_code': 'GET_STATISTICS_ERROR'
+            }
+
+    @http.route('/api/users/deactivate', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
+    def deactivate_account(self, **kwargs):
+        """
+        Desactivar cuenta del usuario
+        
+        Parámetros requeridos:
+        - password: str (confirmación)
+        """
+        try:
+            user_data = self._get_authenticated_user()
+            if not user_data:
+                return {
+                    'success': False,
+                    'message': 'No autenticado',
+                    'error_code': 'UNAUTHORIZED'
+                }
+            
+            data = request.httprequest.get_json(force=True) or {}
+            
+            if not data.get('password'):
+                return {
+                    'success': False,
+                    'message': 'Se requiere la contraseña para confirmar',
+                    'error_code': 'MISSING_FIELD'
+                }
+            
+            user = request.env['second_market.user'].sudo().browse(user_data['user_id'])
+            
+            if not user.exists():
+                return {
+                    'success': False,
+                    'message': 'Usuario no encontrado',
+                    'error_code': 'USER_NOT_FOUND'
+                }
+            
+            # Verificar contraseña
+            if user.password != data['password']:
+                return {
+                    'success': False,
+                    'message': 'Contraseña incorrecta',
+                    'error_code': 'INVALID_PASSWORD'
+                }
+            
+            # Desactivar usuario
+            user.sudo().write({'activo': False})
+            
+            # Desactivar todos sus artículos
+            user.ids_articulos_venta.sudo().write({'activo': False})
+            
+            _logger.info(f"Usuario desactivado: {user.id}")
+            
+            return {
+                'success': True,
+                'message': 'Cuenta desactivada exitosamente'
+            }
+            
+        except Exception as e:
+            _logger.error(f"Error al desactivar cuenta: {str(e)}", exc_info=True)
+            return {
+                'success': False,
+                'message': 'Error al desactivar cuenta',
+                'error_code': 'DEACTIVATE_ACCOUNT_ERROR'
+            }
