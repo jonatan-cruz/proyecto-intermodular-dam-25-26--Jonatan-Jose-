@@ -80,8 +80,7 @@
 
                     <group string="Resolución y Acciones" invisible="estado == 'pendiente'">
                         <field name="accion_tomada" readonly="estado not in ['en_revision']" />
-                        <field name="resolucion" readonly="estado not in ['en_revision']"
-                            required="estado == 'en_revision'" />
+                        <field name="resolucion" readonly="estado not in ['en_revision']" />
                     </group>
                 </sheet>
             </form>
