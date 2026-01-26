@@ -5,7 +5,7 @@ from odoo.http import request
 import logging
 import base64
 
-from .auth_controller import verify_jwt_token, get_token_from_request
+from .auth_controller import verify_jwt_token, get_token_from_request, get_authenticated_user_with_refresh
 
 _logger = logging.getLogger(__name__)
 
@@ -14,11 +14,11 @@ class SecondMarketArticleController(http.Controller):
     """Controlador para gestión de artículos - API v1"""
 
     def _get_authenticated_user(self):
-        """Obtener usuario autenticado desde el token del header Authorization"""
-        token = get_token_from_request()
-        if not token:
-            return None
-        return verify_jwt_token(token)
+        """
+        Obtener usuario autenticado desde el token
+        Incluye renovación automática de tokens si es necesario
+        """
+        return get_authenticated_user_with_refresh()
 
     @http.route('/api/v1/articles', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
     def get_articles(self, **kwargs):
@@ -239,13 +239,16 @@ class SecondMarketArticleController(http.Controller):
         """
         try:
             # Verificar autenticación
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado. Debe proporcionar token en header Authorization',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
             
@@ -316,7 +319,7 @@ class SecondMarketArticleController(http.Controller):
             
             _logger.info(f"Artículo creado: {article.codigo} por usuario {user_data['user_id']}")
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Artículo creado exitosamente',
                 'data': {
@@ -324,6 +327,12 @@ class SecondMarketArticleController(http.Controller):
                     'codigo': article.codigo
                 }
             }
+            
+            # Agregar nuevo token si fue renovado
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al crear artículo: {str(e)}", exc_info=True)
@@ -343,13 +352,16 @@ class SecondMarketArticleController(http.Controller):
         """
         try:
             # Verificar autenticación
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado. Debe proporcionar token en header Authorization',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             article = request.env['second_market.article'].sudo().browse(article_id)
             
@@ -403,10 +415,16 @@ class SecondMarketArticleController(http.Controller):
                 if invalid_tags:
                     _logger.warning(f"Etiquetas no encontradas al actualizar (ignoradas): {invalid_tags}")
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Artículo actualizado exitosamente'
             }
+            
+            # Agregar nuevo token si fue renovado
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al actualizar artículo: {str(e)}", exc_info=True)
@@ -423,13 +441,16 @@ class SecondMarketArticleController(http.Controller):
         Requiere autenticación mediante token JWT en header Authorization
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado. Debe proporcionar token en header Authorization',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             article = request.env['second_market.article'].sudo().browse(article_id)
             
@@ -449,10 +470,16 @@ class SecondMarketArticleController(http.Controller):
             
             article.sudo().write({'estado_publicacion': 'publicado'})
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Artículo publicado exitosamente'
             }
+            
+            # Agregar nuevo token si fue renovado
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al publicar artículo: {str(e)}", exc_info=True)
@@ -469,13 +496,16 @@ class SecondMarketArticleController(http.Controller):
         Requiere autenticación mediante token JWT en header Authorization
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado. Debe proporcionar token en header Authorization',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             article = request.env['second_market.article'].sudo().browse(article_id)
             
@@ -498,10 +528,16 @@ class SecondMarketArticleController(http.Controller):
                 'estado_publicacion': 'eliminado'
             })
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Artículo eliminado exitosamente'
             }
+            
+            # Agregar nuevo token si fue renovado
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al eliminar artículo: {str(e)}", exc_info=True)
@@ -518,13 +554,16 @@ class SecondMarketArticleController(http.Controller):
         Requiere autenticación mediante token JWT en header Authorization
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado. Debe proporcionar token en header Authorization',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
             limit = data.get('limit', 20)
@@ -554,13 +593,19 @@ class SecondMarketArticleController(http.Controller):
                     'create_date': article.create_date.isoformat() if article.create_date else None
                 })
             
-            return {
+            response = {
                 'success': True,
                 'data': {
                     'articles': articles_data,
                     'total': total_count
                 }
             }
+            
+            # Agregar nuevo token si fue renovado
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al obtener mis artículos: {str(e)}", exc_info=True)

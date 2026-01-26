@@ -10,7 +10,7 @@ import os
 # ============================================
 
 # Obtener la clave secreta del entorno o usar una por defecto (NO USAR EN PRODUCCIÓN)
-JWT_SECRET_KEY = os.environ.get('SECOND_MARKET_JWT_SECRET', 'second_market_secret_key_2025_CHANGE_ME')
+JWT_SECRET_KEY = os.environ.get('SECOND_MARKET_JWT_SECRET', 'second_market_secret_key_2025_OHYEAH')
 
 # Algoritmo de firma JWT
 JWT_ALGORITHM = 'HS256'
@@ -20,6 +20,11 @@ JWT_ALGORITHM = 'HS256'
 # 86400 = 24 horas
 # 604800 = 7 días
 JWT_EXP_DELTA_SECONDS = int(os.environ.get('SECOND_MARKET_JWT_EXPIRATION', 86400))  # 24 horas por defecto
+
+# Umbral para renovación automática de tokens (en segundos)
+# Si al token le quedan menos de este tiempo, se renovará automáticamente
+# 7200 = 2 horas
+JWT_REFRESH_THRESHOLD_SECONDS = int(os.environ.get('SECOND_MARKET_JWT_REFRESH_THRESHOLD', 2700))  # 2 horas por defecto
 
 # ============================================
 # CONFIGURACIÓN DE API

@@ -65,6 +65,7 @@
 
                     <group>
                         <group name="info_basica" string="Información del Mensaje">
+                            <field name="id" readonly="1" />
                             <field name="id_mensaje" readonly="1" />
                             <field name="fecha_hora" readonly="1" />
                             <field name="leido" readonly="1" />

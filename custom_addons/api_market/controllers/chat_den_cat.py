@@ -4,7 +4,7 @@ from odoo import http, _
 from odoo.http import request
 import logging
 
-from .auth_controller import verify_jwt_token, get_token_from_request
+from .auth_controller import verify_jwt_token, get_token_from_request, get_authenticated_user_with_refresh
 
 _logger = logging.getLogger(__name__)
 
@@ -13,11 +13,11 @@ class SecondMarketChatController(http.Controller):
     """Controlador para gestión de chats y mensajes"""
 
     def _get_authenticated_user(self):
-        """Obtener usuario autenticado desde el token"""
-        token = get_token_from_request()
-        if not token:
-            return None
-        return verify_jwt_token(token)
+        """
+        Obtener usuario autenticado desde el token
+        Incluye renovación automática de tokens si es necesario
+        """
+        return get_authenticated_user_with_refresh()
 
     @http.route('/api/v1/chats', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def create_chat(self, **kwargs):
@@ -28,13 +28,16 @@ class SecondMarketChatController(http.Controller):
         - articulo_id: int
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
             
@@ -69,7 +72,7 @@ class SecondMarketChatController(http.Controller):
             ], limit=1)
             
             if existing_chat:
-                return {
+                response = {
                     'success': True,
                     'message': 'Chat recuperado',
                     'data': {
@@ -77,6 +80,11 @@ class SecondMarketChatController(http.Controller):
                         'new_chat': False
                     }
                 }
+                
+                if new_token:
+                    response['new_token'] = new_token
+                    
+                return response
             
             # Crear nuevo chat
             chat = request.env['second_market.chat'].sudo().create({
@@ -84,7 +92,7 @@ class SecondMarketChatController(http.Controller):
                 'id_comprador': user_data['user_id']
             })
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Chat creado exitosamente',
                 'data': {
@@ -92,6 +100,11 @@ class SecondMarketChatController(http.Controller):
                     'new_chat': True
                 }
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al crear chat: {str(e)}", exc_info=True)
@@ -105,13 +118,16 @@ class SecondMarketChatController(http.Controller):
     def get_chats(self, **kwargs):
         """Obtener todos los chats del usuario autenticado"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             # Chats donde el usuario es comprador o vendedor
             chats = request.env['second_market.chat'].sudo().search([
@@ -145,10 +161,15 @@ class SecondMarketChatController(http.Controller):
                     'conteo_mensajes': chat.conteo_mensajes
                 })
             
-            return {
+            response = {
                 'success': True,
                 'data': {'chats': chats_data}
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al obtener chats: {str(e)}", exc_info=True)
@@ -162,13 +183,16 @@ class SecondMarketChatController(http.Controller):
     def get_chat_messages(self, chat_id, **kwargs):
         """Obtener mensajes de un chat"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             chat = request.env['second_market.chat'].sudo().browse(chat_id)
             
@@ -201,7 +225,7 @@ class SecondMarketChatController(http.Controller):
                     'is_mine': message.id_usuario.id == user_data['user_id']
                 })
             
-            return {
+            response = {
                 'success': True,
                 'data': {
                     'messages': messages_data,
@@ -213,6 +237,11 @@ class SecondMarketChatController(http.Controller):
                     }
                 }
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al obtener mensajes: {str(e)}", exc_info=True)
@@ -231,13 +260,16 @@ class SecondMarketChatController(http.Controller):
         - contenido: str
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
             
@@ -272,7 +304,7 @@ class SecondMarketChatController(http.Controller):
                 'contenido': data['contenido']
             })
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Mensaje enviado',
                 'data': {
@@ -280,6 +312,11 @@ class SecondMarketChatController(http.Controller):
                     'fecha_envio': message.fecha_envio.isoformat() if message.fecha_envio else None
                 }
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al enviar mensaje: {str(e)}", exc_info=True)
@@ -294,11 +331,11 @@ class SecondMarketReportController(http.Controller):
     """Controlador para gestión de denuncias"""
 
     def _get_authenticated_user(self):
-        """Obtener usuario autenticado desde el token"""
-        token = get_token_from_request()
-        if not token:
-            return None
-        return verify_jwt_token(token)
+        """
+        Obtener usuario autenticado desde el token
+        Incluye renovación automática de tokens si es necesario
+        """
+        return get_authenticated_user_with_refresh()
 
     @http.route('/api/v1/reports', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def create_report(self, **kwargs):
@@ -313,13 +350,16 @@ class SecondMarketReportController(http.Controller):
         - comentario_id: int (si tipo_denuncia='comentario')
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
             
@@ -370,7 +410,7 @@ class SecondMarketReportController(http.Controller):
             # Crear denuncia
             report = request.env['second_market.report'].sudo().create(report_vals)
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Denuncia creada exitosamente',
                 'data': {
@@ -378,6 +418,11 @@ class SecondMarketReportController(http.Controller):
                     'num_denuncia': report.num_denuncia
                 }
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al crear denuncia: {str(e)}", exc_info=True)
@@ -391,13 +436,16 @@ class SecondMarketReportController(http.Controller):
     def get_my_reports(self, **kwargs):
         """Obtener denuncias realizadas por el usuario"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             reports = request.env['second_market.report'].sudo().search([
                 ('id_denunciante', '=', user_data['user_id']),
@@ -430,10 +478,15 @@ class SecondMarketReportController(http.Controller):
                 
                 reports_data.append(report_dict)
             
-            return {
+            response = {
                 'success': True,
                 'data': {'reports': reports_data}
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al obtener denuncias: {str(e)}", exc_info=True)

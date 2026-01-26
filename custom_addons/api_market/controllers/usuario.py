@@ -4,7 +4,7 @@ from odoo import http, _
 from odoo.http import request
 import logging
 
-from .auth_controller import verify_jwt_token, get_token_from_request
+from .auth_controller import verify_jwt_token, get_token_from_request, get_authenticated_user_with_refresh
 
 _logger = logging.getLogger(__name__)
 
@@ -13,23 +13,33 @@ class SecondMarketUserController(http.Controller):
     """Controlador para gestión de perfiles de usuario"""
 
     def _get_authenticated_user(self):
-        """Obtener usuario autenticado desde el token"""
-        token = get_token_from_request()
-        if not token:
-            return None
-        return verify_jwt_token(token)
+        """
+        Obtener usuario autenticado desde el token
+        Incluye renovación automática de tokens si es necesario
+        
+        Returns:
+            dict: {
+                'user_data': dict con datos del usuario,
+                'new_token': str (opcional, solo si se renovó)
+            }
+            None: Si no está autenticado
+        """
+        return get_authenticated_user_with_refresh()
 
     @http.route('/api/v1/users/profile', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
     def get_my_profile(self, **kwargs):
         """Obtener perfil del usuario autenticado"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             user = request.env['second_market.user'].sudo().browse(user_data['user_id'])
             
@@ -59,10 +69,16 @@ class SecondMarketUserController(http.Controller):
                 'activo': user.activo
             }
             
-            return {
+            response_data = {
                 'success': True,
                 'data': profile_data
             }
+            
+            # Agregar nuevo token en la respuesta si fue renovado
+            if new_token:
+                response_data['new_token'] = new_token
+            
+            return response_data
             
         except Exception as e:
             _logger.error(f"Error al obtener perfil: {str(e)}", exc_info=True)
@@ -85,13 +101,16 @@ class SecondMarketUserController(http.Controller):
         - avatar: str (base64)
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             user = request.env['second_market.user'].sudo().browse(user_data['user_id'])
             
@@ -116,10 +135,16 @@ class SecondMarketUserController(http.Controller):
                 user.sudo().write(update_vals)
                 _logger.info(f"Perfil actualizado para usuario {user.id}")
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Perfil actualizado exitosamente'
             }
+            
+            # Agregar nuevo token en la respuesta si fue renovado
+            if new_token:
+                response['new_token'] = new_token
+            
+            return response
             
         except Exception as e:
             _logger.error(f"Error al actualizar perfil: {str(e)}", exc_info=True)
@@ -140,13 +165,16 @@ class SecondMarketUserController(http.Controller):
         - new_password: str
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
             
@@ -187,10 +215,16 @@ class SecondMarketUserController(http.Controller):
             
             _logger.info(f"Contraseña cambiada para usuario {user.id}")
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Contraseña actualizada exitosamente'
             }
+            
+            # Agregar nuevo token en la respuesta si fue renovado
+            if new_token:
+                response['new_token'] = new_token
+            
+            return response
             
         except Exception as e:
             _logger.error(f"Error al cambiar contraseña: {str(e)}", exc_info=True)
