@@ -57,6 +57,11 @@
                             <field name="id_comentario" readonly="estado != 'pendiente'"
                                 invisible="tipo_denuncia != 'comentario'"
                                 required="tipo_denuncia == 'comentario'" />
+
+                            <field name="id_usuario_denunciado" readonly="estado != 'pendiente'"
+                                invisible="tipo_denuncia != 'usuario'"
+                                required="tipo_denuncia == 'usuario'" />
+
                             <field name="motivo" readonly="estado != 'pendiente'" />
                             <field name="prioridad" />
                         </group>
