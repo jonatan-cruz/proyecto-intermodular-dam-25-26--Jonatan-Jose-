@@ -36,7 +36,7 @@ class SecondMarketChatController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             
             if not data.get('articulo_id'):
                 return {
@@ -101,7 +101,7 @@ class SecondMarketChatController(http.Controller):
                 'error_code': 'CREATE_CHAT_ERROR'
             }
 
-    @http.route('/api/v1/chats', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/chats', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_chats(self, **kwargs):
         """Obtener todos los chats del usuario autenticado"""
         try:
@@ -158,7 +158,7 @@ class SecondMarketChatController(http.Controller):
                 'error_code': 'GET_CHATS_ERROR'
             }
 
-    @http.route('/api/v1/chats/<int:chat_id>/messages', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/chats/<int:chat_id>/messages', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_chat_messages(self, chat_id, **kwargs):
         """Obtener mensajes de un chat"""
         try:
@@ -239,7 +239,7 @@ class SecondMarketChatController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             
             if not data.get('contenido'):
                 return {
@@ -303,14 +303,17 @@ class SecondMarketReportController(http.Controller):
     @http.route('/api/v1/reports', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def create_report(self, **kwargs):
         """
-        Crear una denuncia
+        Crear una denuncia sobre un artículo, comentario o usuario.
+        Genera un registro visible para los moderadores/empleados en Odoo.
+        Requiere autenticación JWT.
         
         Parámetros requeridos:
-        - tipo_denuncia: str ('articulo' o 'comentario')
+        - tipo_denuncia: str ('articulo', 'comentario' o 'usuario')
         - motivo: str
         - descripcion: str
         - articulo_id: int (si tipo_denuncia='articulo')
         - comentario_id: int (si tipo_denuncia='comentario')
+        - usuario_id: int (si tipo_denuncia='usuario')
         """
         try:
             user_data = self._get_authenticated_user()
@@ -321,7 +324,7 @@ class SecondMarketReportController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             
             # Validar campos requeridos
             required_fields = ['tipo_denuncia', 'motivo', 'descripcion']
@@ -334,7 +337,7 @@ class SecondMarketReportController(http.Controller):
                     }
             
             # Validar tipo de denuncia
-            if data['tipo_denuncia'] not in ['articulo', 'comentario']:
+            if data['tipo_denuncia'] not in ['articulo', 'comentario', 'usuario']:
                 return {
                     'success': False,
                     'message': 'Tipo de denuncia inválido',
@@ -358,7 +361,7 @@ class SecondMarketReportController(http.Controller):
                         'error_code': 'MISSING_FIELD'
                     }
                 report_vals['id_articulo'] = data['articulo_id']
-            else:
+            elif data['tipo_denuncia'] == 'comentario':
                 if not data.get('comentario_id'):
                     return {
                         'success': False,
@@ -366,6 +369,14 @@ class SecondMarketReportController(http.Controller):
                         'error_code': 'MISSING_FIELD'
                     }
                 report_vals['id_comentario'] = data['comentario_id']
+            elif data['tipo_denuncia'] == 'usuario':
+                if not data.get('usuario_id'):
+                    return {
+                        'success': False,
+                        'message': 'El usuario es requerido',
+                        'error_code': 'MISSING_FIELD'
+                    }
+                report_vals['id_usuario_denunciado'] = data['usuario_id']
             
             # Crear denuncia
             report = request.env['second_market.report'].sudo().create(report_vals)
@@ -387,7 +398,7 @@ class SecondMarketReportController(http.Controller):
                 'error_code': 'CREATE_REPORT_ERROR'
             }
 
-    @http.route('/api/v1/reports/my-reports', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/reports/my-reports', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_my_reports(self, **kwargs):
         """Obtener denuncias realizadas por el usuario"""
         try:
@@ -427,6 +438,11 @@ class SecondMarketReportController(http.Controller):
                         'id': report.id_comentario.id,
                         'texto': report.id_comentario.texto[:50]
                     }
+                elif report.tipo_denuncia == 'usuario' and report.id_usuario_denunciado:
+                    report_dict['usuario'] = {
+                        'id': report.id_usuario_denunciado.id,
+                        'nombre': report.id_usuario_denunciado.name
+                    }
                 
                 reports_data.append(report_dict)
             
@@ -447,7 +463,7 @@ class SecondMarketReportController(http.Controller):
 class SecondMarketCategoryController(http.Controller):
     """Controlador para categorías y etiquetas"""
 
-    @http.route('/api/v1/categories', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/categories', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_categories(self, **kwargs):
         """Obtener todas las categorías activas"""
         try:
@@ -480,11 +496,11 @@ class SecondMarketCategoryController(http.Controller):
                 'error_code': 'GET_CATEGORIES_ERROR'
             }
 
-    @http.route('/api/v1/categories/<int:category_id>/articles', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/categories/<int:category_id>/articles', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_category_articles(self, category_id, **kwargs):
         """Obtener artículos de una categoría específica"""
         try:
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             limit = data.get('limit', 20)
             offset = data.get('offset', 0)
             
@@ -518,7 +534,7 @@ class SecondMarketCategoryController(http.Controller):
                 'error_code': 'GET_CATEGORY_ARTICLES_ERROR'
             }
 
-    @http.route('/api/v1/tags', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/tags', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_tags(self, **kwargs):
         """Obtener todas las etiquetas disponibles"""
         try:

@@ -19,7 +19,7 @@ class SecondMarketUserController(http.Controller):
             return None
         return verify_jwt_token(token)
 
-    @http.route('/api/v1/users/profile', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/users/profile', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_my_profile(self, **kwargs):
         """Obtener perfil del usuario autenticado"""
         try:
@@ -102,7 +102,7 @@ class SecondMarketUserController(http.Controller):
                     'error_code': 'USER_NOT_FOUND'
                 }
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             
             # Campos actualizables
             update_vals = {}
@@ -148,7 +148,7 @@ class SecondMarketUserController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             
             if not data.get('current_password') or not data.get('new_password'):
                 return {
@@ -200,7 +200,7 @@ class SecondMarketUserController(http.Controller):
                 'error_code': 'CHANGE_PASSWORD_ERROR'
             }
 
-    @http.route('/api/v1/users/<int:user_id>', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/users/<int:user_id>', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_user_profile(self, user_id, **kwargs):
         """Obtener perfil público de un usuario"""
         try:
@@ -241,11 +241,11 @@ class SecondMarketUserController(http.Controller):
                 'error_code': 'GET_USER_PROFILE_ERROR'
             }
 
-    @http.route('/api/v1/users/<int:user_id>/articles', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/users/<int:user_id>/articles', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_user_articles(self, user_id, **kwargs):
         """Obtener artículos publicados de un usuario"""
         try:
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             limit = data.get('limit', 20)
             offset = data.get('offset', 0)
             
@@ -283,11 +283,11 @@ class SecondMarketUserController(http.Controller):
                 'error_code': 'GET_USER_ARTICLES_ERROR'
             }
 
-    @http.route('/api/v1/users/<int:user_id>/ratings', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/users/<int:user_id>/ratings', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_user_ratings(self, user_id, **kwargs):
         """Obtener valoraciones de un usuario"""
         try:
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             limit = data.get('limit', 10)
             offset = data.get('offset', 0)
             
@@ -325,7 +325,7 @@ class SecondMarketUserController(http.Controller):
                 'error_code': 'GET_USER_RATINGS_ERROR'
             }
 
-    @http.route('/api/v1/users/statistics', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/users/statistics', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_my_statistics(self, **kwargs):
         """Obtener estadísticas del usuario autenticado"""
         try:
@@ -406,7 +406,7 @@ class SecondMarketUserController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             
             if not data.get('password'):
                 return {

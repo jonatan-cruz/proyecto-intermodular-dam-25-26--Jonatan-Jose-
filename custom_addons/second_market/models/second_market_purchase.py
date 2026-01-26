@@ -256,10 +256,15 @@ class SecondMarketPurchase(models.Model):
     def _notificar_nueva_compra(self):
         """Notificar a comprador y vendedor"""
         self.ensure_one()
-        mensaje = _("Nueva compra creada para el artículo <b>%s</b> por <b>%.2f€</b>.") % (
-            self.id_articulo.nombre, self.precio
-        )
-        self.message_post(body=mensaje, subtype_xmlid='mail.mt_note')
+        mensaje = _(
+            "¡Nueva compra realizada!<br/>"
+            "El usuario <b>%s</b> ha comprado el artículo <b>%s</b> por <b>%.2f€</b>.<br/>"
+            "Estado actual: <b>%s</b>."
+        ) % (self.id_comprador.name, self.id_articulo.nombre, self.precio, self.estado)
+        
+        self.id_articulo.message_post(body=mensaje, message_type='notification')
+        self.id_vendedor.message_post(body=mensaje, message_type='notification')
+        self.id_comprador.message_post(body=mensaje, message_type='notification')
     
     def _notificar_transaccion_completada(self):
         """Notificar que la transacción se completó"""

@@ -22,7 +22,9 @@ class SecondMarketCommentController(http.Controller):
     @http.route('/api/v1/comments', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def create_comment(self, **kwargs):
         """
-        Crear un nuevo comentario en un artículo
+        Crear un nuevo comentario público en un artículo.
+        El propietario del artículo recibirá una notificación automática.
+        Requiere autenticación JWT.
         
         Parámetros requeridos:
         - articulo_id: int
@@ -233,7 +235,9 @@ class SecondMarketPurchaseController(http.Controller):
     @http.route('/api/v1/purchases', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def create_purchase(self, **kwargs):
         """
-        Crear una nueva compra
+        Iniciar el proceso de compra de un artículo.
+        Cambia el estado del artículo a 'reservado' y notifica al vendedor.
+        Requiere autenticación JWT. El comprador no puede ser el propietario.
         
         Parámetros requeridos:
         - articulo_id: int

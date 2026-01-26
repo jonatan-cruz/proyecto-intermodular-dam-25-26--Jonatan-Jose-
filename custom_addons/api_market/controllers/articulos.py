@@ -20,10 +20,11 @@ class SecondMarketArticleController(http.Controller):
             return None
         return verify_jwt_token(token)
 
-    @http.route('/api/v1/articles', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/articles', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_articles(self, **kwargs):
         """
-        Obtener lista de artículos publicados
+        Obtener lista de artículos publicados filtrados por diversos criterios.
+        Permite la búsqueda global por texto y filtrado por categoría, precio, estado y localidad.
         
         Parámetros opcionales:
         - limit: int (default: 20)
@@ -36,7 +37,7 @@ class SecondMarketArticleController(http.Controller):
         - localidad: str
         """
         try:
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             
             limit = data.get('limit', 20)
             offset = data.get('offset', 0)
@@ -126,7 +127,7 @@ class SecondMarketArticleController(http.Controller):
                 'error_code': 'GET_ARTICLES_ERROR'
             }
 
-    @http.route('/api/v1/articles/<int:article_id>', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/articles/<int:article_id>', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_article_detail(self, article_id, **kwargs):
         """
         Obtener detalle de un artículo específico
@@ -219,7 +220,10 @@ class SecondMarketArticleController(http.Controller):
     @http.route('/api/v1/articles', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def create_article(self, **kwargs):
         """
-        Crear un nuevo artículo
+        Crear un nuevo artículo en estado borrador.
+        Requiere autenticación mediante token JWT. El usuario autenticado se convertirá en el propietario.
+        Permite subir múltiples imágenes (1-10) y asignar etiquetas existentes.
+        
         Requiere autenticación mediante token JWT en header Authorization
         
         Parámetros requeridos:
@@ -247,7 +251,7 @@ class SecondMarketArticleController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             
             # Validar campos requeridos
             required_fields = ['nombre', 'descripcion', 'precio', 'estado_producto', 'localidad', 'categoria_id', 'imagenes']
@@ -368,7 +372,7 @@ class SecondMarketArticleController(http.Controller):
                     'error_code': 'FORBIDDEN'
                 }
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             
             # Campos actualizables
             update_vals = {}
@@ -511,7 +515,7 @@ class SecondMarketArticleController(http.Controller):
                 'error_code': 'DELETE_ERROR'
             }
 
-    @http.route('/api/v1/articles/my-articles', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/articles/my-articles', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_my_articles(self, **kwargs):
         """
         Obtener artículos del usuario autenticado
@@ -526,7 +530,7 @@ class SecondMarketArticleController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params
             limit = data.get('limit', 20)
             offset = data.get('offset', 0)
             

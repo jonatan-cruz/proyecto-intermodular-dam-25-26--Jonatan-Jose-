@@ -52,12 +52,21 @@ class Denuncia(models.Model):
     
     tipo_denuncia = fields.Selection([
         ('articulo', 'Artículo'),
-        ('comentario', 'Comentario')
+        ('comentario', 'Comentario'),
+        ('usuario', 'Usuario')
     ],
         string='Tipo de Denuncia',
         required=True,
         default='articulo',
-        help='Indica si la denuncia es sobre un artículo o un comentario'
+        help='Indica si la denuncia es sobre un artículo, un comentario o un usuario'
+    )
+    
+    id_usuario_denunciado = fields.Many2one(
+        'second_market.user',
+        string='Usuario Denunciado',
+        ondelete='cascade',
+        tracking=True,
+        help='Usuario sobre el que se realiza la denuncia'
     )
     
     id_comentario = fields.Many2one(
@@ -178,23 +187,25 @@ class Denuncia(models.Model):
         help='Propietario del artículo o autor del comentario denunciado'
     )
     
-    @api.depends('id_articulo', 'id_comentario', 'tipo_denuncia')
+    @api.depends('id_articulo', 'id_comentario', 'id_usuario_denunciado', 'tipo_denuncia')
     def _computar_nombre_denunciado(self):
         for denuncia in self:
             nombre = False
- 
+
             if denuncia.tipo_denuncia == 'articulo' and denuncia.id_articulo:
                 articulo = denuncia.id_articulo
                 propietario = articulo.id_propietario
- 
                 if propietario:
                     nombre = propietario.name or str(propietario.id)
                 else:
                     nombre = 'Usuario eliminado'
- 
+
             elif denuncia.tipo_denuncia == 'comentario' and denuncia.id_comentario:
-                nombre = 'Por implementar'
- 
+                nombre = denuncia.id_comentario.id_emisor.name if denuncia.id_comentario.id_emisor else 'Por implementar'
+
+            elif denuncia.tipo_denuncia == 'usuario' and denuncia.id_usuario_denunciado:
+                nombre = denuncia.id_usuario_denunciado.name
+
             denuncia.nombre_denunciado = nombre
  
     
@@ -202,7 +213,7 @@ class Denuncia(models.Model):
     # CONSTRAINTS Y VALIDACIONES
     # ============================================
     
-    @api.constrains('id_articulo', 'id_comentario', 'tipo_denuncia')
+    @api.constrains('id_articulo', 'id_comentario', 'id_usuario_denunciado', 'tipo_denuncia')
     def _check_tipo_denuncia(self):
         """Verificar que haya relación con lo denunciado según el tipo"""
         for denuncia in self:
@@ -210,6 +221,8 @@ class Denuncia(models.Model):
                 raise ValidationError(_('Debes seleccionar un artículo para denunciar.'))
             if denuncia.tipo_denuncia == 'comentario' and not denuncia.id_comentario:
                 raise ValidationError(_('Debes seleccionar un comentario para denunciar.'))
+            if denuncia.tipo_denuncia == 'usuario' and not denuncia.id_usuario_denunciado:
+                raise ValidationError(_('Debes seleccionar un usuario para denunciar.'))
     
     @api.constrains('descripcion')
     def _check_descripcion_length(self):

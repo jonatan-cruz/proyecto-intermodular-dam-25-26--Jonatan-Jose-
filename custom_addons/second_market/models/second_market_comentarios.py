@@ -256,13 +256,30 @@ class SecondMarketComment(models.Model):
     def _notificar_nuevo_comentario(self):
         """Notificar al receptor sobre el nuevo comentario"""
         self.ensure_one()
-        # TODO: Implementar notificación por email o mensaje interno
-        # Ejemplo básico:
-        # self.id_receptor.message_post(
-        #     body=f"Nuevo comentario de {self.id_emisor.name} en {self.id_articulo.nombre}",
-        #     subject="Nuevo Comentario"
-        # )
-        pass
+        try:
+            # Cuerpo del mensaje
+            body = _(
+                "¡Tienes un nuevo comentario en tu artículo <b>%s</b>!<br/><br/>"
+                "<b>%s:</b> %s"
+            ) % (self.id_articulo.nombre, self.id_emisor.name, self.texto)
+            
+            # Postear mensaje en el artículo para que el propietario reciba la notificación (si está siguiendo)
+            self.id_articulo.message_post(
+                body=body,
+                message_type='comment',
+                subtype_xmlid='mail.mt_comment'
+            )
+            
+            # También notificar al receptor directamente
+            self.id_receptor.message_post(
+                body=body,
+                message_type='notification'
+            )
+        except Exception as e:
+            # Importar logger si no está disponible, aunque debería estar en el nivel de módulo
+            from odoo import logging
+            _logger = logging.getLogger(__name__)
+            _logger.error("Error al enviar notificación de comentario: %s", str(e))
     
     def action_ver_articulo(self):
         """Abrir el artículo relacionado"""
