@@ -121,7 +121,7 @@ class SecondMarketUserController(http.Controller):
                     'error_code': 'USER_NOT_FOUND'
                 }
             
-            data = request.params
+            data = request.params or request.httprequest.get_json(force=True) or {}
             
             # Campos actualizables
             update_vals = {}
@@ -173,14 +173,10 @@ class SecondMarketUserController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-<<<<<<< HEAD
-            data = request.params
-=======
             user_data = auth_result['user_data']
             new_token = auth_result.get('new_token')
             
-            data = request.httprequest.get_json(force=True) or {}
->>>>>>> 1f15b297a08af5c65dfca9b2257dcc0089ad63b2
+            data = request.params or request.httprequest.get_json(force=True) or {}
             
             if not data.get('current_password') or not data.get('new_password'):
                 return {
@@ -444,7 +440,7 @@ class SecondMarketUserController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-            data = request.params
+            data = request.params or request.httprequest.get_json(force=True) or {}
             
             if not data.get('password'):
                 return {

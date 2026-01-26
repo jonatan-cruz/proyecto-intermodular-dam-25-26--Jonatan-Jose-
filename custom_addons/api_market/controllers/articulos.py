@@ -251,14 +251,9 @@ class SecondMarketArticleController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-<<<<<<< HEAD
-            data = request.params
-=======
+            data = request.params or request.httprequest.get_json(force=True) or {}
             user_data = auth_result['user_data']
             new_token = auth_result.get('new_token')
-            
-            data = request.httprequest.get_json(force=True) or {}
->>>>>>> 1f15b297a08af5c65dfca9b2257dcc0089ad63b2
             
             # Validar campos requeridos
             required_fields = ['nombre', 'descripcion', 'precio', 'estado_producto', 'localidad', 'categoria_id', 'imagenes']
@@ -388,8 +383,8 @@ class SecondMarketArticleController(http.Controller):
                     'error_code': 'FORBIDDEN'
                 }
             
-            data = request.params
-            
+            data = request.params or request.httprequest.get_json(force=True) or {}
+        
             # Campos actualizables
             update_vals = {}
             updatable_fields = ['nombre', 'descripcion', 'precio', 'estado_producto', 
@@ -570,14 +565,10 @@ class SecondMarketArticleController(http.Controller):
                     'error_code': 'UNAUTHORIZED'
                 }
             
-<<<<<<< HEAD
-            data = request.params
-=======
             user_data = auth_result['user_data']
             new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
->>>>>>> 1f15b297a08af5c65dfca9b2257dcc0089ad63b2
             limit = data.get('limit', 20)
             offset = data.get('offset', 0)
             

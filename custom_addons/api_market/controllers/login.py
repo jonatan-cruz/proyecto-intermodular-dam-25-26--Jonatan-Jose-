@@ -49,7 +49,7 @@ class SecondMarketAuthController(http.Controller):
         """
         try:
             # Obtener datos del request
-            data = request.params
+            data = request.params or request.httprequest.get_json(force=True) or {}
             login = data.get('login')
             password = data.get('password')
             
@@ -159,8 +159,8 @@ class SecondMarketAuthController(http.Controller):
         - data: dict con token y datos del usuario (si success=True)
         """
         try:
-            data = request.params
-            
+            # Obtener datos: soporta JSON directo (según tu captura) o JSON-RPC
+            data = request.params or request.httprequest.get_json(force=True) or {}
             # Validar campos requeridos
             required_fields = ['name', 'login', 'password']
             for field in required_fields:
@@ -316,82 +316,6 @@ class SecondMarketAuthController(http.Controller):
                 'error_code': 'VERIFICATION_ERROR'
             }
 
-<<<<<<< HEAD:custom_addons/api_market/controllers/login.py
-    @http.route('/api/v1/auth/refresh', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
-    def refresh_token(self, **kwargs):
-        """
-        Endpoint para refrescar un token JWT
-        El token actual debe enviarse en el header Authorization: Bearer <token>
-        
-        Retorna:
-        - success: bool
-        - message: str
-        - data: dict con nuevo token (si success=True)
-        """
-        try:
-            from .auth_controller import get_token_from_request
-            
-            token = get_token_from_request()
-            
-            if not token:
-                return {
-                    'success': False,
-                    'message': RESPONSE_MESSAGES.get('TOKEN_MISSING', 'Token no proporcionado en el header Authorization'),
-                    'error_code': ERROR_CODES.get('TOKEN_MISSING', 'TOKEN_MISSING')
-                }
-            
-            # Decodificar el token (permitir tokens expirados para refresh)
-            try:
-                payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM], options={"verify_exp": False})
-            except jwt.InvalidTokenError:
-                return {
-                    'success': False,
-                    'message': RESPONSE_MESSAGES.get('TOKEN_INVALID', 'Token inválido'),
-                    'error_code': ERROR_CODES.get('TOKEN_INVALID', 'TOKEN_INVALID')
-                }
-            
-            # Verificar que el usuario existe y está activo
-            user_id = payload.get('user_id')
-            user = request.env['second_market.user'].sudo().browse(user_id)
-            
-            if not user.exists() or not user.activo:
-                return {
-                    'success': False,
-                    'message': RESPONSE_MESSAGES.get('USER_NOT_FOUND', 'Usuario no encontrado'),
-                    'error_code': ERROR_CODES.get('USER_NOT_FOUND', 'USER_NOT_FOUND')
-                }
-            
-            # Generar nuevo token con caducidad
-            new_payload = {
-                'user_id': user.id,
-                'id_usuario': user.id_usuario,
-                'login': user.login,
-                'name': user.name,
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=JWT_EXP_DELTA_SECONDS),
-                'iat': datetime.datetime.utcnow()
-            }
-            
-            new_token = jwt.encode(new_payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
-            
-            return {
-                'success': True,
-                'message': RESPONSE_MESSAGES.get('TOKEN_REFRESHED', 'Token refrescado exitosamente'),
-                'data': {
-                    'token': new_token,
-                    'expires_in': JWT_EXP_DELTA_SECONDS
-                }
-            }
-            
-        except Exception as e:
-            _logger.error(f"Error al refrescar token: {str(e)}", exc_info=True)
-            return {
-                'success': False,
-                'message': 'Error al refrescar token',
-                'error_code': 'REFRESH_ERROR'
-            }
-
-=======
->>>>>>> 1f15b297a08af5c65dfca9b2257dcc0089ad63b2:custom_addons/api_market/controllers/loggin.py
     @http.route('/api/v1/auth/logout', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def logout(self, **kwargs):
         """

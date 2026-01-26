@@ -42,7 +42,7 @@ class SecondMarketCommentController(http.Controller):
             user_data = auth_result['user_data']
             new_token = auth_result.get('new_token')
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params or request.httprequest.get_json(force=True) or {}
             
             if not data.get('articulo_id') or not data.get('texto'):
                 return {
@@ -286,7 +286,7 @@ class SecondMarketPurchaseController(http.Controller):
             user_data = auth_result['user_data']
             new_token = auth_result.get('new_token')
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params or request.httprequest.get_json(force=True) or {}
             
             if not data.get('articulo_id'):
                 return {
@@ -602,7 +602,7 @@ class SecondMarketRatingController(http.Controller):
             user_data = auth_result['user_data']
             new_token = auth_result.get('new_token')
             
-            data = request.httprequest.get_json(force=True) or {}
+            data = request.params or request.httprequest.get_json(force=True) or {}
             
             if not data.get('usuario_id') or not data.get('calificacion'):
                 return {
