@@ -4,7 +4,7 @@ from odoo import http, _
 from odoo.http import request
 import logging
 
-from .auth_controller import verify_jwt_token, get_token_from_request
+from .auth_controller import verify_jwt_token, get_token_from_request, get_authenticated_user_with_refresh
 
 _logger = logging.getLogger(__name__)
 
@@ -13,11 +13,11 @@ class SecondMarketCommentController(http.Controller):
     """Controlador para gestión de comentarios"""
 
     def _get_authenticated_user(self):
-        """Obtener usuario autenticado desde el token"""
-        token = get_token_from_request()
-        if not token:
-            return None
-        return verify_jwt_token(token)
+        """
+        Obtener usuario autenticado desde el token
+        Incluye renovación automática de tokens si es necesario
+        """
+        return get_authenticated_user_with_refresh()
 
     @http.route('/api/v1/comments', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def create_comment(self, **kwargs):
@@ -31,13 +31,16 @@ class SecondMarketCommentController(http.Controller):
         - texto: str
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
             
@@ -65,7 +68,7 @@ class SecondMarketCommentController(http.Controller):
                 'texto': data['texto']
             })
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Comentario creado exitosamente',
                 'data': {
@@ -73,6 +76,11 @@ class SecondMarketCommentController(http.Controller):
                     'id_mensaje': comment.id_mensaje
                 }
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al crear comentario: {str(e)}", exc_info=True)
@@ -86,13 +94,16 @@ class SecondMarketCommentController(http.Controller):
     def mark_comment_read(self, comment_id, **kwargs):
         """Marcar comentario como leído"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             comment = request.env['second_market.comment'].sudo().browse(comment_id)
             
@@ -113,10 +124,15 @@ class SecondMarketCommentController(http.Controller):
             
             comment.sudo().leer()
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Comentario marcado como leído'
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al marcar comentario: {str(e)}", exc_info=True)
@@ -130,13 +146,16 @@ class SecondMarketCommentController(http.Controller):
     def delete_comment(self, comment_id, **kwargs):
         """Eliminar comentario"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             comment = request.env['second_market.comment'].sudo().browse(comment_id)
             
@@ -157,10 +176,15 @@ class SecondMarketCommentController(http.Controller):
             
             comment.sudo().eliminar()
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Comentario eliminado'
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al eliminar comentario: {str(e)}", exc_info=True)
@@ -174,13 +198,16 @@ class SecondMarketCommentController(http.Controller):
     def get_received_comments(self, **kwargs):
         """Obtener comentarios recibidos por el usuario"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
             limit = data.get('limit', 20)
@@ -208,10 +235,15 @@ class SecondMarketCommentController(http.Controller):
                     }
                 })
             
-            return {
+            response = {
                 'success': True,
                 'data': {'comments': comments_data}
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al obtener comentarios: {str(e)}", exc_info=True)
@@ -226,11 +258,11 @@ class SecondMarketPurchaseController(http.Controller):
     """Controlador para gestión de compras"""
 
     def _get_authenticated_user(self):
-        """Obtener usuario autenticado desde el token"""
-        token = get_token_from_request()
-        if not token:
-            return None
-        return verify_jwt_token(token)
+        """
+        Obtener usuario autenticado desde el token
+        Incluye renovación automática de tokens si es necesario
+        """
+        return get_authenticated_user_with_refresh()
 
     @http.route('/api/v1/purchases', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def create_purchase(self, **kwargs):
@@ -243,13 +275,16 @@ class SecondMarketPurchaseController(http.Controller):
         - articulo_id: int
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
             
@@ -295,7 +330,7 @@ class SecondMarketPurchaseController(http.Controller):
             # Cambiar estado del artículo
             article.sudo().write({'estado_publicacion': 'reservado'})
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Compra creada exitosamente',
                 'data': {
@@ -304,6 +339,11 @@ class SecondMarketPurchaseController(http.Controller):
                     'precio': purchase.precio
                 }
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al crear compra: {str(e)}", exc_info=True)
@@ -317,13 +357,16 @@ class SecondMarketPurchaseController(http.Controller):
     def confirm_purchase(self, purchase_id, **kwargs):
         """Confirmar una compra (vendedor confirma pago)"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             purchase = request.env['second_market.purchase'].sudo().browse(purchase_id)
             
@@ -344,10 +387,15 @@ class SecondMarketPurchaseController(http.Controller):
             
             purchase.sudo().confirmar_transaccion()
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Compra confirmada exitosamente'
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al confirmar compra: {str(e)}", exc_info=True)
@@ -361,13 +409,16 @@ class SecondMarketPurchaseController(http.Controller):
     def cancel_purchase(self, purchase_id, **kwargs):
         """Cancelar una compra"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             purchase = request.env['second_market.purchase'].sudo().browse(purchase_id)
             
@@ -388,10 +439,15 @@ class SecondMarketPurchaseController(http.Controller):
             
             purchase.sudo().cancelar_compra()
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Compra cancelada'
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al cancelar compra: {str(e)}", exc_info=True)
@@ -405,13 +461,16 @@ class SecondMarketPurchaseController(http.Controller):
     def get_my_purchases(self, **kwargs):
         """Obtener compras realizadas por el usuario"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             purchases = request.env['second_market.purchase'].sudo().search([
                 ('id_comprador', '=', user_data['user_id'])
@@ -436,10 +495,15 @@ class SecondMarketPurchaseController(http.Controller):
                     }
                 })
             
-            return {
+            response = {
                 'success': True,
                 'data': {'purchases': purchases_data}
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al obtener compras: {str(e)}", exc_info=True)
@@ -453,13 +517,16 @@ class SecondMarketPurchaseController(http.Controller):
     def get_my_sales(self, **kwargs):
         """Obtener ventas del usuario"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             sales = request.env['second_market.purchase'].sudo().search([
                 ('id_vendedor', '=', user_data['user_id'])
@@ -484,10 +551,15 @@ class SecondMarketPurchaseController(http.Controller):
                     }
                 })
             
-            return {
+            response = {
                 'success': True,
                 'data': {'sales': sales_data}
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al obtener ventas: {str(e)}", exc_info=True)
@@ -502,11 +574,11 @@ class SecondMarketRatingController(http.Controller):
     """Controlador para gestión de valoraciones"""
 
     def _get_authenticated_user(self):
-        """Obtener usuario autenticado desde el token"""
-        token = get_token_from_request()
-        if not token:
-            return None
-        return verify_jwt_token(token)
+        """
+        Obtener usuario autenticado desde el token
+        Incluye renovación automática de tokens si es necesario
+        """
+        return get_authenticated_user_with_refresh()
 
     @http.route('/api/v1/ratings', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def create_rating(self, **kwargs):
@@ -519,13 +591,16 @@ class SecondMarketRatingController(http.Controller):
         - comentario: str (opcional)
         """
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_result = self._get_authenticated_user()
+            if not auth_result:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
+            
+            user_data = auth_result['user_data']
+            new_token = auth_result.get('new_token')
             
             data = request.httprequest.get_json(force=True) or {}
             
@@ -560,13 +635,18 @@ class SecondMarketRatingController(http.Controller):
                 'comentario': data.get('comentario', '')
             })
             
-            return {
+            response = {
                 'success': True,
                 'message': 'Valoración creada exitosamente',
                 'data': {
                     'rating_id': rating.id
                 }
             }
+            
+            if new_token:
+                response['new_token'] = new_token
+                
+            return response
             
         except Exception as e:
             _logger.error(f"Error al crear valoración: {str(e)}", exc_info=True)

@@ -316,6 +316,7 @@ class SecondMarketAuthController(http.Controller):
                 'error_code': 'VERIFICATION_ERROR'
             }
 
+<<<<<<< HEAD:custom_addons/api_market/controllers/login.py
     @http.route('/api/v1/auth/refresh', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def refresh_token(self, **kwargs):
         """
@@ -389,6 +390,8 @@ class SecondMarketAuthController(http.Controller):
                 'error_code': 'REFRESH_ERROR'
             }
 
+=======
+>>>>>>> 1f15b297a08af5c65dfca9b2257dcc0089ad63b2:custom_addons/api_market/controllers/loggin.py
     @http.route('/api/v1/auth/logout', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def logout(self, **kwargs):
         """
