@@ -631,7 +631,7 @@ class SecondMarketRatingController(http.Controller):
             rating = request.env['second_market.rating'].sudo().create({
                 'id_usuario': data['usuario_id'],
                 'id_valorador': user_data['user_id'],
-                'calificacion': data['calificacion'],
+                'calificacion': str(data['calificacion']),
                 'comentario': data.get('comentario', '')
             })
             
