@@ -179,7 +179,7 @@ class SecondMarketChatController(http.Controller):
                 'error_code': 'GET_CHATS_ERROR'
             }
 
-    @http.route('/api/v1/chats/<int:chat_id>/messages', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/chats/<int:chat_id>/messages', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
     def get_chat_messages(self, chat_id, **kwargs):
         """Obtener mensajes de un chat"""
         try:

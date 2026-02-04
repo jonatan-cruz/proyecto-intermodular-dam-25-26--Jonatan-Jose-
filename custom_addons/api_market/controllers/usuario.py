@@ -3,6 +3,10 @@
 from odoo import http, _
 from odoo.http import request
 import logging
+from passlib.context import CryptContext
+
+# Configuración de hashing (mismo que en login.py)
+crypt_context = CryptContext(schemes=["pbkdf2_sha512", "plaintext"], deprecated="auto")
 
 from .auth_controller import verify_jwt_token, get_token_from_request, get_authenticated_user_with_refresh
 
@@ -195,7 +199,7 @@ class SecondMarketUserController(http.Controller):
                 }
             
             # Verificar contraseña actual
-            if user.password != data['current_password']:
+            if not crypt_context.verify(data['current_password'], user.password):
                 return {
                     'success': False,
                     'message': 'Contraseña actual incorrecta',
@@ -359,28 +363,22 @@ class SecondMarketUserController(http.Controller):
                 'error_code': 'GET_USER_RATINGS_ERROR'
             }
 
-    @http.route('/api/v1/users/statistics', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/users/statistics', type='json', auth='public', methods=['GET', 'POST'], csrf=False)
     def get_my_statistics(self, **kwargs):
-        """Obtener estadísticas del usuario autenticado"""
+        """Obtener estadísticas detalladas de actividad del usuario autenticado"""
         try:
-            user_data = self._get_authenticated_user()
-            if not user_data:
+            auth_data = self._get_authenticated_user()
+            _logger.debug(f"_get_authenticated_user() => {auth_data}")
+
+            user = auth_data.get('user_data', {}).get('user')
+
+            if not user:
                 return {
                     'success': False,
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
-            
-            user = request.env['second_market.user'].sudo().browse(user_data['user_id'])
-            
-            if not user.exists():
-                return {
-                    'success': False,
-                    'message': 'Usuario no encontrado',
-                    'error_code': 'USER_NOT_FOUND'
-                }
-            
-            # Estadísticas detalladas
+
             stats = {
                 'productos_en_venta': user.productos_en_venta,
                 'productos_vendidos': user.productos_vendidos,
@@ -388,38 +386,34 @@ class SecondMarketUserController(http.Controller):
                 'calificacion_promedio': user.calificacion_promedio,
                 'total_valoraciones': user.total_valoraciones,
                 'antiguedad': user.antiguedad,
-                
-                # Estadísticas adicionales
+
                 'total_vistas': sum(user.ids_articulos_venta.mapped('conteo_vistas')),
                 'comentarios_recibidos': len(user.ids_comentarios_recibidos.filtered(lambda c: c.activo)),
                 'comentarios_enviados': len(user.ids_comentarios_enviados.filtered(lambda c: c.activo)),
-                
-                # Ventas por estado
+
                 'ventas_pendientes': len(user.ids_ventas.filtered(lambda v: v.estado == 'pendiente')),
                 'ventas_confirmadas': len(user.ids_ventas.filtered(lambda v: v.estado == 'confirmada')),
                 'ventas_completadas': len(user.ids_ventas.filtered(lambda v: v.estado == 'completada')),
-                
-                # Compras por estado
+
                 'compras_pendientes': len(user.ids_compras.filtered(lambda c: c.estado == 'pendiente')),
                 'compras_confirmadas': len(user.ids_compras.filtered(lambda c: c.estado == 'confirmada')),
                 'compras_completadas': len(user.ids_compras.filtered(lambda c: c.estado == 'completada')),
-                
-                # Artículos por estado
+
                 'articulos_borradores': len(user.ids_articulos_venta.filtered(lambda a: a.estado_publicacion == 'borrador')),
                 'articulos_publicados': len(user.ids_articulos_venta.filtered(lambda a: a.estado_publicacion == 'publicado')),
-                'articulos_vendidos': len(user.ids_articulos_venta.filtered(lambda a: a.estado_publicacion == 'vendido'))
+                'articulos_vendidos': len(user.ids_articulos_venta.filtered(lambda a: a.estado_publicacion == 'vendido')),
             }
-            
+
             return {
                 'success': True,
                 'data': stats
             }
-            
+
         except Exception as e:
             _logger.error(f"Error al obtener estadísticas: {str(e)}", exc_info=True)
             return {
                 'success': False,
-                'message': 'Error al obtener estadísticas',
+                'message': str(e),
                 'error_code': 'GET_STATISTICS_ERROR'
             }
 
@@ -459,7 +453,7 @@ class SecondMarketUserController(http.Controller):
                 }
             
             # Verificar contraseña
-            if user.password != data['password']:
+            if not crypt_context.verify(data['password'], user.password):
                 return {
                     'success': False,
                     'message': 'Contraseña incorrecta',
