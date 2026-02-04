@@ -20,7 +20,7 @@ class SecondMarketArticleController(http.Controller):
         """
         return get_authenticated_user_with_refresh()
 
-    @http.route('/api/v1/articles', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/articles', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
     def get_articles(self, **kwargs):
         """
         Obtener lista de artículos publicados filtrados por diversos criterios.
@@ -348,87 +348,63 @@ class SecondMarketArticleController(http.Controller):
 
     @http.route('/api/v1/articles/<int:article_id>', type='json', auth='public', methods=['PUT'], csrf=False, cors='*')
     def update_article(self, article_id, **kwargs):
-        """
-        Actualizar un artículo existente
-        Solo el propietario puede actualizar
-        Requiere autenticación mediante token JWT en header Authorization
-        """
+        """Actualizar campos específicos de un artículo existente (propietario solamente)"""
         try:
-            # Verificar autenticación
             auth_result = self._get_authenticated_user()
             if not auth_result:
                 return {
                     'success': False,
-                    'message': 'No autenticado. Debe proporcionar token en header Authorization',
+                    'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
-            
-            user_data = auth_result['user_data']
-            new_token = auth_result.get('new_token')
-            
+
+            user = auth_result['user_data']['user']
+
             article = request.env['second_market.article'].sudo().browse(article_id)
-            
             if not article.exists():
                 return {
                     'success': False,
                     'message': 'Artículo no encontrado',
                     'error_code': 'ARTICLE_NOT_FOUND'
                 }
-            
-            # Verificar que sea el propietario
-            if article.id_propietario.id != user_data['user_id']:
+
+            if article.id_propietario.id != user.id:
                 return {
                     'success': False,
                     'message': 'No tienes permiso para editar este artículo',
                     'error_code': 'FORBIDDEN'
                 }
-            
+
             data = request.params or request.httprequest.get_json(force=True) or {}
-        
-            # Campos actualizables
+            _logger.debug(f"DATA RECIBIDA => {data}")
+
+            updatable_fields = [
+                'nombre', 'descripcion', 'precio', 'estado_producto',
+                'localidad', 'antiguedad', 'latitud', 'longitud'
+            ]
+
             update_vals = {}
-            updatable_fields = ['nombre', 'descripcion', 'precio', 'estado_producto', 
-                              'localidad', 'antiguedad', 'latitud', 'longitud', 'categoria_id']
-            
             for field in updatable_fields:
                 if field in data:
-                    if field == 'categoria_id':
-                        update_vals['id_categoria'] = data[field]
-                    else:
-                        update_vals[field] = data[field]
-            
-            if update_vals:
-                article.sudo().write(update_vals)
-            
-            # Actualizar etiquetas si se envían
-            if 'etiquetas_ids' in data:
-                etiquetas_ids = data['etiquetas_ids']
-                # Validar que todas las etiquetas existan
-                existing_tags = request.env['second_market.tag'].sudo().search([
-                    ('id', 'in', etiquetas_ids)
-                ])
-                existing_tag_ids = existing_tags.ids
-                
-                # Filtrar solo las etiquetas que existen
-                valid_tag_ids = [tag_id for tag_id in etiquetas_ids if tag_id in existing_tag_ids]
-                article.sudo().write({'ids_etiquetas': [(6, 0, valid_tag_ids)]})
-                
-                # Advertir si algunas etiquetas no existen
-                invalid_tags = set(etiquetas_ids) - set(existing_tag_ids)
-                if invalid_tags:
-                    _logger.warning(f"Etiquetas no encontradas al actualizar (ignoradas): {invalid_tags}")
-            
-            response = {
+                    update_vals[field] = data[field]
+
+            if 'categoria_id' in data:
+                update_vals['id_categoria'] = data['categoria_id']
+
+            if not update_vals:
+                return {
+                    'success': False,
+                    'message': 'No se enviaron campos para actualizar',
+                    'error_code': 'NO_DATA'
+                }
+
+            article.sudo().write(update_vals)
+
+            return {
                 'success': True,
                 'message': 'Artículo actualizado exitosamente'
             }
-            
-            # Agregar nuevo token si fue renovado
-            if new_token:
-                response['new_token'] = new_token
-                
-            return response
-            
+
         except Exception as e:
             _logger.error(f"Error al actualizar artículo: {str(e)}", exc_info=True)
             return {

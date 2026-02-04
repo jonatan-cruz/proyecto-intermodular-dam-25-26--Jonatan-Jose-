@@ -45,7 +45,7 @@
                             <page string="Mensajes">
                                 <field name="ids_mensajes" mode="list">
                                     <list editable="bottom" create="true" delete="false">
-                                        <field name="id_usuario" readonly="1" />
+                                        <field name="id_usuario"/>
                                         <field name="contenido" />
                                         <field name="fecha_envio" readonly="1" />
                                         <field name="leido" />
