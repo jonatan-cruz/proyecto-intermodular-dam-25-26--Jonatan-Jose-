@@ -1,4 +1,4 @@
-package com.example.secondmarket.data.api
+package com.example.aplicacionmovil.data.remote.api
 
 import com.example.aplicacionmovil.domain.models.CreateArticleRequest
 import com.example.aplicacionmovil.domain.models.CreateCommentRequest
@@ -20,16 +20,16 @@ interface ApiService {
     // ==================== AUTH ENDPOINTS ====================
     
     @POST("api/v1/auth/login")
-    suspend fun login(@Body request: LoginRequest): Response<ApiResponse<AuthResponse>>
+    suspend fun login(@Body request: LoginRequest): Response<JsonRpcResponse<ApiResponse<AuthResponse>>>
     
     @POST("api/v1/auth/register")
-    suspend fun register(@Body request: RegisterRequest): Response<ApiResponse<AuthResponse>>
+    suspend fun register(@Body request: RegisterRequest): Response<JsonRpcResponse<ApiResponse<AuthResponse>>>
     
     @POST("api/v1/auth/verify")
-    suspend fun verifyToken(): Response<ApiResponse<Map<String, User>>>
+    suspend fun verifyToken(): Response<JsonRpcResponse<ApiResponse<Map<String, User>>>>
     
     @POST("api/v1/auth/logout")
-    suspend fun logout(): Response<ApiResponse<Any>>
+    suspend fun logout(): Response<JsonRpcResponse<ApiResponse<Any>>>
     
     // ==================== ARTICLES ENDPOINTS ====================
 
@@ -49,7 +49,7 @@ interface ApiService {
      * Crear un nuevo artículo
      */
     @POST("api/v1/articles")
-    suspend fun createArticle(@Body request: CreateArticleRequest): Response<ApiResponse<Map<String, Any>>>
+    suspend fun createArticle(@Body request: CreateArticleRequest): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
     
     /**
      * Actualizar un artículo
@@ -58,19 +58,19 @@ interface ApiService {
     suspend fun updateArticle(
         @Path("id") articleId: Int,
         @Body request: UpdateArticleRequest
-    ): Response<ApiResponse<Any>>
+    ): Response<JsonRpcResponse<ApiResponse<Any>>>
     
     /**
      * Publicar un artículo
      */
     @POST("api/v1/articles/{id}/publish")
-    suspend fun publishArticle(@Path("id") articleId: Int): Response<ApiResponse<Any>>
+    suspend fun publishArticle(@Path("id") articleId: Int): Response<JsonRpcResponse<ApiResponse<Any>>>
     
     /**
      * Eliminar un artículo
      */
     @HTTP(method = "DELETE", path = "api/v1/articles/{id}")
-    suspend fun deleteArticle(@Path("id") articleId: Int): Response<ApiResponse<Any>>
+    suspend fun deleteArticle(@Path("id") articleId: Int): Response<JsonRpcResponse<ApiResponse<Any>>>
     
     /**
      * Obtener mis artículos
@@ -106,13 +106,13 @@ interface ApiService {
      * Crear un comentario
      */
     @POST("api/v1/comments")
-    suspend fun createComment(@Body request: CreateCommentRequest): Response<ApiResponse<Map<String, Any>>>
+    suspend fun createComment(@Body request: CreateCommentRequest): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
     
     /**
      * Eliminar un comentario
      */
     @HTTP(method = "DELETE", path = "api/v1/comments/{id}")
-    suspend fun deleteComment(@Path("id") commentId: Int): Response<ApiResponse<Any>>
+    suspend fun deleteComment(@Path("id") commentId: Int): Response<JsonRpcResponse<ApiResponse<Any>>>
     
     // ==================== CATEGORIES ENDPOINTS ====================
     
@@ -120,5 +120,5 @@ interface ApiService {
      * Obtener todas las categorías
      */
     @GET("api/v1/categories")
-    suspend fun getCategories(): Response<ApiResponse<Map<String, List<Category>>>>
+    suspend fun getCategories(): Response<JsonRpcResponse<ApiResponse<Map<String, List<Category>>>>>
 }

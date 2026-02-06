@@ -20,14 +20,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 @Composable
 fun LoginScreen(
     navController: NavHostController,
-    context: Context
+    context: Context,
+    viewModel: LoginViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var camposVacios by remember { mutableStateOf(false) }
+
+    val loginState by viewModel.loginState.collectAsState()
+
+    LaunchedEffect(loginState) {
+        if (loginState is LoginState.Success) {
+            navController.navigate("home") {
+                popUpTo("login") { inclusive = true }
+            }
+            viewModel.resetState()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -51,6 +66,25 @@ fun LoginScreen(
             modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
         )
 
+        // Mostrar Error si existe
+        if (loginState is LoginState.Error) {
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Text(
+                    text = (loginState as LoginState.Error).message,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp
+                )
+            }
+        }
+
         // Campo de Email
         OutlinedTextField(
             value = email,
@@ -67,10 +101,12 @@ fun LoginScreen(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
+            isError = camposVacios,
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp)
+                .padding(bottom = 16.dp),
+            enabled = loginState !is LoginState.Loading
         )
 
         // Campo de Contraseña
@@ -88,12 +124,19 @@ fun LoginScreen(
             trailingIcon = {
                 TextButton(
                     onClick = { passwordVisible = !passwordVisible },
-                    modifier = Modifier.padding(end = 4.dp)
+                    modifier = Modifier.padding(end = 4.dp),
+                    enabled = loginState !is LoginState.Loading
                 ) {
                     Text(
                         text = if (passwordVisible) "Ocultar" else "Mostrar",
                         fontSize = 12.sp
                     )
+                }
+            },
+            isError = camposVacios,
+            supportingText = {
+                if (camposVacios) {
+                    Text("Los campos de email y contraseña son obligatorios")
                 }
             },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -104,24 +147,39 @@ fun LoginScreen(
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 24.dp)
+                .padding(bottom = 24.dp),
+            enabled = loginState !is LoginState.Loading
         )
 
         // Botón de Login
         Button(
             onClick = {
-                // TODO: Implementar lógica de login con API
+                if (email.isEmpty() || password.isEmpty()){
+                    camposVacios = true
+                } else {
+                    camposVacios = false
+                    viewModel.login(email, password)
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
+            enabled = loginState !is LoginState.Loading
         ) {
-            Text(
-                text = "Iniciar Sesión",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
+            if (loginState is LoginState.Loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = "Iniciar Sesión",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
         // Separador
@@ -157,8 +215,9 @@ fun LoginScreen(
             )
             TextButton(
                 onClick = {
-                    // TODO: Navegar a pantalla de registro
-                }
+                    navController.navigate("register")
+                },
+                enabled = loginState !is LoginState.Loading
             ) {
                 Text(
                     text = "Regístrate",

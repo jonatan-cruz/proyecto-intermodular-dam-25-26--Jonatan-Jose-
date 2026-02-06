@@ -4,7 +4,21 @@ import com.google.gson.annotations.SerializedName
 // ==================== RESPUESTA BASE ====================
 
 /**
- * Clase genérica para todas las respuestas de la API
+ * Envoltorio para el protocolo JSON-RPC 2.0 que usa el servidor
+ */
+data class JsonRpcResponse<T>(
+    @SerializedName("jsonrpc")
+    val jsonrpc: String,
+    
+    @SerializedName("id")
+    val id: Any? = null,
+    
+    @SerializedName("result")
+    val result: T
+)
+
+/**
+ * Clase genérica para el contenido de la respuesta (dentro de "result")
  */
 data class ApiResponse<T>(
     @SerializedName("success")
