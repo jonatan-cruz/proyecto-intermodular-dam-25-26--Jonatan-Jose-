@@ -36,14 +36,14 @@ interface ApiService {
     /**
      * Obtener lista de artículos publicados
      */
-//    @POST("api/v1/articles")
-//    suspend fun getArticles(@Body request: SearchArticlesRequest): Response<ApiResponse<ArticlesResponse>>
-//
-//    /**
-//     * Obtener detalle de un artículo
-//     */
-//    @POST("api/v1/articles/{id}")
-//    suspend fun getArticleDetail(@Path("id") articleId: Int): Response<ApiResponse<ArticleDetail>>
+    @POST("api/v1/articles")
+    suspend fun getArticles(@Body request: SearchArticlesRequest): Response<ApiResponse<ArticlesResponse>>
+
+    /**
+     * Obtener detalle de un artículo
+     */
+    @POST("api/v1/articles/{id}")
+    suspend fun getArticleDetail(@Path("id") articleId: Int): Response<ApiResponse<ArticleDetail>>
     
     /**
      * Crear un nuevo artículo
@@ -75,31 +75,31 @@ interface ApiService {
     /**
      * Obtener mis artículos
      */
-//    @POST("api/v1/articles/my-articles")
-//    suspend fun getMyArticles(
-//        @Body request: Map<String, Int>
-//    ): Response<ApiResponse<ArticlesResponse>>
-//
-//    // ==================== PURCHASES ENDPOINTS ====================
-//
-//    /**
-//     * Crear una compra
-//     */
-//    @POST("api/v1/purchases")
-//    suspend fun createPurchase(@Body request: CreatePurchaseRequest): Response<ApiResponse<PurchaseResponse>>
-//
-//    /**
-//     * Obtener mis compras
-//     */
-//    @GET("api/v1/purchases/my-purchases")
-//    suspend fun getMyPurchases(): Response<ApiResponse<PurchasesResponse>>
-//
-//    /**
-//     * Obtener mis ventas
-//     */
-//    @GET("api/v1/purchases/my-sales")
-//    suspend fun getMySales(): Response<ApiResponse<SalesResponse>>
-//
+    @POST("api/v1/articles/my-articles")
+    suspend fun getMyArticles(
+        @Body request: Map<String, Int>
+    ): Response<ApiResponse<ArticlesResponse>>
+
+    // ==================== PURCHASES ENDPOINTS ====================
+
+    /**
+     * Crear una compra
+     */
+    @POST("api/v1/purchases")
+    suspend fun createPurchase(@Body request: CreatePurchaseRequest): Response<ApiResponse<PurchaseResponse>>
+
+    /**
+     * Obtener mis compras
+     */
+    @GET("api/v1/purchases/my-purchases")
+    suspend fun getMyPurchases(): Response<ApiResponse<PurchasesResponse>>
+
+    /**
+     * Obtener mis ventas
+     */
+    @GET("api/v1/purchases/my-sales")
+    suspend fun getMySales(): Response<ApiResponse<SalesResponse>>
+
     // ==================== COMMENTS ENDPOINTS ====================
     
     /**
