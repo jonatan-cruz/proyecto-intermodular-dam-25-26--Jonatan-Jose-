@@ -19,7 +19,7 @@ class LoginViewModel : ViewModel() {
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState
 
-    fun login(email: String, password: String) {
+    fun login(email: String, password: String, sessionManager: com.example.aplicacionmovil.data.local.SessionManager) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
             try {
@@ -28,6 +28,10 @@ class LoginViewModel : ViewModel() {
                     val rpcBody = response.body()
                     val apiBody = rpcBody?.result
                     if (apiBody?.success == true) {
+                        // Guardar el token si viene en la respuesta
+                        apiBody.data?.token?.let { token ->
+                            sessionManager.saveAuthToken(token)
+                        }
                         _loginState.value = LoginState.Success("Login exitoso")
                     } else {
                         _loginState.value = LoginState.Error(apiBody?.message ?: "Error en la lógica del servidor")

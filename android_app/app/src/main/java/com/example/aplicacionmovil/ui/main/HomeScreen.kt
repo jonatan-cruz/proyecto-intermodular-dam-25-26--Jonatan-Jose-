@@ -36,10 +36,12 @@ fun HomeScreen(navController: NavHostController) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
-            Spacer(modifier = Modifier.height(32.dp))
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val sessionManager = androidx.compose.runtime.remember { com.example.aplicacionmovil.data.local.SessionManager(context) }
             
             Button(
                 onClick = {
+                    sessionManager.clearAuthToken()
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
