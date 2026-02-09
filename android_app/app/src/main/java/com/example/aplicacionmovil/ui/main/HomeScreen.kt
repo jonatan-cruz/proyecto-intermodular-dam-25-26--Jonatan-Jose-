@@ -16,16 +16,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.aplicacionmovil.data.local.SessionManager
 import com.example.aplicacionmovil.domain.models.Article
+import com.example.aplicacionmovil.domain.models.User
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -249,38 +249,13 @@ fun HomeScreen(
                                 )
                             }
                         )
-            Text(
-                text = "Pantalla Home",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "¡Has iniciado sesión con éxito!",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            val context = LocalContext.current
-            val sessionManager = remember { SessionManager(context) }
-            
-            Button(
-                onClick = {
-                    sessionManager.clearAuthToken()
-                    navController.navigate("login") {
-                        popUpTo("home") { inclusive = true }
                     }
-                },
-                content = TODO()
-            )
+                }
             }
 
             // Grid de artículos
-            when (articlesState) {
-                is ArticlesState.Loading -> {
+            when (val state = articlesState) {
+                is ArticlesState.Idle, is ArticlesState.Loading -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -290,7 +265,7 @@ fun HomeScreen(
                 }
 
                 is ArticlesState.Success -> {
-                    val articles = (articlesState as ArticlesState.Success).articles
+                    val articles = state.articles
 
                     if (articles.isEmpty()) {
                         Box(
@@ -347,7 +322,7 @@ fun HomeScreen(
                                 tint = MaterialTheme.colorScheme.error
                             )
                             Text(
-                                text = (articlesState as ArticlesState.Error).message,
+                                text = state.message,
                                 color = MaterialTheme.colorScheme.error,
                                 fontSize = 16.sp
                             )
@@ -357,8 +332,6 @@ fun HomeScreen(
                         }
                     }
                 }
-
-                else -> Unit
             }
         }
     }
@@ -416,6 +389,16 @@ fun HomeScreen(
             }
         )
     }
+}
+
+@Composable
+fun AsyncImage(
+    model: String?,
+    contentDescription: String,
+    modifier: Modifier,
+    contentScale: ContentScale
+) {
+    TODO("Not yet implemented")
 }
 
 @Composable
@@ -519,29 +502,4 @@ fun ArticleCard(
             }
         }
     }
-}
-
-        @Composable
-fun AsyncImage(
-    model: String?,
-    contentDescription: String,
-    modifier: Modifier,
-    contentScale: ContentScale
-) {
-    TODO("Not yet implemented")
-}}}
-
-@Composable
-fun AsyncImage(
-    model: String?,
-    contentDescription: String,
-    modifier: Modifier,
-    contentScale: ContentScale
-) {
-    TODO("Not yet implemented")
-}
-
-@Composable
-fun ArticleCard(article: Article, onClick: () -> Unit) {
-    TODO("Not yet implemented")
 }

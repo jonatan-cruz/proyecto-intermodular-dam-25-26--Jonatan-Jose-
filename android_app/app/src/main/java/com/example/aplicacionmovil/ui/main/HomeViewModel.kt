@@ -2,7 +2,6 @@ package com.example.aplicacionmovil.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.aplicacionmovil.data.remote.api.ApiService
 import com.example.aplicacionmovil.data.remote.api.RetrofitClient
 import com.example.aplicacionmovil.domain.models.SearchArticlesRequest
 import com.example.aplicacionmovil.domain.models.Article
@@ -12,10 +11,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel simplificado que obtiene ApiService directamente de RetrofitClient
+ * Esta versión NO requiere factory y se puede usar con viewModel() directamente
+ */
 class HomeViewModel : ViewModel() {
-    private val apiService = RetrofitClient.apiService
-    // ... resto del código
 
+    // Obtener ApiService del singleton RetrofitClient
+    private val apiService = RetrofitClient.apiService
 
     private val _articlesState = MutableStateFlow<ArticlesState>(ArticlesState.Idle)
     val articlesState: StateFlow<ArticlesState> = _articlesState.asStateFlow()
@@ -48,8 +51,10 @@ class HomeViewModel : ViewModel() {
                 if (response.isSuccessful && response.body() != null) {
                     val apiResponse = response.body()!!
 
-                    // Acceder a los artículos según tu estructura: ApiResponse<ArticlesResponse>
-                    val articles = apiResponse.data?.articles ?: emptyList()
+                    // La respuesta es ApiResponse<ArticlesResponse> directamente
+                    // Acceder a los artículos según tu estructura
+                    val articlesData = apiResponse.data
+                    val articles = articlesData?.articles ?: emptyList()
 
                     _articlesState.value = ArticlesState.Success(articles)
                 } else {
@@ -86,7 +91,8 @@ class HomeViewModel : ViewModel() {
 
                 if (response.isSuccessful && response.body() != null) {
                     val apiResponse = response.body()!!
-                    val articles = apiResponse.data?.articles ?: emptyList()
+                    val articlesData = apiResponse.data
+                    val articles = articlesData?.articles ?: emptyList()
 
                     _articlesState.value = ArticlesState.Success(articles)
                 } else {
