@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,6 +42,7 @@ fun HomeScreen(
 
     val articlesState by viewModel.articlesState.collectAsState()
     val userState by viewModel.userState.collectAsState()
+    val categoriesState by viewModel.categoriesState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -342,42 +344,121 @@ fun HomeScreen(
             onDismissRequest = { showFilterDialog = false },
             title = { Text("Seleccionar Categoría") },
             text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Lista de categorías de ejemplo - esto debería venir de la API
-                    val categories = listOf(
-                        1 to "Electrónica",
-                        2 to "Moda",
-                        3 to "Hogar",
-                        4 to "Deportes",
-                        5 to "Libros",
-                        6 to "Juguetes",
-                        7 to "Vehículos",
-                        8 to "Otros"
-                    )
-
-                    categories.forEach { (id, name) ->
-                        OutlinedCard(
+                when (val state = categoriesState) {
+                    is CategoriesState.Loading -> {
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    selectedCategoryId = id
-                                    selectedCategoryName = name
-                                    viewModel.searchArticles(searchQuery, id, priceRange)
-                                    showFilterDialog = false
-                                },
-                            border = if (selectedCategoryId == id) {
-                                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                            } else {
-                                BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                            }
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = name,
-                                modifier = Modifier.padding(16.dp),
-                                fontWeight = if (selectedCategoryId == id) FontWeight.Bold else FontWeight.Normal
-                            )
+                            CircularProgressIndicator()
+                        }
+                    }
+
+                    is CategoriesState.Success -> {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            state.categories.forEach { category ->
+                                OutlinedCard(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            selectedCategoryId = category.id
+                                            selectedCategoryName = category.name
+                                            viewModel.searchArticles(searchQuery, category.id, priceRange)
+                                            showFilterDialog = false
+                                        },
+                                    border = if (selectedCategoryId == category.id) {
+                                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                    } else {
+                                        BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                                    }
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(
+                                                text = category.name,
+                                                fontWeight = if (selectedCategoryId == category.id) FontWeight.Bold else FontWeight.Normal,
+                                                fontSize = 15.sp
+                                            )
+                                            category.descripcion?.let {
+                                                Text(
+                                                    text = it,
+                                                    fontSize = 12.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        }
+
+                                        // Contador de artículos
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Text(
+                                                text = "${category.conteoArticulos}",
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    is CategoriesState.Error -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                                Text(
+                                    text = state.message,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                                TextButton(onClick = { viewModel.loadCategories() }) {
+                                    Text("Reintentar")
+                                }
+                            }
+                        }
+                    }
+
+                    else -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
                     }
                 }

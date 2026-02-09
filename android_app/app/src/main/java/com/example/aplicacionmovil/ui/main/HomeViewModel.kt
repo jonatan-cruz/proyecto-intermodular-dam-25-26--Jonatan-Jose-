@@ -6,6 +6,7 @@ import com.example.aplicacionmovil.data.remote.api.RetrofitClient
 import com.example.aplicacionmovil.domain.models.SearchArticlesRequest
 import com.example.aplicacionmovil.domain.models.Article
 import com.example.aplicacionmovil.domain.models.User
+import com.example.aplicacionmovil.domain.models.Category
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,9 +27,13 @@ class HomeViewModel : ViewModel() {
     private val _userState = MutableStateFlow<User?>(null)
     val userState: StateFlow<User?> = _userState.asStateFlow()
 
+    private val _categoriesState = MutableStateFlow<CategoriesState>(CategoriesState.Idle)
+    val categoriesState: StateFlow<CategoriesState> = _categoriesState.asStateFlow()
+
     init {
         loadArticles()
         loadUserInfo()
+        loadCategories()
     }
 
     fun loadArticles() {
@@ -58,12 +63,13 @@ class HomeViewModel : ViewModel() {
 
                     _articlesState.value = ArticlesState.Success(articles)
                 } else {
-                    _articlesState.value = ArticlesState.Error("Error al cargar los artículos")
+                    _articlesState.value = ArticlesState.Error("Error al cargar los artículos: ${response.code()}")
                 }
             } catch (e: Exception) {
                 _articlesState.value = ArticlesState.Error(
-                    e.localizedMessage ?: "Error desconocido"
+                    e.localizedMessage ?: "Error desconocido al cargar artículos"
                 )
+                e.printStackTrace()
             }
         }
     }
@@ -96,12 +102,40 @@ class HomeViewModel : ViewModel() {
 
                     _articlesState.value = ArticlesState.Success(articles)
                 } else {
-                    _articlesState.value = ArticlesState.Error("Error en la búsqueda")
+                    _articlesState.value = ArticlesState.Error("Error en la búsqueda: ${response.code()}")
                 }
             } catch (e: Exception) {
                 _articlesState.value = ArticlesState.Error(
                     e.localizedMessage ?: "Error en la búsqueda"
                 )
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun loadCategories() {
+        viewModelScope.launch {
+            _categoriesState.value = CategoriesState.Loading
+            try {
+                val response = apiService.getCategories()
+
+                if (response.isSuccessful && response.body() != null) {
+                    val jsonRpcResponse = response.body()!!
+                    val apiResponse = jsonRpcResponse.result
+
+                    // La respuesta es Map<String, List<Category>>
+                    val categoriesMap = apiResponse.data
+                    val categories = categoriesMap?.get("categories") ?: emptyList()
+
+                    _categoriesState.value = CategoriesState.Success(categories)
+                } else {
+                    _categoriesState.value = CategoriesState.Error("Error al cargar categorías: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                _categoriesState.value = CategoriesState.Error(
+                    e.localizedMessage ?: "Error al cargar categorías"
+                )
+                e.printStackTrace()
             }
         }
     }
@@ -141,4 +175,11 @@ sealed class ArticlesState {
     object Loading : ArticlesState()
     data class Success(val articles: List<Article>) : ArticlesState()
     data class Error(val message: String) : ArticlesState()
+}
+
+sealed class CategoriesState {
+    object Idle : CategoriesState()
+    object Loading : CategoriesState()
+    data class Success(val categories: List<Category>) : CategoriesState()
+    data class Error(val message: String) : CategoriesState()
 }

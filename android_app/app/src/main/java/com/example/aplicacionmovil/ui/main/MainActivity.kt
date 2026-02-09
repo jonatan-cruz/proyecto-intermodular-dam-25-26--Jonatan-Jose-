@@ -45,6 +45,21 @@ class MainActivity : ComponentActivity() {
                         composable("home") {
                             HomeScreen(navController = navController)
                         }
+                        composable ("create_article"){
+                            CrearArticulo(navController=navController)
+                        }
+                        composable("settings") {
+                            SettingsScreen(navController = navController)
+                        }
+                        composable("profile") {
+                            ProfileScreen(navController = navController)
+                        }
+                        composable("notifications") {
+                            NotificationsScreen(navController = navController)
+                        }
+                        composable("search") {
+                            SearchScreen(navController = navController)
+                        }
                         // Aquí puedes añadir más rutas para otras pantallas
                         // composable("home") { HomeScreen(...) }
                         // composable("register") { RegisterScreen(...) }
