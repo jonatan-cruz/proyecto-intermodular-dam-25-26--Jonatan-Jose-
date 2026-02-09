@@ -17,12 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.aplicacionmovil.data.local.SessionManager
 import com.example.aplicacionmovil.domain.models.Article
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -262,8 +264,8 @@ fun HomeScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
-            val context = androidx.compose.ui.platform.LocalContext.current
-            val sessionManager = androidx.compose.runtime.remember { com.example.aplicacionmovil.data.local.SessionManager(context) }
+            val context = LocalContext.current
+            val sessionManager = remember { SessionManager(context) }
             
             Button(
                 onClick = {
@@ -271,7 +273,9 @@ fun HomeScreen(
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
-                }
+                },
+                content = TODO()
+            )
             }
 
             // Grid de artículos
@@ -517,6 +521,16 @@ fun ArticleCard(
     }
 }
 
+        @Composable
+fun AsyncImage(
+    model: String?,
+    contentDescription: String,
+    modifier: Modifier,
+    contentScale: ContentScale
+) {
+    TODO("Not yet implemented")
+}}}
+
 @Composable
 fun AsyncImage(
     model: String?,
@@ -524,5 +538,10 @@ fun AsyncImage(
     modifier: Modifier,
     contentScale: ContentScale
 ) {
+    TODO("Not yet implemented")
+}
+
+@Composable
+fun ArticleCard(article: Article, onClick: () -> Unit) {
     TODO("Not yet implemented")
 }
