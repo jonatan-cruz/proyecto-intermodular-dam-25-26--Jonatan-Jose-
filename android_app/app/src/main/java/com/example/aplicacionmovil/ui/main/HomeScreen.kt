@@ -247,6 +247,29 @@ fun HomeScreen(
                                 )
                             }
                         )
+            Text(
+                text = "Pantalla Home",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = "¡Has iniciado sesión con éxito!",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val sessionManager = androidx.compose.runtime.remember { com.example.aplicacionmovil.data.local.SessionManager(context) }
+            
+            Button(
+                onClick = {
+                    sessionManager.clearAuthToken()
+                    navController.navigate("login") {
+                        popUpTo("home") { inclusive = true }
                     }
                 }
             }

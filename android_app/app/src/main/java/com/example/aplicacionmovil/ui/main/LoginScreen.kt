@@ -31,9 +31,11 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var camposVacios by remember { mutableStateOf(false) }
+    var emailError by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf(false) }
 
     val loginState by viewModel.loginState.collectAsState()
+    val sessionManager = remember { com.example.aplicacionmovil.data.local.SessionManager(context) }
 
     LaunchedEffect(loginState) {
         if (loginState is LoginState.Success) {
@@ -66,7 +68,7 @@ fun LoginScreen(
             modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
         )
 
-        // Mostrar Error si existe
+        // Mostrar Error de la API si existe
         if (loginState is LoginState.Error) {
             Surface(
                 color = MaterialTheme.colorScheme.errorContainer,
@@ -88,7 +90,10 @@ fun LoginScreen(
         // Campo de Email
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = { 
+                email = it
+                emailError = false 
+            },
             label = { Text("Correo electrónico") },
             placeholder = { Text("ejemplo@correo.com") },
             leadingIcon = {
@@ -101,7 +106,12 @@ fun LoginScreen(
                 keyboardType = KeyboardType.Email,
                 imeAction = ImeAction.Next
             ),
-            isError = camposVacios,
+            isError = emailError,
+            supportingText = {
+                if (emailError) {
+                    Text("Introduce tu correo electrónico")
+                }
+            },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -112,7 +122,10 @@ fun LoginScreen(
         // Campo de Contraseña
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = { 
+                password = it
+                passwordError = false
+            },
             label = { Text("Contraseña") },
             placeholder = { Text("Tu contraseña") },
             leadingIcon = {
@@ -133,10 +146,10 @@ fun LoginScreen(
                     )
                 }
             },
-            isError = camposVacios,
+            isError = passwordError,
             supportingText = {
-                if (camposVacios) {
-                    Text("Los campos de email y contraseña son obligatorios")
+                if (passwordError) {
+                    Text("La contraseña es obligatoria")
                 }
             },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -154,11 +167,11 @@ fun LoginScreen(
         // Botón de Login
         Button(
             onClick = {
-                if (email.isEmpty() || password.isEmpty()){
-                    camposVacios = true
-                } else {
-                    camposVacios = false
-                    viewModel.login(email, password)
+                emailError = email.isEmpty()
+                passwordError = password.isEmpty()
+                
+                if (!emailError && !passwordError) {
+                    viewModel.login(email, password, sessionManager)
                 }
             },
             modifier = Modifier
