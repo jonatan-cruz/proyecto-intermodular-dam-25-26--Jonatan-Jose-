@@ -19,13 +19,15 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     navController: NavHostController,
-    context: Context
+    context: Context,
+    viewModel: RegisterViewModel = viewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -36,8 +38,22 @@ fun RegisterScreen(
     var biografia by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var camposVacios by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
+
+
+    val registerState by viewModel.registerState.collectAsState()
+
+    LaunchedEffect(registerState) {
+        if (registerState is RegisterState.Success) {
+            navController.navigate("home") {
+                popUpTo("register") { inclusive = true }
+            }
+            viewModel.resetState()
+        }
+    }
+
 
     Scaffold(
         topBar = {
@@ -99,6 +115,7 @@ fun RegisterScreen(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next
                 ),
+                isError = camposVacios,
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -121,6 +138,7 @@ fun RegisterScreen(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 ),
+
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -190,9 +208,9 @@ fun RegisterScreen(
                     imeAction = ImeAction.Next
                 ),
                 singleLine = true,
-                isError = confirmPassword.isNotEmpty() && password != confirmPassword,
+                isError = camposVacios,
                 supportingText = {
-                    if (confirmPassword.isNotEmpty() && password != confirmPassword) {
+                    if (camposVacios) {
                         Text("Las contraseñas no coinciden")
                     }
                 },
@@ -271,7 +289,12 @@ fun RegisterScreen(
             // Botón de Registro
             Button(
                 onClick = {
-                    // TODO: Implementar lógica de registro con API
+                    if (email.isEmpty() || password.isEmpty()){
+                        camposVacios = true
+                    } else {
+                        camposVacios = false
+                        viewModel.register(name,email, password, telefono, ubicacion, biografia)
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()

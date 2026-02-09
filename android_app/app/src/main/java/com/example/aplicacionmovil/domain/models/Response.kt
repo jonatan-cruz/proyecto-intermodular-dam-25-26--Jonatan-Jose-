@@ -45,3 +45,24 @@ data class AuthResponse(
     val expiresIn: Int
 )
 
+data class ArticlesResponse(
+    val articles: List<Article>,
+    val total: Int,
+    val limit: Int,
+    val offset: Int
+)
+
+data class PurchaseResponse(
+    @SerializedName("purchase_id")
+    val purchaseId: Int,
+    @SerializedName("id_compra")
+    val idCompra: String
+)
+
+data class PurchasesResponse(
+    val purchases: List<Purchase>
+)
+
+data class SalesResponse(
+    val sales: List<Sale>
+)
