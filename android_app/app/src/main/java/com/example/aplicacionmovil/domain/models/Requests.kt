@@ -81,6 +81,7 @@ data class CreateCommentRequest(
  * Request de Búsqueda de Artículos
  */
 data class SearchArticlesRequest(
+    @SerializedName("nombre") val nombre: String? = null,
     @SerializedName("limit") val limit: Int = 20,
     @SerializedName("offset") val offset: Int = 0,
     @SerializedName("categoria_id") val categoriaId: Int? = null,

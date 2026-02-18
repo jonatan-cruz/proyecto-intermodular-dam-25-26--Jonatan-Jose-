@@ -20,7 +20,7 @@ class SecondMarketArticleController(http.Controller):
         """
         return get_authenticated_user_with_refresh()
 
-    @http.route('/api/v1/articles', type='json', auth='public', methods=['GET'], csrf=False, cors='*')
+    @http.route('/api/v1/articles/list', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_articles(self, **kwargs):
         """
         Obtener lista de artículos publicados filtrados por diversos criterios.
@@ -37,7 +37,7 @@ class SecondMarketArticleController(http.Controller):
         - localidad: str
         """
         try:
-            data = request.params
+            data = request.params or request.httprequest.get_json(force=True) or {}
             
             limit = data.get('limit', 20)
             offset = data.get('offset', 0)
