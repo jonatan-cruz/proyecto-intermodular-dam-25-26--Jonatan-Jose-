@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.aplicacionmovil.ui.products.create.CreateArticleScreen
 import com.example.aplicacionmovil.ui.theme.AplicacionMovilTheme
 import com.example.aplicacionmovil.ui.products.detail.ArticleDetailScreen
 import androidx.navigation.NavType

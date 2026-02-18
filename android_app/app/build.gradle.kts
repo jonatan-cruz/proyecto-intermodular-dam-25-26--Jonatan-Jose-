@@ -61,6 +61,9 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.androidx.security.crypto)
+    // Glide for image loading
+    implementation(libs.glide)
+    implementation(libs.glide.compose)
     implementation(libs.coil.compose)
 
     // Retrofit y Gson (si no las tienes ya)
