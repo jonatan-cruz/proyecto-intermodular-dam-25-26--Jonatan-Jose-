@@ -27,6 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import coil.compose.AsyncImage
 import com.example.aplicacionmovil.domain.models.Article
 
@@ -312,8 +317,7 @@ fun HomeScreen(
                                 ArticleCard(
                                     article = article,
                                     onClick = {
-                                        // Navegar a detalle del artículo
-                                        // navController.navigate("article_detail/${article.id}")
+                                        navController.navigate("article_detail/${article.id}")
                                     }
                                 )
                             }
@@ -516,8 +520,15 @@ fun ArticleCard(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 if (article.imagenPrincipal != null) {
+                    val imageBytes = remember(article.imagenPrincipal) {
+                        try {
+                            Base64.decode(article.imagenPrincipal, Base64.DEFAULT)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
                     AsyncImage(
-                        model = article.imagenPrincipal,
+                        model = imageBytes,
                         contentDescription = article.nombre,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop

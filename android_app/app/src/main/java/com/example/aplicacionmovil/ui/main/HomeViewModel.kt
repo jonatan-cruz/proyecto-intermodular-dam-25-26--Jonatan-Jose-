@@ -143,7 +143,7 @@ class HomeViewModel(context: Context) : ViewModel() {
             _articlesState.value = ArticlesState.Loading
             try {
                 val request = SearchArticlesRequest(
-                    nombre = query.ifEmpty { null },
+                    search = query.ifEmpty { null },
                     categoriaId = categoryId,
                     precioMin = priceRange?.start?.toDouble(),
                     precioMax = priceRange?.endInclusive?.toDouble()

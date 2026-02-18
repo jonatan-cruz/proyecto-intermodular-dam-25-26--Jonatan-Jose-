@@ -13,6 +13,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.aplicacionmovil.ui.theme.AplicacionMovilTheme
+import com.example.aplicacionmovil.ui.products.detail.ArticleDetailScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,6 +62,13 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("search") {
                             SearchScreen(navController = navController)
+                        }
+                        composable(
+                            route = "article_detail/{articleId}",
+                            arguments = listOf(navArgument("articleId") { type = NavType.IntType })
+                        ) { backStackEntry ->
+                            val articleId = backStackEntry.arguments?.getInt("articleId") ?: 0
+                            ArticleDetailScreen(navController = navController, articleId = articleId)
                         }
                         // Aquí puedes añadir más rutas para otras pantallas
                         // composable("home") { HomeScreen(...) }
