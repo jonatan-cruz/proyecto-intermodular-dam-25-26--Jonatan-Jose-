@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.aplicacionmovil.ui.products.create.CreateArticleScreen
 import com.example.aplicacionmovil.ui.theme.AplicacionMovilTheme
 
 class MainActivity : ComponentActivity() {
@@ -44,6 +45,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("home") {
                             HomeScreen(navController = navController)
+                        }
+                        composable("create_article") {
+                            CreateArticleScreen(navController = navController)
                         }
                         // Aquí puedes añadir más rutas para otras pantallas
                         // composable("home") { HomeScreen(...) }

@@ -17,6 +17,8 @@ navigationCompose = "2.9.7"
 navigationRuntimeKtx = "2.9.7"
 retrofit = "3.0.0"
 securityCrypto = "1.1.0-alpha06"
+glide = "4.16.0"
+glideCompose = "1.0.0-beta01"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -42,6 +44,9 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "loggingInterceptor" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+glide-compose = { group = "com.github.bumptech.glide", name = "compose", version.ref = "glideCompose" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

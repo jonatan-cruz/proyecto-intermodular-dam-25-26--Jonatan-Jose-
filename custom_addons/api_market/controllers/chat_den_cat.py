@@ -520,6 +520,7 @@ class SecondMarketCategoryController(http.Controller):
     def get_categories(self, **kwargs):
         """Obtener todas las categorías activas"""
         try:
+            _logger.info("Recibida petición get_categories")
             categories = request.env['second_market.category'].sudo().search([
                 ('activo', '=', True)
             ], order='name')
@@ -533,7 +534,7 @@ class SecondMarketCategoryController(http.Controller):
                     'icono': category.icono,
                     'color': category.color,
                     'conteo_articulos': category.conteo_articulos,
-                    'imagen': category.imagen.decode('utf-8') if category.imagen else None
+                    #'imagen': category.imagen.decode('utf-8') if category.imagen else None
                 })
             
             return {

@@ -119,6 +119,6 @@ interface ApiService {
     /**
      * Obtener todas las categorías
      */
-    @GET("api/v1/categories")
-    suspend fun getCategories(): Response<JsonRpcResponse<ApiResponse<Map<String, List<Category>>>>>
+    @POST("api/v1/categories")
+    suspend fun getCategories(@Body request: Map<String, String>): Response<JsonRpcResponse<ApiResponse<Map<String, List<Category>>>>>
 }

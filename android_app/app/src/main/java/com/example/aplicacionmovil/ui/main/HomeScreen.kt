@@ -26,6 +26,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.aplicacionmovil.domain.models.Article
 import com.example.aplicacionmovil.domain.models.User
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -391,6 +393,7 @@ fun HomeScreen(
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun AsyncImage(
     model: String?,
@@ -398,7 +401,12 @@ fun AsyncImage(
     modifier: Modifier,
     contentScale: ContentScale
 ) {
-    TODO("Not yet implemented")
+    GlideImage(
+        model = model,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = contentScale
+    )
 }
 
 @Composable
