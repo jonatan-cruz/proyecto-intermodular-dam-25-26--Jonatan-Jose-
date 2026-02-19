@@ -3,22 +3,33 @@ package com.example.aplicacionmovil.ui.products.create
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.aplicacionmovil.data.remote.api.RetrofitClient
+import com.example.aplicacionmovil.domain.models.Category
 import com.example.aplicacionmovil.domain.models.CreateArticleRequest
 import com.example.aplicacionmovil.domain.models.ImageRequest
 import com.example.aplicacionmovil.utils.ImageUtils
+import com.example.aplicacionmovil.domain.models.JsonRpcRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class CreateArticleViewModel : ViewModel() {
+// ==================== ESTADOS ====================
 
-    private val apiService = RetrofitClient.apiService
+sealed class CategoriesFormState {
+    object Loading : CategoriesFormState()
+    data class Success(val categories: List<Category>) : CategoriesFormState()
+    data class Error(val message: String) : CategoriesFormState()
+}
 
-    private val _uiState = MutableStateFlow<CreateArticleUiState>(CreateArticleUiState.Idle)
-    val uiState: StateFlow<CreateArticleUiState> = _uiState.asStateFlow()
+// ==================== VIEWMODEL ====================
+
+class CreateArticleViewModel(context: Context) : ViewModel() {
+
+    // Igual que HomeViewModel: servicio autenticado inicializado con contexto
+    private val api = RetrofitClient.getAuthenticatedService(context)
 
     // Form states
     var name = MutableStateFlow("")
@@ -26,46 +37,53 @@ class CreateArticleViewModel : ViewModel() {
     var price = MutableStateFlow("")
     var categoryId = MutableStateFlow<Int?>(null)
     var selectedImages = MutableStateFlow<List<Uri>>(emptyList())
-    
-    // Categories from API
-    private val _categories = MutableStateFlow<List<com.example.aplicacionmovil.domain.models.Category>>(emptyList())
-    val categories: StateFlow<List<com.example.aplicacionmovil.domain.models.Category>> = _categories.asStateFlow()
 
-    fun loadCategories(context: Context) {
-        // Asegurar que RetrofitClient tiene el SessionManager
-        if (RetrofitClient.sessionManager == null) {
-             RetrofitClient.sessionManager = com.example.aplicacionmovil.data.local.SessionManager(context)
-        }
+    // Estado de categorías (igual que CategoriesState en HomeViewModel)
+    private val _categoriesState = MutableStateFlow<CategoriesFormState>(CategoriesFormState.Loading)
+    val categoriesState: StateFlow<CategoriesFormState> = _categoriesState.asStateFlow()
 
+    // Estado general del formulario
+    private val _uiState = MutableStateFlow<CreateArticleUiState>(CreateArticleUiState.Idle)
+    val uiState: StateFlow<CreateArticleUiState> = _uiState.asStateFlow()
+
+    init {
+        loadCategories()
+    }
+
+    // ==================== CATEGORÍAS ====================
+    // Mismo patrón que HomeViewModel.loadCategories()
+
+    fun loadCategories() {
         viewModelScope.launch {
+            _categoriesState.value = CategoriesFormState.Loading
             try {
-                val response = apiService.getCategories(emptyMap())
+                val response = api.getCategories(JsonRpcRequest())
                 if (response.isSuccessful) {
-                    val jsonRpcResponse = response.body()
-                    val apiResponse = jsonRpcResponse?.result
-                    
-                    if (apiResponse?.success == true) {
-                        val categoriesMap = apiResponse.data
-                        val allCategories = categoriesMap?.get("categories") 
-                        
-                        if (allCategories != null) {
-                            _categories.value = allCategories
-                        } else {
-                            // Si no viene en el mapa "categories", intentar ver si rpcResult.data es la lista directamente
-                            _uiState.value = CreateArticleUiState.Error("Estructura de categorías inesperada")
-                        }
+                    val result = response.body()?.result
+                    if (result?.success == true) {
+                        val categories: List<Category> =
+                            result.data?.get("categories") ?: emptyList()
+                        _categoriesState.value = CategoriesFormState.Success(categories)
                     } else {
-                        _uiState.value = CreateArticleUiState.Error("Error del servidor: ${apiResponse?.message ?: "Sin mensaje"}")
+                        _categoriesState.value = CategoriesFormState.Error(
+                            result?.message ?: "Error al cargar categorías"
+                        )
                     }
                 } else {
-                    _uiState.value = CreateArticleUiState.Error("Error HTTP ${response.code()}: ${response.message()}")
+                    _categoriesState.value = CategoriesFormState.Error(
+                        "Error ${response.code()}: ${response.message()}"
+                    )
                 }
             } catch (e: Exception) {
+                _categoriesState.value = CategoriesFormState.Error(
+                    "[${e.javaClass.simpleName}] ${e.localizedMessage ?: "sin mensaje"}"
+                )
                 e.printStackTrace()
-                _uiState.value = CreateArticleUiState.Error("Error de red: ${e.localizedMessage}")
             }
         }
     }
+
+    // ==================== IMÁGENES ====================
 
     fun onImagesSelected(uris: List<Uri>) {
         val current = selectedImages.value.toMutableList()
@@ -79,18 +97,14 @@ class CreateArticleViewModel : ViewModel() {
         selectedImages.value = current
     }
 
+    // ==================== CREAR ARTÍCULO ====================
+
     fun createArticle(context: Context, onSuccess: () -> Unit) {
         if (!validateForm()) return
-
-        // Asegurar que RetrofitClient tiene el SessionManager
-        if (RetrofitClient.sessionManager == null) {
-            RetrofitClient.sessionManager = com.example.aplicacionmovil.data.local.SessionManager(context)
-        }
 
         viewModelScope.launch {
             _uiState.value = CreateArticleUiState.Loading
             try {
-                // Convertir imágenes a Base64
                 val imageRequests = selectedImages.value.mapIndexed { index, uri ->
                     val base64 = ImageUtils.uriToBase64(context, uri) ?: ""
                     ImageRequest(
@@ -104,12 +118,12 @@ class CreateArticleViewModel : ViewModel() {
                     nombre = name.value,
                     descripcion = description.value,
                     precio = price.value.toDoubleOrNull() ?: 0.0,
-                    estadoProducto = "nuevo", // Valor por defecto conveniente
+                    estadoProducto = "nuevo",
                     categoriaId = categoryId.value ?: 1,
                     imagenes = imageRequests
                 )
 
-                val response = apiService.createArticle(request)
+                val response = api.createArticle(JsonRpcRequest(params = request))
 
                 if (response.isSuccessful) {
                     val rpcResult = response.body()?.result
@@ -117,10 +131,14 @@ class CreateArticleViewModel : ViewModel() {
                         _uiState.value = CreateArticleUiState.Success
                         onSuccess()
                     } else {
-                        _uiState.value = CreateArticleUiState.Error("Error: ${rpcResult?.message ?: "Desconocido"}")
+                        _uiState.value = CreateArticleUiState.Error(
+                            "Error: ${rpcResult?.message ?: "Desconocido"}"
+                        )
                     }
                 } else {
-                    _uiState.value = CreateArticleUiState.Error("Error HTTP ${response.code()}: ${response.message()}")
+                    _uiState.value = CreateArticleUiState.Error(
+                        "Error HTTP ${response.code()}: ${response.message()}"
+                    )
                 }
             } catch (e: Exception) {
                 _uiState.value = CreateArticleUiState.Error("Error: ${e.localizedMessage}")
@@ -144,6 +162,17 @@ class CreateArticleViewModel : ViewModel() {
         return true
     }
 }
+
+// ==================== FACTORY ====================
+
+class CreateArticleViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        @Suppress("UNCHECKED_CAST")
+        return CreateArticleViewModel(context) as T
+    }
+}
+
+// ==================== ESTADOS UI ====================
 
 sealed class CreateArticleUiState {
     object Idle : CreateArticleUiState()

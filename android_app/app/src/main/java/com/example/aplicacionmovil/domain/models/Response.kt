@@ -1,6 +1,20 @@
 package com.example.aplicacionmovil.domain.models
 import com.google.gson.annotations.SerializedName
 
+// ==================== PETICIÓN JSON-RPC ====================
+
+/**
+ * Envoltorio JSON-RPC 2.0 para peticiones al servidor Odoo.
+ * Odoo con type='json' lee los datos del campo "params".
+ * Uso sin datos: JsonRpcRequest()
+ * Uso con datos: JsonRpcRequest(params = miRequest)
+ */
+data class JsonRpcRequest<T : Any>(
+    @SerializedName("jsonrpc") val jsonrpc: String = "2.0",
+    @SerializedName("method")  val method: String  = "call",
+    @SerializedName("params")  val params: T? = null
+)
+
 // ==================== RESPUESTA BASE ====================
 
 /**

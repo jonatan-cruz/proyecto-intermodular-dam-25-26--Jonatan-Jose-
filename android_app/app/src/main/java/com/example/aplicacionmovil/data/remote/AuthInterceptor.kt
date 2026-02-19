@@ -20,7 +20,6 @@ class AuthInterceptor(private val context: Context) : Interceptor {
     }
 
     private fun getToken(context: Context): String? {
-        // Ajusta esto según dónde guardes el token (SharedPreferences, DataStore, etc.)
         val prefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
         return prefs.getString("jwt_token", null)
     }

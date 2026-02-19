@@ -31,26 +31,27 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.aplicacionmovil.ui.products.create.CategoriesFormState
+import com.example.aplicacionmovil.ui.products.create.CreateArticleUiState
+import com.example.aplicacionmovil.ui.products.create.CreateArticleViewModel
+import com.example.aplicacionmovil.ui.products.create.CreateArticleViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
 @Composable
 fun CreateArticleScreen(
-    navController: NavController,
-    viewModel: CreateArticleViewModel = viewModel()
+    navController: NavController
 ) {
     val context = LocalContext.current
+    val viewModel: CreateArticleViewModel = viewModel(
+        factory = CreateArticleViewModelFactory(context)
+    )
     val uiState by viewModel.uiState.collectAsState()
     val name by viewModel.name.collectAsState()
     val description by viewModel.description.collectAsState()
     val price by viewModel.price.collectAsState()
     val categoryId by viewModel.categoryId.collectAsState()
     val selectedImages by viewModel.selectedImages.collectAsState()
-    val categories by viewModel.categories.collectAsState()
-
-    // Cargar categorías al iniciar
-    LaunchedEffect(Unit) {
-        viewModel.loadCategories(context)
-    }
+    val categoriesState by viewModel.categoriesState.collectAsState()
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
@@ -167,21 +168,36 @@ fun CreateArticleScreen(
                 // Selector de Categoría Dinámico
                 Text("Categoría", fontWeight = FontWeight.Bold)
 
-                if (categories.isEmpty()) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        for (category in categories) {
-                            FilterChip(
-                                selected = categoryId == category.id,
-                                onClick = { viewModel.categoryId.value = category.id },
-                                label = { Text(category.name) }
+                when (val state = categoriesState) {
+                    is CategoriesFormState.Loading -> {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                    is CategoriesFormState.Error -> {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = state.message,
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 13.sp
                             )
+                            TextButton(onClick = { viewModel.loadCategories() }) {
+                                Text("Reintentar")
+                            }
+                        }
+                    }
+                    is CategoriesFormState.Success -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            for (category in state.categories) {
+                                FilterChip(
+                                    selected = categoryId == category.id,
+                                    onClick = { viewModel.categoryId.value = category.id },
+                                    label = { Text(category.displayName) }
+                                )
+                            }
                         }
                     }
                 }

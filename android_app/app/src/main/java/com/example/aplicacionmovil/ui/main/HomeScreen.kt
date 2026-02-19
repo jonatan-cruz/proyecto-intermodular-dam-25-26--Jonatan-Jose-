@@ -29,12 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.aplicacionmovil.domain.models.Article
-<<<<<<< HEAD
 import com.example.aplicacionmovil.domain.models.User
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
-=======
->>>>>>> 71bcd65bdcf1784db571a8299a6fd539da9760e7
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -458,7 +453,7 @@ fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalGlideComposeApi::class)
+
 @Composable
 fun CategoryChip(
     name: String,

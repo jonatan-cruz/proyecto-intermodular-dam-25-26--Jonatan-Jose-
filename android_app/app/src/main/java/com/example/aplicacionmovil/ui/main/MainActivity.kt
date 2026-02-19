@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(navController = navController)
                         }
                         composable ("create_article"){
-                            CrearArticulo(navController=navController)
+                            CreateArticleScreen(navController=navController)
                         }
                         composable("settings") {
                             SettingsScreen(navController = navController)

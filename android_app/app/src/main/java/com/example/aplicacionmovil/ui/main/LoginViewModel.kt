@@ -3,6 +3,7 @@ package com.example.aplicacionmovil.ui.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aplicacionmovil.data.remote.api.RetrofitClient
+import com.example.aplicacionmovil.domain.models.JsonRpcRequest
 import com.example.aplicacionmovil.domain.models.LoginRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +24,7 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
             try {
-                val response = RetrofitClient.apiService.login(LoginRequest(email, password))
+                val response = RetrofitClient.apiService.login(JsonRpcRequest(params = LoginRequest(email, password)))
                 if (response.isSuccessful) {
                     val rpcBody = response.body()
                     val apiBody = rpcBody?.result

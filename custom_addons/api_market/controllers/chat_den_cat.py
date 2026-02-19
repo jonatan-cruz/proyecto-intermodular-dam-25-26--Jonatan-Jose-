@@ -527,16 +527,27 @@ class SecondMarketCategoryController(http.Controller):
             
             categories_data = []
             for category in categories:
-                categories_data.append({
-                    'id': category.id,
-                    'name': category.name,
-                    'descripcion': category.descripcion,
-                    'icono': category.icono,
-                    'color': category.color,
-                    'conteo_articulos': category.conteo_articulos,
-                    #'imagen': category.imagen.decode('utf-8') if category.imagen else None
-                })
+                try:
+                    categories_data.append({
+                        'id': category.id,
+                        'name': category.name or '',
+                        'descripcion': category.descripcion or '',
+                        'icono': category.icono or '',
+                        'color': int(category.color) if category.color else 0,
+                        'conteo_articulos': int(category.conteo_articulos) if category.conteo_articulos else 0,
+                    })
+                except Exception as cat_err:
+                    _logger.error(f"Error serializando categoría {category.id}: {str(cat_err)}", exc_info=True)
+                    categories_data.append({
+                        'id': category.id,
+                        'name': category.name or '',
+                        'descripcion': '',
+                        'icono': '',
+                        'color': 0,
+                        'conteo_articulos': 0,
+                    })
             
+            _logger.info(f"Devolviendo {len(categories_data)} categorías")
             return {
                 'success': True,
                 'data': {'categories': categories_data}

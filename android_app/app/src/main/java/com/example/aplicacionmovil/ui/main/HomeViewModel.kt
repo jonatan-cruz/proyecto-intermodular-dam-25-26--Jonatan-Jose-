@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aplicacionmovil.data.remote.api.RetrofitClient
 import com.example.aplicacionmovil.domain.models.*
-import com.google.gson.JsonObject
+import com.example.aplicacionmovil.domain.models.JsonRpcRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,7 +54,7 @@ class HomeViewModel(context: Context) : ViewModel() {
     private fun loadUserInfo() {
         viewModelScope.launch {
             try {
-                val response = api.verifyToken(JsonObject())
+                val response = api.verifyToken(JsonRpcRequest())
                 if (response.isSuccessful) {
                     _userState.value = response.body()?.result?.data?.get("user")
                 }
@@ -72,7 +72,7 @@ class HomeViewModel(context: Context) : ViewModel() {
         viewModelScope.launch {
             _categoriesState.value = CategoriesState.Loading
             try {
-                val response = api.getCategories(JsonObject())
+                val response = api.getCategories(JsonRpcRequest())
                 if (response.isSuccessful) {
                     val result = response.body()?.result
                     if (result?.success == true) {
@@ -91,7 +91,7 @@ class HomeViewModel(context: Context) : ViewModel() {
                 }
             } catch (e: Exception) {
                 _categoriesState.value = CategoriesState.Error(
-                    "Error de conexión: ${e.localizedMessage ?: "desconocido"}"
+                    "[${e.javaClass.simpleName}] ${e.localizedMessage ?: "sin mensaje"}"
                 )
                 e.printStackTrace()
             }
@@ -106,7 +106,7 @@ class HomeViewModel(context: Context) : ViewModel() {
         viewModelScope.launch {
             _articlesState.value = ArticlesState.Loading
             try {
-                val response = api.getArticles(SearchArticlesRequest())
+                val response = api.getArticles(JsonRpcRequest(params = SearchArticlesRequest()))
                 if (response.isSuccessful) {
                     // FIXED: Unwrap JsonRpcResponse first, then ApiResponse
                     val jsonRpcResponse = response.body()
@@ -148,7 +148,7 @@ class HomeViewModel(context: Context) : ViewModel() {
                     precioMin = priceRange?.start?.toDouble(),
                     precioMax = priceRange?.endInclusive?.toDouble()
                 )
-                val response = api.getArticles(request)
+                val response = api.getArticles(JsonRpcRequest(params = request))
                 if (response.isSuccessful) {
                     // FIXED: Unwrap JsonRpcResponse first, then ApiResponse
                     val jsonRpcResponse = response.body()

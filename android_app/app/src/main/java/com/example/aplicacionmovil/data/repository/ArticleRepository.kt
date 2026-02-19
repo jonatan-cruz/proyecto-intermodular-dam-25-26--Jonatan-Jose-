@@ -3,6 +3,7 @@ package com.example.aplicacionmovil.data.repository
 import android.content.Context
 import com.example.aplicacionmovil.data.remote.api.RetrofitClient
 import com.example.aplicacionmovil.domain.models.*
+import com.example.aplicacionmovil.domain.models.JsonRpcRequest
 
 /**
  * Repository for Article operations
@@ -37,7 +38,7 @@ class ArticleRepository(private val context: Context) {
 
             // Use authenticated service
             val response = RetrofitClient.getAuthenticatedService(context)
-                .getArticles(request)
+                .getArticles(JsonRpcRequest(params = request))
 
             if (response.isSuccessful && response.body() != null) {
                 val jsonRpcResponse = response.body()!!
@@ -89,7 +90,7 @@ class ArticleRepository(private val context: Context) {
             val request = mapOf("limit" to limit, "offset" to offset)
 
             val response = RetrofitClient.getAuthenticatedService(context)
-                .getMyArticles(request)
+                .getMyArticles(JsonRpcRequest(params = request))
 
             if (response.isSuccessful && response.body() != null) {
                 val jsonRpcResponse = response.body()!!
@@ -114,7 +115,7 @@ class ArticleRepository(private val context: Context) {
     suspend fun createArticle(request: CreateArticleRequest): Result<Map<String, Any>> {
         return try {
             val response = RetrofitClient.getAuthenticatedService(context)
-                .createArticle(request)
+                .createArticle(JsonRpcRequest(params = request))
 
             if (response.isSuccessful && response.body() != null) {
                 val jsonRpcResponse = response.body()!!
@@ -139,7 +140,7 @@ class ArticleRepository(private val context: Context) {
     suspend fun updateArticle(articleId: Int, request: UpdateArticleRequest): Result<Any> {
         return try {
             val response = RetrofitClient.getAuthenticatedService(context)
-                .updateArticle(articleId, request)
+                .updateArticle(articleId, JsonRpcRequest(params = request))
 
             if (response.isSuccessful && response.body() != null) {
                 val jsonRpcResponse = response.body()!!

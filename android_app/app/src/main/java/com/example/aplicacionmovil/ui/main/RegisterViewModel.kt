@@ -3,6 +3,7 @@ package com.example.aplicacionmovil.ui.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.aplicacionmovil.data.remote.api.RetrofitClient
+import com.example.aplicacionmovil.domain.models.JsonRpcRequest
 import com.example.aplicacionmovil.domain.models.RegisterRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,14 +32,14 @@ class RegisterViewModel : ViewModel() {
             _registerState.value = RegisterState.Loading
             try {
                 val response = RetrofitClient.apiService.register(
-                    RegisterRequest(
+                    JsonRpcRequest(params = RegisterRequest(
                         name = name,
                         login = login,
                         password = password,
                         telefono = telefono,
                         ubicacion = ubicacion,
                         biografia = biografia
-                    )
+                    ))
                 )
 
                 if (response.isSuccessful) {

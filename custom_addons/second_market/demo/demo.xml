@@ -1,30 +1,714 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
-<!--
-          <record id="object0" model="second_market.second_market">
-            <field name="name">Object 0</field>
-            <field name="value">0</field>
-          </record>
+  <data>
 
-          <record id="object1" model="second_market.second_market">
-            <field name="name">Object 1</field>
-            <field name="value">10</field>
-          </record>
+    <!-- ============================================ -->
+    <!-- ETIQUETAS (second_market.tag)               -->
+    <!-- ============================================ -->
 
-          <record id="object2" model="second_market.second_market">
-            <field name="name">Object 2</field>
-            <field name="value">20</field>
-          </record>
+    <record id="tag_electronica" model="second_market.tag">
+      <field name="name">Electrónica</field>
+      <field name="color">1</field>
+    </record>
 
-          <record id="object3" model="second_market.second_market">
-            <field name="name">Object 3</field>
-            <field name="value">30</field>
-          </record>
+    <record id="tag_vintage" model="second_market.tag">
+      <field name="name">Vintage</field>
+      <field name="color">2</field>
+    </record>
 
-          <record id="object4" model="second_market.second_market">
-            <field name="name">Object 4</field>
-            <field name="value">40</field>
-          </record>
--->
-    </data>
+    <record id="tag_oferta" model="second_market.tag">
+      <field name="name">Oferta</field>
+      <field name="color">3</field>
+    </record>
+
+    <record id="tag_nuevo" model="second_market.tag">
+      <field name="name">Como Nuevo</field>
+      <field name="color">4</field>
+    </record>
+
+    <record id="tag_deportes" model="second_market.tag">
+      <field name="name">Deportes</field>
+      <field name="color">5</field>
+    </record>
+
+    <record id="tag_hogar" model="second_market.tag">
+      <field name="name">Hogar</field>
+      <field name="color">6</field>
+    </record>
+
+    <record id="tag_libros" model="second_market.tag">
+      <field name="name">Libros</field>
+      <field name="color">7</field>
+    </record>
+
+    <record id="tag_urgente" model="second_market.tag">
+      <field name="name">Venta Urgente</field>
+      <field name="color">9</field>
+    </record>
+
+    <!-- ============================================ -->
+    <!-- CATEGORÍAS (second_market.category)         -->
+    <!-- ============================================ -->
+
+    <record id="cat_electronica" model="second_market.category">
+      <field name="name">Electrónica y Tecnología</field>
+      <field name="descripcion">Móviles, ordenadores, tablets, accesorios tech y más</field>
+      <field name="icono">fa-laptop</field>
+      <field name="color">1</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="cat_ropa" model="second_market.category">
+      <field name="name">Ropa y Moda</field>
+      <field name="descripcion">Ropa, calzado, complementos y accesorios de moda</field>
+      <field name="icono">fa-tshirt</field>
+      <field name="color">2</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="cat_hogar" model="second_market.category">
+      <field name="name">Hogar y Decoración</field>
+      <field name="descripcion">Muebles, electrodomésticos, decoración y artículos del hogar</field>
+      <field name="icono">fa-home</field>
+      <field name="color">3</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="cat_deportes" model="second_market.category">
+      <field name="name">Deportes y Fitness</field>
+      <field name="descripcion">Material deportivo, bicicletas, equipamiento de gym y outdoor</field>
+      <field name="icono">fa-bicycle</field>
+      <field name="color">4</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="cat_libros" model="second_market.category">
+      <field name="name">Libros y Música</field>
+      <field name="descripcion">Libros, cómics, vinilos, CDs, instrumentos musicales</field>
+      <field name="icono">fa-book</field>
+      <field name="color">5</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="cat_motor" model="second_market.category">
+      <field name="name">Motor y Vehículos</field>
+      <field name="descripcion">Coches, motos, bicicletas y recambios de vehículos</field>
+      <field name="icono">fa-car</field>
+      <field name="color">6</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="cat_juguetes" model="second_market.category">
+      <field name="name">Juguetes y Bebés</field>
+      <field name="descripcion">Juguetes, material infantil, ropa bebé y accesorios</field>
+      <field name="icono">fa-child</field>
+      <field name="color">7</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="cat_coleccionismo" model="second_market.category">
+      <field name="name">Coleccionismo y Arte</field>
+      <field name="descripcion">Artículos de colección, arte, antigüedades y manualidades</field>
+      <field name="icono">fa-star</field>
+      <field name="color">8</field>
+      <field name="activo">True</field>
+    </record>
+
+    <!-- ============================================ -->
+    <!-- USUARIOS (second_market.user)               -->
+    <!-- ============================================ -->
+
+    <record id="user_carlos" model="second_market.user">
+      <field name="id_usuario">1000001</field>
+      <field name="name">Carlos Martínez</field>
+      <field name="login">carlos.martinez</field>
+      <field name="password">SecurePass1!</field>
+      <field name="telefono">612 345 678</field>
+      <field name="ubicacion">Madrid</field>
+      <field name="biografia">Apasionado de la tecnología y el coleccionismo. Siempre encontrarás
+        gangas en mi perfil.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="user_laura" model="second_market.user">
+      <field name="id_usuario">1000002</field>
+      <field name="name">Laura García</field>
+      <field name="login">laura.garcia</field>
+      <field name="password">SecurePass2!</field>
+      <field name="telefono">634 567 890</field>
+      <field name="ubicacion">Barcelona</field>
+      <field name="biografia">Amante de la moda sostenible. Vendo ropa que ya no uso para darle una
+        segunda vida.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="user_miguel" model="second_market.user">
+      <field name="id_usuario">1000003</field>
+      <field name="name">Miguel Torres</field>
+      <field name="login">miguel.torres</field>
+      <field name="password">SecurePass3!</field>
+      <field name="telefono">655 789 012</field>
+      <field name="ubicacion">Valencia</field>
+      <field name="biografia">Deportista y aficionado al fitness. Vendo material deportivo en
+        perfecto estado.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="user_sofia" model="second_market.user">
+      <field name="id_usuario">1000004</field>
+      <field name="name">Sofía Romero</field>
+      <field name="login">sofia.romero</field>
+      <field name="password">SecurePass4!</field>
+      <field name="telefono">677 890 123</field>
+      <field name="ubicacion">Sevilla</field>
+      <field name="biografia">Decoradora de interiores. Vendo muebles y objetos decorativos únicos a
+        buen precio.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="user_david" model="second_market.user">
+      <field name="id_usuario">1000005</field>
+      <field name="name">David López</field>
+      <field name="login">david.lopez</field>
+      <field name="password">SecurePass5!</field>
+      <field name="telefono">699 012 345</field>
+      <field name="ubicacion">Bilbao</field>
+      <field name="biografia">Lector empedernido y coleccionista de vinilos. Siempre renovando mi
+        biblioteca.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="user_ana" model="second_market.user">
+      <field name="id_usuario">1000006</field>
+      <field name="name">Ana Sánchez</field>
+      <field name="login">ana.sanchez</field>
+      <field name="password">SecurePass6!</field>
+      <field name="telefono">611 234 567</field>
+      <field name="ubicacion">Zaragoza</field>
+      <field name="biografia">Mamá con muchos artículos de bebé en buen estado que ya no necesito.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="user_pedro" model="second_market.user">
+      <field name="id_usuario">1000007</field>
+      <field name="name">Pedro Fernández</field>
+      <field name="login">pedro.fernandez</field>
+      <field name="password">SecurePass7!</field>
+      <field name="telefono">633 456 789</field>
+      <field name="ubicacion">Málaga</field>
+      <field name="biografia">Mecánico aficionado. Vendo recambios y accesorios de motor a precios
+        competitivos.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <!-- ============================================
+             IMAGEN BASE64 utilizada: PNG 1x1 pixel
+             iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAA
+             DUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
+             Las imágenes se embeben inline en el artículo
+             mediante el comando ORM (0, 0, {...})
+        ============================================ -->
+
+    <!-- ============================================ -->
+    <!-- ARTÍCULOS con imágenes inline               -->
+    <!-- (second_market.article)                     -->
+    <!-- ============================================ -->
+
+    <record id="art_iphone13" model="second_market.article">
+      <field name="nombre">iPhone 13 128GB Azul</field>
+      <field name="descripcion">iPhone 13 en excelente estado, cargador incluido.</field>
+      <field name="id_propietario" ref="user_carlos" />
+      <field name="id_categoria" ref="cat_electronica" />
+      <field name="antiguedad">1</field>
+      <field name="estado_producto">como_nuevo</field>
+      <field name="precio">550.00</field>
+      <field name="localidad">Madrid</field>
+      <field name="latitud">40.416775</field>
+      <field name="longitud">-3.703790</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_electronica')), (4, ref('tag_nuevo'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_laptop_gaming" model="second_market.article">
+      <field name="nombre">Portátil Gaming ASUS ROG 15"</field>
+      <field name="descripcion">RTX 3060, 16GB RAM, 512GB SSD. Perfecto estado.</field>
+      <field name="id_propietario" ref="user_carlos" />
+      <field name="id_categoria" ref="cat_electronica" />
+      <field name="antiguedad">2</field>
+      <field name="estado_producto">buen_estado</field>
+      <field name="precio">899.99</field>
+      <field name="localidad">Madrid</field>
+      <field name="latitud">40.416775</field>
+      <field name="longitud">-3.703790</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_electronica')), (4, ref('tag_oferta'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_vestido_zara" model="second_market.article">
+      <field name="nombre">Vestido Zara talla M color rojo</field>
+      <field name="descripcion">Vestido de fiesta, usado solo una vez. Talla M.</field>
+      <field name="id_propietario" ref="user_laura" />
+      <field name="id_categoria" ref="cat_ropa" />
+      <field name="antiguedad">0</field>
+      <field name="estado_producto">como_nuevo</field>
+      <field name="precio">35.00</field>
+      <field name="localidad">Barcelona</field>
+      <field name="latitud">41.385063</field>
+      <field name="longitud">2.173404</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_nuevo')), (4, ref('tag_oferta'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_chaqueta_cuero" model="second_market.article">
+      <field name="nombre">Chaqueta de cuero vintage talla L</field>
+      <field name="descripcion">Chaqueta auténtica de cuero estilo años 80. Talla L.</field>
+      <field name="id_propietario" ref="user_laura" />
+      <field name="id_categoria" ref="cat_ropa" />
+      <field name="antiguedad">10</field>
+      <field name="estado_producto">buen_estado</field>
+      <field name="precio">85.00</field>
+      <field name="localidad">Barcelona</field>
+      <field name="latitud">41.385063</field>
+      <field name="longitud">2.173404</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_vintage'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_bicicleta_mtb" model="second_market.article">
+      <field name="nombre">Bicicleta MTB Trek Marlin 5</field>
+      <field name="descripcion">Bici montaña 29 pulgadas, suspensión delantera. Poco uso.</field>
+      <field name="id_propietario" ref="user_miguel" />
+      <field name="id_categoria" ref="cat_deportes" />
+      <field name="antiguedad">2</field>
+      <field name="estado_producto">buen_estado</field>
+      <field name="precio">450.00</field>
+      <field name="localidad">Valencia</field>
+      <field name="latitud">39.469906</field>
+      <field name="longitud">-0.376288</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_deportes')), (4, ref('tag_oferta'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_pesas_gym" model="second_market.article">
+      <field name="nombre">Set de Pesas Ajustables 2-32 kg</field>
+      <field name="descripcion">Mancuernas ajustables Bowflex SelectTech 552. Perfectas.</field>
+      <field name="id_propietario" ref="user_miguel" />
+      <field name="id_categoria" ref="cat_deportes" />
+      <field name="antiguedad">1</field>
+      <field name="estado_producto">como_nuevo</field>
+      <field name="precio">280.00</field>
+      <field name="localidad">Valencia</field>
+      <field name="latitud">39.469906</field>
+      <field name="longitud">-0.376288</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_deportes')), (4, ref('tag_nuevo'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_sofa_esquinero" model="second_market.article">
+      <field name="nombre">Sofá esquinero gris 5 plazas</field>
+      <field name="descripcion">Sofá chaise longue reversible, tela antimanchas. 280x165.</field>
+      <field name="id_propietario" ref="user_sofia" />
+      <field name="id_categoria" ref="cat_hogar" />
+      <field name="antiguedad">3</field>
+      <field name="estado_producto">buen_estado</field>
+      <field name="precio">400.00</field>
+      <field name="localidad">Sevilla</field>
+      <field name="latitud">37.389092</field>
+      <field name="longitud">-5.984459</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_hogar')), (4, ref('tag_urgente'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_lamparas_pie" model="second_market.article">
+      <field name="nombre">Lámpara de pie nórdica blanca</field>
+      <field name="descripcion">Lámpara de pie estilo escandinavo, bombilla LED incluida.</field>
+      <field name="id_propietario" ref="user_sofia" />
+      <field name="id_categoria" ref="cat_hogar" />
+      <field name="antiguedad">1</field>
+      <field name="estado_producto">como_nuevo</field>
+      <field name="precio">55.00</field>
+      <field name="localidad">Sevilla</field>
+      <field name="latitud">37.389092</field>
+      <field name="longitud">-5.984459</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_hogar')), (4, ref('tag_nuevo'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_pack_libros" model="second_market.article">
+      <field name="nombre">Pack 20 libros de fantasía épica</field>
+      <field name="descripcion">Colección incluye Tolkien, G.R.R. Martin y más autores.</field>
+      <field name="id_propietario" ref="user_david" />
+      <field name="id_categoria" ref="cat_libros" />
+      <field name="antiguedad">5</field>
+      <field name="estado_producto">buen_estado</field>
+      <field name="precio">60.00</field>
+      <field name="localidad">Bilbao</field>
+      <field name="latitud">43.263012</field>
+      <field name="longitud">-2.934985</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_libros')), (4, ref('tag_oferta'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_vinilo_beatles" model="second_market.article">
+      <field name="nombre">Vinilo The Beatles Abbey Road 1969</field>
+      <field name="descripcion">Vinilo original en muy buen estado, funda incluida.</field>
+      <field name="id_propietario" ref="user_david" />
+      <field name="id_categoria" ref="cat_libros" />
+      <field name="antiguedad">50</field>
+      <field name="estado_producto">buen_estado</field>
+      <field name="precio">120.00</field>
+      <field name="localidad">Bilbao</field>
+      <field name="latitud">43.263012</field>
+      <field name="longitud">-2.934985</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_vintage')), (4, ref('tag_libros'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_silla_paseo" model="second_market.article">
+      <field name="nombre">Silla de paseo Bugaboo Bee 3</field>
+      <field name="descripcion">Silla de paseo plegable, capota solar incluida. Impecable.</field>
+      <field name="id_propietario" ref="user_ana" />
+      <field name="id_categoria" ref="cat_juguetes" />
+      <field name="antiguedad">2</field>
+      <field name="estado_producto">como_nuevo</field>
+      <field name="precio">250.00</field>
+      <field name="localidad">Zaragoza</field>
+      <field name="latitud">41.649693</field>
+      <field name="longitud">-0.887712</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_nuevo'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <record id="art_recambio_motor" model="second_market.article">
+      <field name="nombre">Motor de arranque Honda Civic 2015</field>
+      <field name="descripcion">Motor de arranque original Honda, compatible 2013-2016.</field>
+      <field name="id_propietario" ref="user_pedro" />
+      <field name="id_categoria" ref="cat_motor" />
+      <field name="antiguedad">4</field>
+      <field name="estado_producto">buen_estado</field>
+      <field name="precio">75.00</field>
+      <field name="localidad">Málaga</field>
+      <field name="latitud">36.721261</field>
+      <field name="longitud">-4.421265</field>
+      <field name="estado_publicacion">publicado</field>
+      <field name="activo">True</field>
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <!-- Artículo en estado vendido (historial) -->
+    <record id="art_tablet_vendida" model="second_market.article">
+      <field name="nombre">Samsung Galaxy Tab S7 WiFi</field>
+      <field name="descripcion">Tablet 11 pulgadas, 6GB RAM, 128GB. Cargador original.</field>
+      <field name="id_propietario" ref="user_carlos" />
+      <field name="id_categoria" ref="cat_electronica" />
+      <field name="antiguedad">1</field>
+      <field name="estado_producto">buen_estado</field>
+      <field name="precio">320.00</field>
+      <field name="localidad">Madrid</field>
+      <field name="latitud">40.416775</field>
+      <field name="longitud">-3.703790</field>
+      <field name="estado_publicacion">vendido</field>
+      <field name="activo">True</field>
+      <field name="ids_etiquetas" eval="[(4, ref('tag_electronica'))]" />
+      <field name="ids_imagenes"
+        eval="[(0, 0, {'image': 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'name': 'Foto principal'})]" />
+    </record>
+
+    <!-- ============================================ -->
+    <!-- CHATS (second_market.chat)                  -->
+    <!-- ============================================ -->
+
+    <!-- Miguel pregunta a Carlos por el iPhone -->
+    <record id="chat_miguel_iphone" model="second_market.chat">
+      <field name="id_articulo" ref="art_iphone13" />
+      <field name="id_comprador" ref="user_miguel" />
+      <field name="activo">True</field>
+    </record>
+
+    <!-- Laura pregunta a Carlos por el portátil -->
+    <record id="chat_laura_laptop" model="second_market.chat">
+      <field name="id_articulo" ref="art_laptop_gaming" />
+      <field name="id_comprador" ref="user_laura" />
+      <field name="activo">True</field>
+    </record>
+
+    <!-- David pregunta a Miguel por la bicicleta -->
+    <record id="chat_david_bici" model="second_market.chat">
+      <field name="id_articulo" ref="art_bicicleta_mtb" />
+      <field name="id_comprador" ref="user_david" />
+      <field name="activo">True</field>
+    </record>
+
+    <!-- Ana pregunta a Sofia por la lámpara -->
+    <record id="chat_ana_lampara" model="second_market.chat">
+      <field name="id_articulo" ref="art_lamparas_pie" />
+      <field name="id_comprador" ref="user_ana" />
+      <field name="activo">True</field>
+    </record>
+
+    <!-- Pedro pregunta a David por el vinilo -->
+    <record id="chat_pedro_vinilo" model="second_market.chat">
+      <field name="id_articulo" ref="art_vinilo_beatles" />
+      <field name="id_comprador" ref="user_pedro" />
+      <field name="activo">True</field>
+    </record>
+
+    <!-- ============================================ -->
+    <!-- MENSAJES (second_market.message)            -->
+    <!-- ============================================ -->
+
+    <!-- Chat Miguel <-> Carlos sobre el iPhone -->
+    <record id="msg_1" model="second_market.message">
+      <field name="id_chat" ref="chat_miguel_iphone" />
+      <field name="id_usuario" ref="user_miguel" />
+      <field name="contenido">Hola, ¿sigue disponible el iPhone 13? ¿Tiene algún arañazo?</field>
+      <field name="leido">True</field>
+    </record>
+
+    <record id="msg_2" model="second_market.message">
+      <field name="id_chat" ref="chat_miguel_iphone" />
+      <field name="id_usuario" ref="user_carlos" />
+      <field name="contenido">Hola Miguel! Sí, sigue disponible. Está en perfecto estado, sin
+        arañazos.</field>
+      <field name="leido">True</field>
+    </record>
+
+    <record id="msg_3" model="second_market.message">
+      <field name="id_chat" ref="chat_miguel_iphone" />
+      <field name="id_usuario" ref="user_miguel" />
+      <field name="contenido">¿Aceptarías 500€? Preferiría quedar en persona para verlo.</field>
+      <field name="leido">False</field>
+    </record>
+
+    <!-- Chat Laura <-> Carlos sobre el portátil -->
+    <record id="msg_4" model="second_market.message">
+      <field name="id_chat" ref="chat_laura_laptop" />
+      <field name="id_usuario" ref="user_laura" />
+      <field name="contenido">Buenos días, ¿puede hacer envío el portátil o solo recogida en mano?</field>
+      <field name="leido">True</field>
+    </record>
+
+    <record id="msg_5" model="second_market.message">
+      <field name="id_chat" ref="chat_laura_laptop" />
+      <field name="id_usuario" ref="user_carlos" />
+      <field name="contenido">Hola Laura, solo recogida en Madrid. Los gastos de envío son muy
+        altos.</field>
+      <field name="leido">True</field>
+    </record>
+
+    <record id="msg_6" model="second_market.message">
+      <field name="id_chat" ref="chat_laura_laptop" />
+      <field name="id_usuario" ref="user_laura" />
+      <field name="contenido">Entendido, ¿podríamos quedar el próximo sábado por la tarde?</field>
+      <field name="leido">False</field>
+    </record>
+
+    <!-- Chat David <-> Miguel sobre la bici -->
+    <record id="msg_7" model="second_market.message">
+      <field name="id_chat" ref="chat_david_bici" />
+      <field name="id_usuario" ref="user_david" />
+      <field name="contenido">Hola, ¿la bici tiene cambios Shimano? ¿Se ha caído alguna vez?</field>
+      <field name="leido">True</field>
+    </record>
+
+    <record id="msg_8" model="second_market.message">
+      <field name="id_chat" ref="chat_david_bici" />
+      <field name="id_usuario" ref="user_miguel" />
+      <field name="contenido">Sí, cambios Shimano Altus 21 velocidades. Nunca se ha caído, muy bien
+        cuidada.</field>
+      <field name="leido">False</field>
+    </record>
+
+    <!-- Chat Ana <-> Sofia sobre la lámpara -->
+    <record id="msg_9" model="second_market.message">
+      <field name="id_chat" ref="chat_ana_lampara" />
+      <field name="id_usuario" ref="user_ana" />
+      <field name="contenido">Hola Sofía, ¿la lámpara tiene algún defecto o está como nueva?</field>
+      <field name="leido">True</field>
+    </record>
+
+    <record id="msg_10" model="second_market.message">
+      <field name="id_chat" ref="chat_ana_lampara" />
+      <field name="id_usuario" ref="user_sofia" />
+      <field name="contenido">¡Hola! Está impecable, solo la usé unos meses. No tiene ningún
+        defecto.</field>
+      <field name="leido">True</field>
+    </record>
+
+    <!-- ============================================ -->
+    <!-- COMENTARIOS (second_market.comment)         -->
+    <!-- ============================================ -->
+
+    <record id="comment_1" model="second_market.comment">
+      <field name="id_emisor" ref="user_laura" />
+      <field name="id_receptor" ref="user_carlos" />
+      <field name="id_articulo" ref="art_iphone13" />
+      <field name="texto">¿Incluye la caja original del iPhone? ¿Y los auriculares?</field>
+      <field name="leido">True</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="comment_2" model="second_market.comment">
+      <field name="id_emisor" ref="user_carlos" />
+      <field name="id_receptor" ref="user_laura" />
+      <field name="id_articulo" ref="art_iphone13" />
+      <field name="texto">Sí, tiene caja original. Los auriculares no los tengo, los perdí.</field>
+      <field name="leido">True</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="comment_3" model="second_market.comment">
+      <field name="id_emisor" ref="user_sofia" />
+      <field name="id_receptor" ref="user_carlos" />
+      <field name="id_articulo" ref="art_laptop_gaming" />
+      <field name="texto">¿El portátil tiene garantía restante? ¿Qué sistema operativo trae?</field>
+      <field name="leido">False</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="comment_4" model="second_market.comment">
+      <field name="id_emisor" ref="user_pedro" />
+      <field name="id_receptor" ref="user_sofia" />
+      <field name="id_articulo" ref="art_sofa_esquinero" />
+      <field name="texto">¿Cabe en una furgoneta mediana para el transporte? ¿Es desmontable?</field>
+      <field name="leido">True</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="comment_5" model="second_market.comment">
+      <field name="id_emisor" ref="user_sofia" />
+      <field name="id_receptor" ref="user_pedro" />
+      <field name="id_articulo" ref="art_sofa_esquinero" />
+      <field name="texto">Sí, es desmontable en dos partes. Cabe perfectamente en una furgoneta.</field>
+      <field name="leido">True</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="comment_6" model="second_market.comment">
+      <field name="id_emisor" ref="user_ana" />
+      <field name="id_receptor" ref="user_david" />
+      <field name="id_articulo" ref="art_pack_libros" />
+      <field name="texto">¿Están todos en castellano los libros? ¿Alguno está en inglés?</field>
+      <field name="leido">False</field>
+      <field name="activo">True</field>
+    </record>
+
+    <record id="comment_7" model="second_market.comment">
+      <field name="id_emisor" ref="user_miguel" />
+      <field name="id_receptor" ref="user_david" />
+      <field name="id_articulo" ref="art_vinilo_beatles" />
+      <field name="texto">¿El vinilo suena bien? ¿Tiene rayaduras en la superficie?</field>
+      <field name="leido">False</field>
+      <field name="activo">True</field>
+    </record>
+
+    <!-- ============================================ -->
+    <!-- COMPRAS (second_market.purchase)            -->
+    <!-- ============================================ -->
+
+    <!-- Compra completada: Laura compra la tablet a Carlos -->
+    <record id="purchase_tablet" model="second_market.purchase">
+      <field name="id_comprador" ref="user_laura" />
+      <field name="id_vendedor" ref="user_carlos" />
+      <field name="id_articulo" ref="art_tablet_vendida" />
+      <field name="precio">320.00</field>
+      <field name="estado">completada</field>
+      <field name="activo">True</field>
+    </record>
+
+    <!-- ============================================ -->
+    <!-- VALORACIONES (second_market.rating)         -->
+    <!-- ============================================ -->
+
+    <!-- Laura valora a Carlos tras la compra de la tablet -->
+    <record id="rating_laura_carlos" model="second_market.rating">
+      <field name="id_usuario" ref="user_carlos" />
+      <field name="id_valorador" ref="user_laura" />
+      <field name="calificacion">5</field>
+      <field name="comentario">Vendedor muy serio y puntual. El producto estaba como se describía.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <!-- Carlos valora a Laura tras la venta -->
+    <record id="rating_carlos_laura" model="second_market.rating">
+      <field name="id_usuario" ref="user_laura" />
+      <field name="id_valorador" ref="user_carlos" />
+      <field name="calificacion">5</field>
+      <field name="comentario">Compradora muy amable y puntual. Sin problemas en la transacción.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <!-- Miguel valora a Carlos -->
+    <record id="rating_miguel_carlos" model="second_market.rating">
+      <field name="id_usuario" ref="user_carlos" />
+      <field name="id_valorador" ref="user_miguel" />
+      <field name="calificacion">4</field>
+      <field name="comentario">Buen vendedor, responde rápido. El producto en buen estado.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <!-- David valora a Sofia -->
+    <record id="rating_david_sofia" model="second_market.rating">
+      <field name="id_usuario" ref="user_sofia" />
+      <field name="id_valorador" ref="user_david" />
+      <field name="calificacion">5</field>
+      <field name="comentario">Excelente vendedora, muy detallista con la descripción de sus
+        artículos.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <!-- Pedro valora a Miguel -->
+    <record id="rating_pedro_miguel" model="second_market.rating">
+      <field name="id_usuario" ref="user_miguel" />
+      <field name="id_valorador" ref="user_pedro" />
+      <field name="calificacion">4</field>
+      <field name="comentario">Todo bien, quedamos sin problema. Material deportivo en buenas
+        condiciones.</field>
+      <field name="activo">True</field>
+    </record>
+
+    <!-- Ana valora a David -->
+    <record id="rating_ana_david" model="second_market.rating">
+      <field name="id_usuario" ref="user_david" />
+      <field name="id_valorador" ref="user_ana" />
+      <field name="calificacion">3</field>
+      <field name="comentario">Bien en general, aunque tardó un poco en responder los mensajes.</field>
+      <field name="activo">True</field>
+    </record>
+
+  </data>
 </odoo>

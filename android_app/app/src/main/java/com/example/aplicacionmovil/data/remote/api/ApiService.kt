@@ -8,7 +8,7 @@ import com.example.aplicacionmovil.domain.models.RegisterRequest
 import com.example.aplicacionmovil.domain.models.SearchArticlesRequest
 import com.example.aplicacionmovil.domain.models.UpdateArticleRequest
 import com.example.aplicacionmovil.domain.models.*
-import com.google.gson.JsonObject
+import com.example.aplicacionmovil.domain.models.JsonRpcRequest
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -21,16 +21,16 @@ interface ApiService {
     // ==================== AUTH ENDPOINTS ====================
 
     @POST("api/v1/auth/login")
-    suspend fun login(@Body request: LoginRequest): Response<JsonRpcResponse<ApiResponse<AuthResponse>>>
+    suspend fun login(@Body request: JsonRpcRequest<LoginRequest>): Response<JsonRpcResponse<ApiResponse<AuthResponse>>>
     
     @POST("api/v1/auth/register")
-    suspend fun register(@Body request: RegisterRequest): Response<JsonRpcResponse<ApiResponse<AuthResponse>>>
+    suspend fun register(@Body request: JsonRpcRequest<RegisterRequest>): Response<JsonRpcResponse<ApiResponse<AuthResponse>>>
     
     @POST("api/v1/auth/verify")
-    suspend fun verifyToken(@Body body: JsonObject = JsonObject()): Response<JsonRpcResponse<ApiResponse<Map<String, User>>>>
+    suspend fun verifyToken(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Map<String, User>>>>
     
     @POST("api/v1/auth/logout")
-    suspend fun logout(): Response<JsonRpcResponse<ApiResponse<Any>>>
+    suspend fun logout(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Any>>>
     
     // ==================== ARTICLES ENDPOINTS ====================
 
@@ -38,19 +38,19 @@ interface ApiService {
      * Obtener lista de artículos publicados
      */
     @POST("api/v1/articles/list")
-    suspend fun getArticles(@Body request: SearchArticlesRequest): Response<JsonRpcResponse<ApiResponse<ArticlesResponse>>>
+    suspend fun getArticles(@Body request: JsonRpcRequest<SearchArticlesRequest>): Response<JsonRpcResponse<ApiResponse<ArticlesResponse>>>
 
     /**
      * Obtener detalle de un artículo
      */
     @POST("api/v1/articles/{id}")
-    suspend fun getArticleDetail(@Path("id") articleId: Int): Response<JsonRpcResponse<ApiResponse<ArticleDetail>>>
+    suspend fun getArticleDetail(@Path("id") articleId: Int, @Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<ArticleDetail>>>
     
     /**
      * Crear un nuevo artículo
      */
     @POST("api/v1/articles")
-    suspend fun createArticle(@Body request: CreateArticleRequest): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
+    suspend fun createArticle(@Body request: JsonRpcRequest<CreateArticleRequest>): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
     
     /**
      * Actualizar un artículo
@@ -58,14 +58,14 @@ interface ApiService {
     @HTTP(method = "PUT", path = "api/v1/articles/{id}", hasBody = true)
     suspend fun updateArticle(
         @Path("id") articleId: Int,
-        @Body request: UpdateArticleRequest
+        @Body request: JsonRpcRequest<UpdateArticleRequest>
     ): Response<JsonRpcResponse<ApiResponse<Any>>>
     
     /**
      * Publicar un artículo
      */
     @POST("api/v1/articles/{id}/publish")
-    suspend fun publishArticle(@Path("id") articleId: Int): Response<JsonRpcResponse<ApiResponse<Any>>>
+    suspend fun publishArticle(@Path("id") articleId: Int, @Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Any>>>
     
     /**
      * Eliminar un artículo
@@ -77,7 +77,7 @@ interface ApiService {
      * Obtener mis artículos
      */
     @POST("api/v1/articles/my-articles")
-    suspend fun getMyArticles(@Body request: Map<String, Int>): Response<JsonRpcResponse<ApiResponse<ArticlesResponse>>>
+    suspend fun getMyArticles(@Body request: JsonRpcRequest<Map<String, Int>>): Response<JsonRpcResponse<ApiResponse<ArticlesResponse>>>
 
     // ==================== PURCHASES ENDPOINTS ====================
 
@@ -85,7 +85,7 @@ interface ApiService {
      * Crear una compra
      */
     @POST("api/v1/purchases")
-    suspend fun createPurchase(@Body request: CreatePurchaseRequest): Response<JsonRpcResponse<ApiResponse<PurchaseResponse>>>
+    suspend fun createPurchase(@Body request: JsonRpcRequest<CreatePurchaseRequest>): Response<JsonRpcResponse<ApiResponse<PurchaseResponse>>>
 
     /**
      * Obtener mis compras
@@ -105,7 +105,7 @@ interface ApiService {
      * Crear un comentario
      */
     @POST("api/v1/comments")
-    suspend fun createComment(@Body request: CreateCommentRequest): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
+    suspend fun createComment(@Body request: JsonRpcRequest<CreateCommentRequest>): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
     
     /**
      * Eliminar un comentario
@@ -119,5 +119,5 @@ interface ApiService {
      * Obtener todas las categorías
      */
     @POST("api/v1/categories")
-    suspend fun getCategories(@Body body: JsonObject = JsonObject()): Response<JsonRpcResponse<ApiResponse<Map<String, List<Category>>>>>
+    suspend fun getCategories(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Map<String, List<Category>>>>>
 }
