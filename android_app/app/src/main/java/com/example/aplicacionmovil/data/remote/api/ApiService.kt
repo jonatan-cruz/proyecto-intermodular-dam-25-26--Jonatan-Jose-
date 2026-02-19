@@ -30,7 +30,7 @@ interface ApiService {
     suspend fun verifyToken(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Map<String, User>>>>
     
     @POST("api/v1/auth/logout")
-    suspend fun logout(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Any>>>
+    suspend fun logout(@Body body: JsonObject = JsonObject()): Response<JsonRpcResponse<ApiResponse<Any>>>
     
     // ==================== ARTICLES ENDPOINTS ====================
 
@@ -44,7 +44,10 @@ interface ApiService {
      * Obtener detalle de un artículo
      */
     @POST("api/v1/articles/{id}")
-    suspend fun getArticleDetail(@Path("id") articleId: Int, @Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<ArticleDetail>>>
+    suspend fun getArticleDetail(
+        @Path("id") articleId: Int,
+        @Body body: JsonObject = JsonObject()
+    ): Response<JsonRpcResponse<ApiResponse<ArticleDetail>>>
     
     /**
      * Crear un nuevo artículo
@@ -65,7 +68,10 @@ interface ApiService {
      * Publicar un artículo
      */
     @POST("api/v1/articles/{id}/publish")
-    suspend fun publishArticle(@Path("id") articleId: Int, @Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Any>>>
+    suspend fun publishArticle(
+        @Path("id") articleId: Int,
+        @Body body: JsonObject = JsonObject()
+    ): Response<JsonRpcResponse<ApiResponse<Any>>>
     
     /**
      * Eliminar un artículo
