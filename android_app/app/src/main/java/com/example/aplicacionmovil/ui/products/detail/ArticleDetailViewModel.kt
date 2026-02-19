@@ -25,7 +25,7 @@ class ArticleDetailViewModel(private val api: ApiService) : ViewModel() {
         viewModelScope.launch {
             _state.value = ArticleDetailState.Loading
             try {
-                val response = api.getArticleDetail(articleId)
+                val response = api.getArticleDetail(articleId, com.google.gson.JsonObject())
                 if (response.isSuccessful) {
                     val jsonRpcResponse = response.body()
                     val apiResponse = jsonRpcResponse?.result

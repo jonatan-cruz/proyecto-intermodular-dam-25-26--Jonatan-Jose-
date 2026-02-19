@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +33,7 @@ import coil.compose.AsyncImage
 import androidx.navigation.NavController
 import com.example.aplicacionmovil.domain.models.ArticleDetail
 import com.example.aplicacionmovil.domain.models.ArticleImage
+import com.example.aplicacionmovil.ui.main.BuyButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,6 +117,7 @@ fun ArticleDetailContent(article: ArticleDetail) {
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
+
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -137,8 +140,64 @@ fun ArticleDetailContent(article: ArticleDetail) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+        }
 
-                Spacer(modifier = Modifier.height(16.dp))
+        // Ubicación y Fecha
+        item {
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = article.localidad ?: "Ubicación no disponible",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                article.createDate?.let { date ->
+                    Text(
+                        text = "Publicado: $date",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        }
+
+        // Etiquetas
+        if (article.etiquetas.isNotEmpty()) {
+            item {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Etiquetas",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        article.etiquetas.forEach { tag ->
+                            SuggestionChip(
+                                onClick = { },
+                                label = { Text(tag.nombre) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Column(modifier = Modifier.padding(16.dp)) {
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -206,6 +265,45 @@ fun ArticleDetailContent(article: ArticleDetail) {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+
+
+                // Comentarios
+                if (article.comentarios.isNotEmpty()) {
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Comentarios (${article.conteoComentarios})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    article.comentarios.forEach { comment ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = comment.emisor.nombre,
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(text = comment.texto, style = MaterialTheme.typography.bodyLarge)
+                                if (comment.fechaHora != null) {
+                                    Text(
+                                        text = comment.fechaHora,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                        modifier = Modifier.align(Alignment.End)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
@@ -247,4 +345,3 @@ fun ArticleImageHeader(imagenes: List<ArticleImage>) {
     }
 }
 
-private fun Modifier.size(size: androidx.compose.ui.unit.Dp): Modifier = this.size(size)

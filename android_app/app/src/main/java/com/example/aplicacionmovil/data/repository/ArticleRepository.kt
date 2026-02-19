@@ -62,7 +62,7 @@ class ArticleRepository(private val context: Context) {
     suspend fun getArticleDetail(articleId: Int): Result<ArticleDetail> {
         return try {
             val response = RetrofitClient.getAuthenticatedService(context)
-                .getArticleDetail(articleId)
+                .getArticleDetail(articleId, com.google.gson.JsonObject())
 
             if (response.isSuccessful && response.body() != null) {
                 val jsonRpcResponse = response.body()!!
@@ -164,7 +164,7 @@ class ArticleRepository(private val context: Context) {
     suspend fun publishArticle(articleId: Int): Result<Any> {
         return try {
             val response = RetrofitClient.getAuthenticatedService(context)
-                .publishArticle(articleId)
+                .publishArticle(articleId, com.google.gson.JsonObject())
 
             if (response.isSuccessful && response.body() != null) {
                 val jsonRpcResponse = response.body()!!

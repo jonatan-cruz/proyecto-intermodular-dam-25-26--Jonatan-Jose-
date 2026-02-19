@@ -34,12 +34,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import coil.compose.AsyncImage
 import com.example.aplicacionmovil.domain.models.Article
-<<<<<<< HEAD
 import com.example.aplicacionmovil.domain.models.User
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-=======
->>>>>>> 71bcd65bdcf1784db571a8299a6fd539da9760e7
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -509,7 +506,8 @@ fun CategoryChip(
 @Composable
 fun ArticleCard(
     article: Article,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isOwner: Boolean = false
 ) {
     Card(
         modifier = Modifier
@@ -631,6 +629,15 @@ fun ArticleCard(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Botón de compra en tarjeta (compacto)
+                BuyButton(
+                    article = article,
+                    isOwner = isOwner,
+                    compact = true
+                )
             }
         }
     }
