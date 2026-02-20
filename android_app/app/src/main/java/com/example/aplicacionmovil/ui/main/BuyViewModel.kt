@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.aplicacionmovil.data.remote.api.RetrofitClient
 import com.example.aplicacionmovil.domain.models.CreatePurchaseRequest
+import com.example.aplicacionmovil.domain.models.JsonRpcRequest
+import com.example.aplicacionmovil.domain.models.JsonRpcResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,7 +36,7 @@ class BuyViewModel(context: Context) : ViewModel() {
                     articuloId = articuloId,
                     precio = precio
                 )
-                val response = api.createPurchase(request)
+                val response = api.createPurchase(JsonRpcRequest(params=request))
 
                 if (response.isSuccessful) {
                     val apiResponse = response.body()?.result
