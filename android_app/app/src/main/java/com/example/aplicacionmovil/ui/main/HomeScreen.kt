@@ -47,6 +47,7 @@ fun HomeScreen(
     var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
     var selectedCategoryName by remember { mutableStateOf<String?>(null) }
     var priceRange by remember { mutableStateOf(0f..10000f) }
+    var showPriceDialog by remember { mutableStateOf(false) }
 
     val articlesState by viewModel.articlesState.collectAsState()
     val userState by viewModel.userState.collectAsState()
@@ -206,7 +207,7 @@ fun HomeScreen(
                         // Filtro de precio
                         FilterChip(
                             selected = priceRange != 0f..10000f,
-                            onClick = { /* Implementar diálogo de precio */ },
+                            onClick = { showPriceDialog = true },
                             label = {
                                 Text(
                                     text = if (priceRange != 0f..10000f) {
@@ -452,6 +453,76 @@ fun HomeScreen(
             }
         )
     }
+
+    // Diálogo de filtro de precio
+    if (showPriceDialog) {
+        PriceFilterDialog(
+            initialRange = priceRange,
+            onDismiss = { showPriceDialog = false },
+            onApply = { newRange ->
+                priceRange = newRange
+                viewModel.searchArticles(searchQuery, selectedCategoryId, newRange)
+                showPriceDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun PriceFilterDialog(
+    initialRange: ClosedFloatingPointRange<Float>,
+    onDismiss: () -> Unit,
+    onApply: (ClosedFloatingPointRange<Float>) -> Unit
+) {
+    var minPrice by remember { mutableStateOf(initialRange.start.toInt().toString()) }
+    var maxPrice by remember { mutableStateOf(initialRange.endInclusive.toInt().toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Filtrar por Precio") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = minPrice,
+                        onValueChange = { if (it.all { char -> char.isDigit() }) minPrice = it },
+                        label = { Text("Mínimo (€)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = maxPrice,
+                        onValueChange = { if (it.all { char -> char.isDigit() }) maxPrice = it },
+                        label = { Text("Máximo (€)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val min = minPrice.toFloatOrNull() ?: 0f
+                    val max = maxPrice.toFloatOrNull() ?: 10000f
+                    onApply(min..max)
+                }
+            ) {
+                Text("Aplicar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
 
 

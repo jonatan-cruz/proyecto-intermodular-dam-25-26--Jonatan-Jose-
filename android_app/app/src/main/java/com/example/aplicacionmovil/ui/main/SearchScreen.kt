@@ -1,6 +1,7 @@
 package com.example.aplicacionmovil.ui.main
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -28,7 +29,14 @@ fun SearchScreen(navController: NavController) {
     )
 
     var searchQuery by remember { mutableStateOf("") }
+    var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
+    var selectedCategoryName by remember { mutableStateOf<String?>(null) }
+    var priceRange by remember { mutableStateOf(0f..10000f) }
+    var showFilterDialog by remember { mutableStateOf(false) }
+    var showPriceDialog by remember { mutableStateOf(false) }
+
     val articlesState by viewModel.articlesState.collectAsState()
+    val categoriesState by viewModel.categoriesState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -38,7 +46,7 @@ fun SearchScreen(navController: NavController) {
                         value = searchQuery,
                         onValueChange = {
                             searchQuery = it
-                            viewModel.searchArticles(it)
+                            viewModel.searchArticles(it, selectedCategoryId, priceRange)
                         },
                         placeholder = { Text("Buscar...") },
                         modifier = Modifier
@@ -72,6 +80,79 @@ fun SearchScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Chips de filtros
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Filtro de categorías
+                FilterChip(
+                    selected = selectedCategoryId != null,
+                    onClick = { showFilterDialog = true },
+                    label = {
+                        Text(
+                            text = selectedCategoryName ?: "Categorías",
+                            fontSize = 13.sp
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                )
+
+                // Filtro de precio
+                FilterChip(
+                    selected = priceRange != 0f..10000f,
+                    onClick = { showPriceDialog = true },
+                    label = {
+                        Text(
+                            text = if (priceRange != 0f..10000f) {
+                                "${priceRange.start.toInt()}-${priceRange.endInclusive.toInt()}€"
+                            } else {
+                                "Precio"
+                            },
+                            fontSize = 13.sp
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.ShoppingCart,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                )
+
+                // Limpiar filtros
+                if (selectedCategoryId != null || priceRange != 0f..10000f || searchQuery.isNotEmpty()) {
+                    FilterChip(
+                        selected = false,
+                        onClick = {
+                            selectedCategoryId = null
+                            selectedCategoryName = null
+                            priceRange = 0f..10000f
+                            searchQuery = ""
+                            viewModel.loadArticles()
+                        },
+                        label = {
+                            Text("Limpiar", fontSize = 13.sp)
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    )
+                }
+            }
             when (val state = articlesState) {
                 is ArticlesState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -105,6 +186,76 @@ fun SearchScreen(navController: NavController) {
                 }
             }
         }
+    }
+
+    // Diálogo de filtro de categorías
+    if (showFilterDialog) {
+        AlertDialog(
+            onDismissRequest = { showFilterDialog = false },
+            title = { Text("Seleccionar Categoría") },
+            text = {
+                when (val state = categoriesState) {
+                    is CategoriesState.Success -> {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(vertical = 8.dp)
+                        ) {
+                            item {
+                                CategoryChip(
+                                    name = "Todas",
+                                    isSelected = selectedCategoryId == null,
+                                    onClick = {
+                                        selectedCategoryId = null
+                                        selectedCategoryName = null
+                                        viewModel.searchArticles(searchQuery, null, priceRange)
+                                        showFilterDialog = false
+                                    }
+                                )
+                            }
+                            items(state.categories) { category ->
+                                CategoryChip(
+                                    name = category.displayName,
+                                    count = category.conteoArticulos,
+                                    isSelected = selectedCategoryId == category.id,
+                                    onClick = {
+                                        selectedCategoryId = category.id
+                                        selectedCategoryName = category.displayName
+                                        viewModel.searchArticles(searchQuery, category.id, priceRange)
+                                        showFilterDialog = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    is CategoriesState.Error -> {
+                        Text(text = state.message, color = MaterialTheme.colorScheme.error)
+                    }
+                    else -> {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showFilterDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    // Diálogo de filtro de precio
+    if (showPriceDialog) {
+        PriceFilterDialog(
+            initialRange = priceRange,
+            onDismiss = { showPriceDialog = false },
+            onApply = { newRange ->
+                priceRange = newRange
+                viewModel.searchArticles(searchQuery, selectedCategoryId, newRange)
+                showPriceDialog = false
+            }
+        )
     }
 }
 
