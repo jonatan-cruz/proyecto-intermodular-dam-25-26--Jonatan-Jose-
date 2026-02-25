@@ -218,7 +218,7 @@ private fun PurchaseConfirmDialog(
                     ) {
                         // Nombre del artículo
                         Text(
-                            text = article.nombre,
+                            text = article.nombre ?: "Sin nombre",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -232,14 +232,14 @@ private fun PurchaseConfirmDialog(
                         ArticleDetailRow(
                             icon = Icons.Default.Star,
                             label = "Estado",
-                            value = article.estadoProducto
+                            value = article.estadoProducto ?: ""
                         )
 
                         if (article.localidad != null) {
                             ArticleDetailRow(
                                 icon = Icons.Default.LocationOn,
                                 label = "Ubicación",
-                                value = article.localidad
+                                value = article.localidad ?: ""
                             )
                         }
 
@@ -247,7 +247,7 @@ private fun PurchaseConfirmDialog(
                             ArticleDetailRow(
                                 icon = Icons.Default.Person,
                                 label = "Vendedor",
-                                value = article.propietario.nombre
+                                value = article.propietario?.nombre ?: ""
                             )
                         }
 
@@ -447,7 +447,7 @@ private fun PurchaseResultDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = errorMsg,
+                            text = errorMsg ?: "Error inesperado",
                             modifier = Modifier.padding(16.dp),
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onErrorContainer,
@@ -508,7 +508,7 @@ private fun ArticleDetailRow(
             )
         }
         Text(
-            text = value,
+            text = value ?: "",
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant

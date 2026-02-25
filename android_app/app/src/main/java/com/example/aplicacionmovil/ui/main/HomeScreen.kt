@@ -86,7 +86,7 @@ fun HomeScreen(
                                 )
                             } else if (userState?.name?.isNotEmpty() == true) {
                                 Text(
-                                    text = userState?.name?.first()?.uppercase() ?: "U",
+                                    text = userState?.name?.firstOrNull()?.uppercase() ?: "U",
                                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp
@@ -558,7 +558,7 @@ fun ArticleCard(
                     shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
-                        text = article.estadoProducto,
+                        text = article.estadoProducto ?: "",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium,
@@ -575,7 +575,7 @@ fun ArticleCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = article.nombre,
+                    text = article.nombre ?: "Sin nombre",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 2,

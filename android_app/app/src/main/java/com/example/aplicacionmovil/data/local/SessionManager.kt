@@ -58,7 +58,7 @@ class SessionManager(context: Context) {
     /**
      * Elimina el token y el ID de usuario (Logout)
      */
-    fun clearAuthToken() {
+    fun clearSession() {
         prefs.edit {
             remove(USER_TOKEN)
             remove(USER_ID)
