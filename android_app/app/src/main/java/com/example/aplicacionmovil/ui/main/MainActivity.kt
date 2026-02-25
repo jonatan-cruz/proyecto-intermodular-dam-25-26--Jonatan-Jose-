@@ -17,6 +17,10 @@ import com.example.aplicacionmovil.ui.theme.AplicacionMovilTheme
 import com.example.aplicacionmovil.ui.products.detail.ArticleDetailScreen
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.example.aplicacionmovil.ui.profile.ProfileScreen
+import com.example.aplicacionmovil.ui.settings.SettingsScreen
+import com.example.aplicacionmovil.ui.main.NotificationsScreen
+import com.example.aplicacionmovil.ui.main.SearchScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
