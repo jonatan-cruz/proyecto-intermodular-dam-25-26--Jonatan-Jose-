@@ -43,12 +43,58 @@ class ProfileViewModel(context: Context) : ViewModel() {
 
     private suspend fun loadUserInfo() {
         try {
-            val response = api.verifyToken(JsonRpcRequest())
+            val response = api.getUserProfile()
             if (response.isSuccessful) {
-                _userState.value = response.body()?.result?.data?.get("user")
+                _userState.value = response.body()?.result?.data
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    fun updateProfile(request: UpdateProfileRequest, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("PROFILE_UPDATE", "Enviando actualización de perfil. Avatar len: ${request.avatar?.length ?: 0}")
+                val response = api.updateProfile(JsonRpcRequest(params = request))
+                if (response.isSuccessful && response.body()?.result?.success == true) {
+                    android.util.Log.d("PROFILE_UPDATE", "Actualización exitosa")
+                    loadUserInfo() // Recargar datos locales
+                    onComplete(true)
+                } else {
+                    android.util.Log.e("PROFILE_UPDATE", "Error en actualización: ${response.body()?.result?.message}")
+                    onComplete(false)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PROFILE_UPDATE", "Excepción en actualización", e)
+                e.printStackTrace()
+                onComplete(false)
+            }
+        }
+    }
+
+    fun changePassword(current: String, new: String, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val params = mapOf("current_password" to current, "new_password" to new)
+                val response = api.changePassword(JsonRpcRequest(params = params))
+                onComplete(response.isSuccessful && response.body()?.result?.success == true)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onComplete(false)
+            }
+        }
+    }
+
+    fun deactivateAccount(password: String, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val response = api.deactivateAccount(JsonRpcRequest(params = mapOf("password" to password)))
+                onComplete(response.isSuccessful && response.body()?.result?.success == true)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onComplete(false)
+            }
         }
     }
 

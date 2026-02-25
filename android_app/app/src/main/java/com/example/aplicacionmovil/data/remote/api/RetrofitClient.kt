@@ -50,6 +50,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     private const val BASE_URL = "http://192.168.1.102:8069/"
@@ -77,6 +78,9 @@ object RetrofitClient {
         val sessionManager = SessionManager(context)
 
         val client = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val token = sessionManager.fetchAuthToken()
                 Log.d("AUTH_TOKEN", "Interceptor - Token usado: $token")

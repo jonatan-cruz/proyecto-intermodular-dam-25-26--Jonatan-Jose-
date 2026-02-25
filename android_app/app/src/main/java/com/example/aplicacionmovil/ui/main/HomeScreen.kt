@@ -31,6 +31,7 @@ import android.util.Base64
 import androidx.compose.ui.text.font.FontFamily
 import coil.compose.AsyncImage
 import com.example.aplicacionmovil.domain.models.Article
+import com.example.aplicacionmovil.utils.ImageDisplayUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,7 +81,7 @@ fun HomeScreen(
                         ) {
                             if (userState?.fotoPerfil != null) {
                                 AsyncImage(
-                                    model = userState?.fotoPerfil,
+                                    model = ImageDisplayUtils.ensureDisplayableImage(userState?.fotoPerfil),
                                     contentDescription = "Foto de perfil",
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop

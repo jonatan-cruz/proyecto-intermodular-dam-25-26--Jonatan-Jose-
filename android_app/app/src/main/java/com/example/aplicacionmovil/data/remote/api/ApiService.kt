@@ -144,4 +144,28 @@ interface ApiService {
      */
     @POST("api/v1/ratings")
     suspend fun createRating(@Body request: JsonRpcRequest<CreateRatingRequest>): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
+
+    /**
+     * Actualizar el perfil del usuario autenticado
+     */
+    @POST("api/v1/users/update-profile")
+    suspend fun updateProfile(@Body request: JsonRpcRequest<UpdateProfileRequest>): Response<JsonRpcResponse<ApiResponse<Any>>>
+
+    /**
+     * Obtener perfil detallado del usuario autenticado
+     */
+    @POST("api/v1/users/profile")
+    suspend fun getUserProfile(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<User>>>
+
+    /**
+     * Cambiar la contraseña del usuario
+     */
+    @POST("api/v1/users/change-password")
+    suspend fun changePassword(@Body request: JsonRpcRequest<Map<String, String>>): Response<JsonRpcResponse<ApiResponse<Any>>>
+
+    /**
+     * Desactivar la cuenta del usuario
+     */
+    @POST("api/v1/users/deactivate")
+    suspend fun deactivateAccount(@Body request: JsonRpcRequest<Map<String, String>>): Response<JsonRpcResponse<ApiResponse<Any>>>
 }
