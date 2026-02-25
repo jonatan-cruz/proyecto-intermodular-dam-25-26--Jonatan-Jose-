@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.AplicacionMovil" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Tema principal de la app -->
+    <style name="Theme.AplicacionMovil" parent="Theme.SplashScreen">
+        <!-- Icono que se muestra en la splash screen -->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <!-- Color de fondo de la splash screen -->
+        <item name="windowSplashScreenBackground">@android:color/white</item>
+        <!-- Tema que se aplica una vez que la splash screen termina -->
+        <item name="postSplashScreenTheme">@style/Theme.AplicacionMovil.Base</item>
+    </style>
+
+    <!-- Tema base real de la app (sin acción bar) -->
+    <style name="Theme.AplicacionMovil.Base" parent="android:Theme.Material.Light.NoActionBar" />
+
 </resources>

@@ -28,7 +28,7 @@ interface ApiService {
     suspend fun register(@Body request: JsonRpcRequest<RegisterRequest>): Response<JsonRpcResponse<ApiResponse<AuthResponse>>>
     
     @POST("api/v1/auth/verify")
-    suspend fun verifyToken(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Map<String, User>>>>
+    suspend fun verifyToken(@Body body: JsonRpcRequest<Map<String, Any>> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Map<String, User>>>>
     
     @POST("api/v1/auth/logout")
     suspend fun logout(@Body body: JsonObject = JsonObject()): Response<JsonRpcResponse<ApiResponse<Any>>>
@@ -98,13 +98,13 @@ interface ApiService {
      * Obtener mis compras
      */
     @POST("api/v1/purchases/my-purchases")
-    suspend fun getMyPurchases(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<PurchasesResponse>>>
+    suspend fun getMyPurchases(@Body body: JsonRpcRequest<Map<String, Any>> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<PurchasesResponse>>>
 
     /**
      * Obtener mis ventas
      */
     @POST("api/v1/purchases/my-sales")
-    suspend fun getMySales(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<SalesResponse>>>
+    suspend fun getMySales(@Body body: JsonRpcRequest<Map<String, Any>> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<SalesResponse>>>
 
     /**
      * Confirmar una compra (Aceptar venta)
@@ -135,7 +135,7 @@ interface ApiService {
      * Obtener todas las categorías
      */
     @POST("api/v1/categories")
-    suspend fun getCategories(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Map<String, List<Category>>>>>
+    suspend fun getCategories(@Body body: JsonRpcRequest<Map<String, Any>> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Map<String, List<Category>>>>>
 
     // ==================== RATINGS ENDPOINTS ====================
 

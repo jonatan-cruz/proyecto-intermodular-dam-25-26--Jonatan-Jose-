@@ -1,5 +1,6 @@
 package com.example.aplicacionmovil.ui.main
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,8 +29,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import android.util.Base64
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
+import com.example.aplicacionmovil.R
 import com.example.aplicacionmovil.domain.models.Article
 import com.example.aplicacionmovil.utils.ImageDisplayUtils
 
@@ -58,11 +62,28 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "Dalo",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        fontFamily = FontFamily.SansSerif
+                    Column {
+                        Text(
+                            text = "Hola, ${userState?.name?.split(" ")?.firstOrNull() ?: "Usuario"}!",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Descubre tesoros hoy",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    Image(
+                        painter = painterResource(id = R.mipmap.ic_launcher_foreground),
+                        contentDescription = "Logo",
+                        modifier = Modifier
+                            .size(70.dp)
+                            .padding(start = 8.dp),
+                        contentScale = ContentScale.Fit
                     )
                 },
                 actions = {
@@ -81,7 +102,7 @@ fun HomeScreen(
                         ) {
                             if (userState?.fotoPerfil != null) {
                                 AsyncImage(
-                                    model = ImageDisplayUtils.ensureDisplayableImage(userState?.fotoPerfil),
+                                    model = userState?.fotoPerfil,
                                     contentDescription = "Foto de perfil",
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
@@ -114,17 +135,19 @@ fun HomeScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { navController.navigate("create_article") },
-                icon = { Icon(Icons.Default.Add, contentDescription = "Publicar") },
-                text = { Text("Publicar") },
-                containerColor = MaterialTheme.colorScheme.primary
+                icon = { Icon(Icons.Default.Add, "Publicar") },
+                text = { },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = RoundedCornerShape(20.dp),
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
             )
         }
     ) { paddingValues ->
@@ -132,248 +155,124 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            // Barra de búsqueda y filtros
+            // Sección de Búsqueda Premium
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shadowElevation = 2.dp,
-                color = MaterialTheme.colorScheme.surface
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 0.dp
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    // Barra de búsqueda
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = {
                             searchQuery = it
                             viewModel.searchArticles(it, selectedCategoryId, priceRange)
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Buscar artículos...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(4.dp, RoundedCornerShape(32.dp)),
+                        placeholder = { Text("Busca lo que necesites...") },
                         leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Buscar"
-                            )
+                            Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.primary)
                         },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = {
-                                    searchQuery = ""
-                                    viewModel.searchArticles("", selectedCategoryId, priceRange)
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Clear,
-                                        contentDescription = "Limpiar"
-                                    )
+                                IconButton(onClick = { searchQuery = ""; viewModel.loadArticles() }) {
+                                    Icon(Icons.Default.Clear, null)
                                 }
                             }
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(32.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         )
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Chips de filtros
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
+                    LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Filtro de categorías
-                        FilterChip(
-                            selected = selectedCategoryId != null,
-                            onClick = { showFilterDialog = true },
-                            label = {
-                                Text(
-                                    text = selectedCategoryName ?: "Categorías",
-                                    fontSize = 13.sp
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.List,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        )
-
-                        // Filtro de precio
-                        FilterChip(
-                            selected = priceRange != 0f..10000f,
-                            onClick = { showPriceDialog = true },
-                            label = {
-                                Text(
-                                    text = if (priceRange != 0f..10000f) {
-                                        "${priceRange.start.toInt()}-${priceRange.endInclusive.toInt()}€"
-                                    } else {
-                                        "Precio"
-                                    },
-                                    fontSize = 13.sp
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.ShoppingCart,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        )
-
-                        // Limpiar filtros
-                        if (selectedCategoryId != null || priceRange != 0f..10000f) {
+                        item {
                             FilterChip(
-                                selected = false,
-                                onClick = {
-                                    selectedCategoryId = null
-                                    selectedCategoryName = null
-                                    priceRange = 0f..10000f
-                                    viewModel.searchArticles(searchQuery)
-                                },
-                                label = {
-                                    Text("Limpiar", fontSize = 13.sp)
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Clear,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
+                                selected = selectedCategoryId != null,
+                                onClick = { showFilterDialog = true },
+                                label = { Text(selectedCategoryName ?: "Categorías") },
+                                leadingIcon = { Icon(Icons.Default.List, null, modifier = Modifier.size(18.dp)) },
+                                shape = RoundedCornerShape(20.dp)
                             )
+                        }
+                        item {
+                            FilterChip(
+                                selected = priceRange != 0f..10000f,
+                                onClick = { showPriceDialog = true },
+                                label = { Text("Rango de Precio") },
+                                leadingIcon = { Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(18.dp)) },
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                        }
+                        if (selectedCategoryId != null || priceRange != 0f..10000f) {
+                            item {
+                                IconButton(
+                                    onClick = { 
+                                        selectedCategoryId = null; selectedCategoryName = null; 
+                                        priceRange = 0f..10000f; viewModel.loadArticles() 
+                                    },
+                                    modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.errorContainer)
+                                ) {
+                                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            // Contenido principal
+            // Lista de Artículos
             when (val state = articlesState) {
                 is ArticlesState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            CircularProgressIndicator()
-                            Text(
-                                text = "Cargando artículos...",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
                 }
-
                 is ArticlesState.Success -> {
                     if (state.articles.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
-                                modifier = Modifier.padding(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Search,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                )
-                                Text(
-                                    text = "No se encontraron artículos",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    text = "Intenta ajustar tus filtros de búsqueda",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
+                        HomeEmptyState()
                     } else {
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
                             contentPadding = PaddingValues(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items(state.articles) { article ->
+                            items(state.articles) { article: com.example.aplicacionmovil.domain.models.Article ->
                                 ArticleCard(
                                     article = article,
-                                    onClick = {
-                                        navController.navigate("article_detail/${article.id}")
-                                    }
+                                    onClick = { navController.navigate("article_detail/${article.id}") }
                                 )
                             }
                         }
                     }
                 }
-
                 is ArticlesState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.padding(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                            Text(
-                                text = "Error al cargar artículos",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.error,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = state.message,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
-                            Button(onClick = { viewModel.loadArticles() }) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Reintentar")
-                            }
-                        }
-                    }
+                    HomeErrorState(message = state.message) { viewModel.loadArticles() }
                 }
             }
         }
     }
 
-    // Diálogo de filtro de categorías
+    // Diálogos de filtrado
     if (showFilterDialog) {
         AlertDialog(
             onDismissRequest = { showFilterDialog = false },
-            title = { Text("Seleccionar Categoría") },
+            title = { Text("Seleccionar Categoría", fontWeight = FontWeight.Bold) },
             text = {
                 when (val state = categoriesState) {
                     is CategoriesState.Success -> {
@@ -381,7 +280,6 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(vertical = 8.dp)
                         ) {
-                            // Opción "Todas"
                             item {
                                 CategoryChip(
                                     name = "Todas",
@@ -394,9 +292,7 @@ fun HomeScreen(
                                     }
                                 )
                             }
-
-                            // Categorías disponibles
-                            items(state.categories) { category ->
+                            items(state.categories) { category: com.example.aplicacionmovil.domain.models.Category ->
                                 CategoryChip(
                                     name = category.displayName,
                                     count = category.conteoArticulos,
@@ -411,37 +307,11 @@ fun HomeScreen(
                             }
                         }
                     }
-
                     is CategoriesState.Error -> {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                            Text(
-                                text = state.message,
-                                color = MaterialTheme.colorScheme.error,
-                                fontSize = 14.sp,
-                                textAlign = TextAlign.Center
-                            )
-                            TextButton(onClick = { viewModel.loadCategories() }) {
-                                Text("Reintentar")
-                            }
-                        }
+                        Text(text = state.message, color = MaterialTheme.colorScheme.error)
                     }
-
                     else -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(100.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator()
                         }
                     }
@@ -451,11 +321,11 @@ fun HomeScreen(
                 TextButton(onClick = { showFilterDialog = false }) {
                     Text("Cerrar")
                 }
-            }
+            },
+            shape = RoundedCornerShape(28.dp)
         )
     }
 
-    // Diálogo de filtro de precio
     if (showPriceDialog) {
         PriceFilterDialog(
             initialRange = priceRange,
@@ -469,243 +339,36 @@ fun HomeScreen(
     }
 }
 
-@Composable
-fun PriceFilterDialog(
-    initialRange: ClosedFloatingPointRange<Float>,
-    onDismiss: () -> Unit,
-    onApply: (ClosedFloatingPointRange<Float>) -> Unit
-) {
-    var minPrice by remember { mutableStateOf(initialRange.start.toInt().toString()) }
-    var maxPrice by remember { mutableStateOf(initialRange.endInclusive.toInt().toString()) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Filtrar por Precio") },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = minPrice,
-                        onValueChange = { if (it.all { char -> char.isDigit() }) minPrice = it },
-                        label = { Text("Mínimo (€)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = maxPrice,
-                        onValueChange = { if (it.all { char -> char.isDigit() }) maxPrice = it },
-                        label = { Text("Máximo (€)") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val min = minPrice.toFloatOrNull() ?: 0f
-                    val max = maxPrice.toFloatOrNull() ?: 10000f
-                    onApply(min..max)
-                }
-            ) {
-                Text("Aplicar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
-        }
-    )
-}
+
+
 
 
 @Composable
-fun CategoryChip(
-    name: String,
-    count: Int? = null,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    FilterChip(
-        selected = isSelected,
-        onClick = onClick,
-        label = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(name)
-                if (count != null) {
-                    Surface(
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.secondaryContainer
-                        },
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = "$count",
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else {
-                                MaterialTheme.colorScheme.onSecondaryContainer
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    )
-}
-
-@Composable
-fun ArticleCard(
-    article: Article,
-    onClick: () -> Unit,
-    isOwner: Boolean = false
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+fun HomeEmptyState() {
+    Column(
+        Modifier.fillMaxSize().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column {
-            // Imagen del artículo
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                if (article.imagenPrincipal != null) {
-                    val imageBytes = remember(article.imagenPrincipal) {
-                        try {
-                            Base64.decode(article.imagenPrincipal, Base64.DEFAULT)
-                        } catch (e: Exception) {
-                            null
-                        }
-                    }
-                    AsyncImage(
-                        model = imageBytes,
-                        contentDescription = article.nombre,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(64.dp)
-                            .align(Alignment.Center),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                    )
-                }
+        Icon(Icons.Default.Search, null, Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary.copy(0.2f))
+        Text("No hay nada por aquí", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text("Prueba con otros filtros", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
 
-                // Badge de estado
-                Surface(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .align(Alignment.TopEnd),
-                    color = when (article.estadoProducto.lowercase()) {
-                        "nuevo" -> Color(0xFF4CAF50)
-                        "como nuevo" -> Color(0xFF8BC34A)
-                        "buen estado" -> Color(0xFFFFC107)
-                        else -> Color(0xFFFF9800)
-                    },
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Text(
-                        text = article.estadoProducto ?: "",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White
-                    )
-                }
-            }
-
-            // Información del artículo
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = article.nombre ?: "Sin nombre",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 18.sp
-                )
-
-                Text(
-                    text = "${article.precio}€",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = article.localidad ?: "Sin ubicación",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                // Badge de categoría
-                if (article.categoria != null) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondaryContainer,
-                        shape = RoundedCornerShape(6.dp)
-                    ) {
-                        Text(
-                            text = article.categoria.displayName,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Botón de compra en tarjeta (compacto)
-                BuyButton(
-                    article = article,
-                    isOwner = isOwner,
-                    compact = true
-                )
-            }
+@Composable
+fun HomeErrorState(message: String, onRetry: () -> Unit) {
+    Column(
+        Modifier.fillMaxSize().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(Icons.Default.Warning, null, Modifier.size(64.dp), tint = MaterialTheme.colorScheme.error)
+        Text("¡Ups! Algo salió mal", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.error)
+        Text(message, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
+        Button(onRetry, modifier = Modifier.padding(top = 16.dp), shape = RoundedCornerShape(12.dp)) {
+            Text("Reintentar")
         }
     }
 }

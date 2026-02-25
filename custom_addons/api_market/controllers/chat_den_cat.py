@@ -114,7 +114,7 @@ class SecondMarketChatController(http.Controller):
                 'error_code': 'CREATE_CHAT_ERROR'
             }
 
-    @http.route('/api/v1/chats', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/chats', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def get_chats(self, **kwargs):
         """Obtener todos los chats del usuario autenticado"""
         try:
@@ -179,7 +179,7 @@ class SecondMarketChatController(http.Controller):
                 'error_code': 'GET_CHATS_ERROR'
             }
 
-    @http.route('/api/v1/chats/<int:chat_id>/messages', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/chats/<int:chat_id>/messages', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def get_chat_messages(self, chat_id, **kwargs):
         """Obtener mensajes de un chat"""
         try:
@@ -443,7 +443,7 @@ class SecondMarketReportController(http.Controller):
                 'error_code': 'CREATE_REPORT_ERROR'
             }
 
-    @http.route('/api/v1/reports/my-reports', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/reports/my-reports', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def get_my_reports(self, **kwargs):
         """Obtener denuncias realizadas por el usuario"""
         try:
@@ -516,7 +516,7 @@ class SecondMarketReportController(http.Controller):
 class SecondMarketCategoryController(http.Controller):
     """Controlador para categorías y etiquetas"""
 
-    @http.route('/api/v1/categories', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/categories', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def get_categories(self, **kwargs):
         """Obtener todas las categorías activas"""
         try:
@@ -561,7 +561,7 @@ class SecondMarketCategoryController(http.Controller):
                 'error_code': 'GET_CATEGORIES_ERROR'
             }
 
-    @http.route('/api/v1/categories/<int:category_id>/articles', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/categories/<int:category_id>/articles', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def get_category_articles(self, category_id, **kwargs):
         """Obtener artículos de una categoría específica"""
         try:
@@ -599,7 +599,7 @@ class SecondMarketCategoryController(http.Controller):
                 'error_code': 'GET_CATEGORY_ARTICLES_ERROR'
             }
 
-    @http.route('/api/v1/tags', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/tags', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def get_tags(self, **kwargs):
         """Obtener todas las etiquetas disponibles"""
         try:
