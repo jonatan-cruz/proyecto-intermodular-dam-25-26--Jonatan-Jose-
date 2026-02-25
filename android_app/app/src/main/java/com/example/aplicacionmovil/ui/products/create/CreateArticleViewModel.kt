@@ -32,13 +32,25 @@ class CreateArticleViewModel(context: Context) : ViewModel() {
     private val api = RetrofitClient.getAuthenticatedService(context)
 
     // Form states
-    var name = MutableStateFlow("")
-    var description = MutableStateFlow("")
-    var price = MutableStateFlow("")
-    var categoryId = MutableStateFlow<Int?>(null)
+    var name           = MutableStateFlow("")
+    var description    = MutableStateFlow("")
+    var price          = MutableStateFlow("")
+    var localidad      = MutableStateFlow("")
+    var antiguedad     = MutableStateFlow("")          // número de años como texto
+    var estadoProducto = MutableStateFlow("usado")    // valor por defecto
+    var categoryId     = MutableStateFlow<Int?>(null)
     var selectedImages = MutableStateFlow<List<Uri>>(emptyList())
 
-    // Estado de categorías (igual que CategoriesState en HomeViewModel)
+    // Opciones de estado del producto
+    val estadosProducto = listOf(
+        "nuevo"       to "Nuevo",
+        "como_nuevo"  to "Como nuevo",
+        "buen_estado" to "Buen estado",
+        "usado"       to "Usado",
+        "para_piezas" to "Para piezas"
+    )
+
+    // Estado de categorías
     private val _categoriesState = MutableStateFlow<CategoriesFormState>(CategoriesFormState.Loading)
     val categoriesState: StateFlow<CategoriesFormState> = _categoriesState.asStateFlow()
 
@@ -51,7 +63,6 @@ class CreateArticleViewModel(context: Context) : ViewModel() {
     }
 
     // ==================== CATEGORÍAS ====================
-    // Mismo patrón que HomeViewModel.loadCategories()
 
     fun loadCategories() {
         viewModelScope.launch {
@@ -87,7 +98,9 @@ class CreateArticleViewModel(context: Context) : ViewModel() {
 
     fun onImagesSelected(uris: List<Uri>) {
         val current = selectedImages.value.toMutableList()
-        current.addAll(uris)
+        // Respetar el máximo de 10 imágenes
+        val remaining = 10 - current.size
+        current.addAll(uris.take(remaining))
         selectedImages.value = current
     }
 
@@ -115,12 +128,14 @@ class CreateArticleViewModel(context: Context) : ViewModel() {
                 }.filter { it.image.isNotEmpty() }
 
                 val request = CreateArticleRequest(
-                    nombre = name.value,
-                    descripcion = description.value,
-                    precio = price.value.toDoubleOrNull() ?: 0.0,
-                    estadoProducto = "nuevo",
-                    categoriaId = categoryId.value ?: 1,
-                    imagenes = imageRequests
+                    nombre         = name.value,
+                    descripcion    = description.value,
+                    precio         = price.value.toDoubleOrNull() ?: 0.0,
+                    estadoProducto = estadoProducto.value,
+                    categoriaId    = categoryId.value ?: 1,
+                    localidad      = localidad.value,
+                    antiguedad     = antiguedad.value.ifBlank { "0" },
+                    imagenes       = imageRequests
                 )
 
                 val response = api.createArticle(JsonRpcRequest(params = request))
@@ -151,12 +166,24 @@ class CreateArticleViewModel(context: Context) : ViewModel() {
             _uiState.value = CreateArticleUiState.Error("El nombre es obligatorio")
             return false
         }
-        if (price.value.toDoubleOrNull() == null) {
-            _uiState.value = CreateArticleUiState.Error("El precio debe ser un número válido")
+        if (description.value.isBlank()) {
+            _uiState.value = CreateArticleUiState.Error("La descripción es obligatoria")
+            return false
+        }
+        if (price.value.toDoubleOrNull() == null || price.value.toDouble() <= 0) {
+            _uiState.value = CreateArticleUiState.Error("Introduce un precio válido")
+            return false
+        }
+        if (localidad.value.isBlank()) {
+            _uiState.value = CreateArticleUiState.Error("La ubicación es obligatoria")
             return false
         }
         if (categoryId.value == null) {
             _uiState.value = CreateArticleUiState.Error("Selecciona una categoría")
+            return false
+        }
+        if (selectedImages.value.isEmpty()) {
+            _uiState.value = CreateArticleUiState.Error("Añade al menos 1 imagen")
             return false
         }
         return true

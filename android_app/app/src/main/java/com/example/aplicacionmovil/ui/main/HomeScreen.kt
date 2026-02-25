@@ -27,16 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import android.graphics.BitmapFactory
 import android.util.Base64
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.foundation.Image
-import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.text.font.FontFamily
 import coil.compose.AsyncImage
 import com.example.aplicacionmovil.domain.models.Article
-import com.example.aplicacionmovil.domain.models.User
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,9 +57,10 @@ fun HomeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Second Market",
+                        "Dalo",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
+                        fontSize = 20.sp,
+                        fontFamily = FontFamily.SansSerif
                     )
                 },
                 actions = {
@@ -126,7 +121,7 @@ fun HomeScreen(
             ExtendedFloatingActionButton(
                 onClick = { navController.navigate("create_article") },
                 icon = { Icon(Icons.Default.Add, contentDescription = "Publicar") },
-                text = { Text("Vender") },
+                text = { Text("Publicar") },
                 containerColor = MaterialTheme.colorScheme.primary
             )
         }

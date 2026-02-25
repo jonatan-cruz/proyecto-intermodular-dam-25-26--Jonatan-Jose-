@@ -1,12 +1,9 @@
 package com.example.aplicacionmovil.ui.products.detail
 
-import android.graphics.BitmapFactory
 import android.util.Base64
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,10 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -31,8 +25,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import androidx.navigation.NavController
+import com.example.aplicacionmovil.data.local.SessionManager
+import com.example.aplicacionmovil.domain.models.Article
 import com.example.aplicacionmovil.domain.models.ArticleDetail
 import com.example.aplicacionmovil.domain.models.ArticleImage
+import com.example.aplicacionmovil.domain.models.ArticlePropietario
+import com.example.aplicacionmovil.domain.models.Category
+import com.example.aplicacionmovil.domain.models.ArticleTag
 import com.example.aplicacionmovil.ui.main.BuyButton
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,15 +80,37 @@ fun ArticleDetailScreen(
                     }
                 }
                 is ArticleDetailState.Success -> {
-                    ArticleDetailContent(currentState.article)
+                    ArticleDetailContent(currentState.article, context)
                 }
             }
         }
     }
 }
 
+/**
+ * Convierte un ArticleDetail (pantalla de detalle) en un Article (modelo de lista)
+ * para poder reutilizar el BuyButton sin duplicar lógica.
+ */
+fun ArticleDetail.toArticle(): Article = Article(
+    id = id,
+    codigo = codigo,
+    nombre = nombre,
+    descripcion = descripcion,
+    precio = precio.toFloat(),
+    estadoProducto = estadoProducto,
+    estadoPublicacion = estadoPublicacion,
+    localidad = localidad,
+    latitud = latitud,
+    longitud = longitud,
+    categoria = categoria?.let { Category(id = it.id, nombre = it.nombre) },
+    propietario = propietario?.let {
+        ArticlePropietario(id = it.id, nombre = it.nombre, calificacionPromedio = it.calificacionPromedio)
+    },
+    etiquetas = etiquetas.map { ArticleTag(id = it.id, nombre = it.nombre) }
+)
+
 @Composable
-fun ArticleDetailContent(article: ArticleDetail) {
+fun ArticleDetailContent(article: ArticleDetail, context: android.content.Context) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -303,7 +324,27 @@ fun ArticleDetailContent(article: ArticleDetail) {
                     }
                 }
 
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+
+        // ─── Botón de compra ───
+        item {
+            val currentUserId = remember {
+                SessionManager(context).getUserId()
+            }
+            val isOwner = article.propietario?.id == currentUserId
+
+            // Solo mostramos el botón si el artículo está publicado
+            if (article.estadoPublicacion == "publicado") {
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    BuyButton(
+                        article = article.toArticle(),
+                        isOwner = isOwner,
+                        compact = false
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

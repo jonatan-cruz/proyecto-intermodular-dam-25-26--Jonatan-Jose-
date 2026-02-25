@@ -22,6 +22,7 @@ class SessionManager(context: Context) {
 
     companion object {
         private const val USER_TOKEN = "user_token"
+        private const val USER_ID    = "user_id"
     }
 
     /**
@@ -41,11 +42,26 @@ class SessionManager(context: Context) {
     }
 
     /**
-     * Elimina el token (Logout)
+     * Guarda el ID numérico del usuario autenticado
+     */
+    fun saveUserId(id: Int) {
+        prefs.edit { putInt(USER_ID, id) }
+    }
+
+    /**
+     * Recupera el ID del usuario autenticado (-1 si no existe)
+     */
+    fun getUserId(): Int {
+        return prefs.getInt(USER_ID, -1)
+    }
+
+    /**
+     * Elimina el token y el ID de usuario (Logout)
      */
     fun clearAuthToken() {
         prefs.edit {
             remove(USER_TOKEN)
+            remove(USER_ID)
         }
     }
 }

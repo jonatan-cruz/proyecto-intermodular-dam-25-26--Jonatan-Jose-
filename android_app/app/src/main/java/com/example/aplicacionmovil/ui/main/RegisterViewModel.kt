@@ -26,7 +26,8 @@ class RegisterViewModel : ViewModel() {
         password: String,
         telefono: String? = null,
         ubicacion: String? = null,
-        biografia: String? = null
+        biografia: String? = null,
+        sessionManager: com.example.aplicacionmovil.data.local.SessionManager? = null
     ) {
         viewModelScope.launch {
             _registerState.value = RegisterState.Loading
@@ -46,6 +47,11 @@ class RegisterViewModel : ViewModel() {
                     val rpcBody = response.body()
                     val apiBody = rpcBody?.result
                     if (apiBody?.success == true) {
+                        // Guardar token y userId si el sessionManager fue facilitado
+                        sessionManager?.let { sm ->
+                            apiBody.data?.token?.let { sm.saveAuthToken(it) }
+                            apiBody.data?.user?.id?.let { sm.saveUserId(it) }
+                        }
                         _registerState.value = RegisterState.Success(
                             apiBody.message ?: "Usuario registrado exitosamente"
                         )

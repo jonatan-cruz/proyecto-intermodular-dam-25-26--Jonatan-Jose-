@@ -31,10 +31,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.example.aplicacionmovil.ui.products.create.CategoriesFormState
-import com.example.aplicacionmovil.ui.products.create.CreateArticleUiState
-import com.example.aplicacionmovil.ui.products.create.CreateArticleViewModel
-import com.example.aplicacionmovil.ui.products.create.CreateArticleViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
 @Composable
@@ -45,13 +41,19 @@ fun CreateArticleScreen(
     val viewModel: CreateArticleViewModel = viewModel(
         factory = CreateArticleViewModelFactory(context)
     )
-    val uiState by viewModel.uiState.collectAsState()
-    val name by viewModel.name.collectAsState()
-    val description by viewModel.description.collectAsState()
-    val price by viewModel.price.collectAsState()
-    val categoryId by viewModel.categoryId.collectAsState()
+    val uiState        by viewModel.uiState.collectAsState()
+    val name           by viewModel.name.collectAsState()
+    val description    by viewModel.description.collectAsState()
+    val price          by viewModel.price.collectAsState()
+    val localidad      by viewModel.localidad.collectAsState()
+    val antiguedad     by viewModel.antiguedad.collectAsState()
+    val estadoProducto by viewModel.estadoProducto.collectAsState()
+    val categoryId     by viewModel.categoryId.collectAsState()
     val selectedImages by viewModel.selectedImages.collectAsState()
     val categoriesState by viewModel.categoriesState.collectAsState()
+
+    // Estado para el dropdown de "Estado del producto"
+    var estadoDropdownExpanded by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
@@ -81,8 +83,13 @@ fun CreateArticleScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Sección de Imágenes
-                Text("Imágenes", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+
+                // ── Sección de Imágenes ──────────────────────────────────
+                Text(
+                    "Imágenes (${selectedImages.size}/10)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
 
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -90,18 +97,21 @@ fun CreateArticleScreen(
                         .fillMaxWidth()
                         .height(120.dp)
                 ) {
-                    item {
-                        Box(
-                            modifier = Modifier
-                                .size(120.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable { galleryLauncher.launch("image/*") },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Default.Add, contentDescription = null)
-                                Text("Añadir", fontSize = 12.sp)
+                    // Botón añadir (solo visible si hay menos de 10)
+                    if (selectedImages.size < 10) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .clickable { galleryLauncher.launch("image/*") },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(Icons.Default.Add, contentDescription = null)
+                                    Text("Añadir", fontSize = 12.sp)
+                                }
                             }
                         }
                     }
@@ -116,7 +126,6 @@ fun CreateArticleScreen(
                                     .clip(RoundedCornerShape(8.dp)),
                                 contentScale = ContentScale.Crop
                             )
-
                             IconButton(
                                 onClick = { viewModel.removeImage(uri) },
                                 modifier = Modifier
@@ -136,19 +145,20 @@ fun CreateArticleScreen(
                     }
                 }
 
-                // Formulario
+                // ── Nombre ───────────────────────────────────────────────
                 OutlinedTextField(
                     value = name,
                     onValueChange = { viewModel.name.value = it },
-                    label = { Text("Nombre del artículo") },
+                    label = { Text("Nombre del artículo *") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
 
+                // ── Descripción ──────────────────────────────────────────
                 OutlinedTextField(
                     value = description,
                     onValueChange = { viewModel.description.value = it },
-                    label = { Text("Descripción") },
+                    label = { Text("Descripción *") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp),
@@ -156,17 +166,58 @@ fun CreateArticleScreen(
                     maxLines = 5
                 )
 
+                // ── Precio ───────────────────────────────────────────────
                 OutlinedTextField(
                     value = price,
                     onValueChange = { viewModel.price.value = it },
-                    label = { Text("Precio (€)") },
+                    label = { Text("Precio (€) *") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
                 )
 
-                // Selector de Categoría Dinámico
-                Text("Categoría", fontWeight = FontWeight.Bold)
+                // ── Ubicación ────────────────────────────────────────────
+                OutlinedTextField(
+                    value = localidad,
+                    onValueChange = { viewModel.localidad.value = it },
+                    label = { Text("Ubicación *") },
+                    placeholder = { Text("Ej: Madrid, Barcelona...") },
+                    leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                // ── Antigüedad ───────────────────────────────────────────
+                OutlinedTextField(
+                    value = antiguedad,
+                    onValueChange = { viewModel.antiguedad.value = it.filter { c -> c.isDigit() } },
+                    label = { Text("Antigüedad (años)") },
+                    placeholder = { Text("0 = menos de 1 año") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+
+                // ── Estado del producto ──────────────────────────────────
+                Text("Estado del producto *", fontWeight = FontWeight.Bold)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    for ((valor, etiqueta) in viewModel.estadosProducto) {
+                        FilterChip(
+                            selected = estadoProducto == valor,
+                            onClick = { viewModel.estadoProducto.value = valor },
+                            label = { Text(etiqueta, fontSize = 13.sp) }
+                        )
+                    }
+                }
+
+                // ── Categoría ────────────────────────────────────────────
+                Text("Categoría *", fontWeight = FontWeight.Bold)
 
                 when (val state = categoriesState) {
                     is CategoriesFormState.Loading -> {
@@ -202,8 +253,25 @@ fun CreateArticleScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                // ── Mensaje de error ─────────────────────────────────────
+                if (uiState is CreateArticleUiState.Error) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = (uiState as CreateArticleUiState.Error).message,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(12.dp),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // ── Botón Publicar ───────────────────────────────────────
                 Button(
                     onClick = {
                         viewModel.createArticle(context) {
@@ -221,17 +289,11 @@ fun CreateArticleScreen(
                             color = Color.White
                         )
                     } else {
-                        Text("Publicar")
+                        Text("Publicar Artículo", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
-                if (uiState is CreateArticleUiState.Error) {
-                    Text(
-                        text = (uiState as CreateArticleUiState.Error).message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

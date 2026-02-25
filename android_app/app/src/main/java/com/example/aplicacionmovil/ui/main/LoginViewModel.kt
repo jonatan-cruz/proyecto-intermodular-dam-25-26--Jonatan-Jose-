@@ -33,6 +33,10 @@ class LoginViewModel : ViewModel() {
                         apiBody.data?.token?.let { token ->
                             sessionManager.saveAuthToken(token)
                         }
+                        // Guardar el ID del usuario autenticado
+                        apiBody.data?.user?.id?.let { userId ->
+                            sessionManager.saveUserId(userId)
+                        }
                         _loginState.value = LoginState.Success("Login exitoso")
                     } else {
                         _loginState.value = LoginState.Error(apiBody?.message ?: "Error en la lógica del servidor")

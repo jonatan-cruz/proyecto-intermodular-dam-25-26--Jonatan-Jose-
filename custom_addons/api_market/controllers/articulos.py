@@ -108,7 +108,7 @@ class SecondMarketArticleController(http.Controller):
                     'etiquetas': [{'id': tag.id, 'nombre': tag.name} for tag in article.ids_etiquetas],
                     'create_date': article.create_date.isoformat() if article.create_date else None
                 })
-            
+
             return {
                 'success': True,
                 'data': {
@@ -286,7 +286,7 @@ class SecondMarketArticleController(http.Controller):
                 'antiguedad': data.get('antiguedad', 0),
                 'latitud': data.get('latitud'),
                 'longitud': data.get('longitud'),
-                'estado_publicacion': 'borrador'
+                'estado_publicacion': 'publicado'
             }
             
             article = request.env['second_market.article'].sudo().create(article_vals)
