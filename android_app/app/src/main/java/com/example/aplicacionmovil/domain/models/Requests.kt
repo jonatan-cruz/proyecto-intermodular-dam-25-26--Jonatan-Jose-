@@ -90,3 +90,12 @@ data class SearchArticlesRequest(
     @SerializedName("estado_producto") val estadoProducto: String? = null,
     @SerializedName("localidad") val localidad: String? = null
 )
+
+/**
+ * Request de Creación de Valoración
+ */
+data class CreateRatingRequest(
+    @SerializedName("usuario_id") val usuarioId: Int,
+    @SerializedName("calificacion") val calificacion: Int,
+    @SerializedName("comentario") val comentario: String? = null
+)

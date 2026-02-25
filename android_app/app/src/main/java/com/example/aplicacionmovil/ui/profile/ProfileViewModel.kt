@@ -22,6 +22,12 @@ class ProfileViewModel(context: Context) : ViewModel() {
     private val _articlesState = MutableStateFlow<ArticlesState>(ArticlesState.Loading)
     val articlesState: StateFlow<ArticlesState> = _articlesState.asStateFlow()
 
+    private val _purchasesState = MutableStateFlow<PurchasesState>(PurchasesState.Loading)
+    val purchasesState: StateFlow<PurchasesState> = _purchasesState.asStateFlow()
+
+    private val _salesState = MutableStateFlow<SalesState>(SalesState.Loading)
+    val salesState: StateFlow<SalesState> = _salesState.asStateFlow()
+
     init {
         loadProfileData()
     }
@@ -30,6 +36,8 @@ class ProfileViewModel(context: Context) : ViewModel() {
         viewModelScope.launch {
             loadUserInfo()
             loadMyArticles()
+            loadMyPurchases()
+            loadMySales()
         }
     }
 
@@ -47,7 +55,6 @@ class ProfileViewModel(context: Context) : ViewModel() {
     private suspend fun loadMyArticles() {
         _articlesState.value = ArticlesState.Loading
         try {
-            // Get user ID from current state or session
             val userId = _userState.value?.id
             if (userId != null) {
                 val response = api.getMyArticles(JsonRpcRequest(params = mapOf("user_id" to userId)))
@@ -63,7 +70,6 @@ class ProfileViewModel(context: Context) : ViewModel() {
                     _articlesState.value = ArticlesState.Error("Error ${response.code()}")
                 }
             } else {
-                // If user not loaded yet, wait or retry
                 _articlesState.value = ArticlesState.Error("Usuario no identificado")
             }
         } catch (e: Exception) {
@@ -71,6 +77,93 @@ class ProfileViewModel(context: Context) : ViewModel() {
             e.printStackTrace()
         }
     }
+
+    private suspend fun loadMyPurchases() {
+        _purchasesState.value = PurchasesState.Loading
+        try {
+            val response = api.getMyPurchases()
+            if (response.isSuccessful) {
+                val apiResponse = response.body()?.result
+                if (apiResponse?.success == true) {
+                    val purchases = apiResponse.data?.purchases ?: emptyList()
+                    _purchasesState.value = PurchasesState.Success(purchases)
+                } else {
+                    _purchasesState.value = PurchasesState.Error(apiResponse?.message ?: "Error al cargar compras")
+                }
+            } else {
+                _purchasesState.value = PurchasesState.Error("Error ${response.code()}")
+            }
+        } catch (e: Exception) {
+            _purchasesState.value = PurchasesState.Error(e.localizedMessage ?: "Error de conexión")
+            e.printStackTrace()
+        }
+    }
+
+    private suspend fun loadMySales() {
+        _salesState.value = SalesState.Loading
+        try {
+            val response = api.getMySales()
+            if (response.isSuccessful) {
+                val apiResponse = response.body()?.result
+                if (apiResponse?.success == true) {
+                    val sales = apiResponse.data?.sales ?: emptyList()
+                    _salesState.value = SalesState.Success(sales)
+                } else {
+                    _salesState.value = SalesState.Error(apiResponse?.message ?: "Error al cargar ventas")
+                }
+            } else {
+                _salesState.value = SalesState.Error("Error ${response.code()}")
+            }
+        } catch (e: Exception) {
+            _salesState.value = SalesState.Error(e.localizedMessage ?: "Error de conexión")
+            e.printStackTrace()
+        }
+    }
+
+    fun confirmSale(saleId: Int) {
+        viewModelScope.launch {
+            try {
+                val response = api.confirmPurchase(saleId)
+                if (response.isSuccessful && response.body()?.result?.success == true) {
+                    // Refrescar datos tras confirmar
+                    loadMySales()
+                    loadMyArticles() // El artículo probablemente cambie de estado
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun submitRating(userId: Int, rating: Int, comment: String?, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val request = JsonRpcRequest(params = CreateRatingRequest(userId, rating, comment))
+                val response = api.createRating(request)
+                if (response.isSuccessful && response.body()?.result?.success == true) {
+                    loadUserInfo() // Probablemente se actualice la calificación promedio
+                    onComplete(true)
+                } else {
+                    onComplete(false)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onComplete(false)
+            }
+        }
+    }
+}
+
+sealed class PurchasesState {
+    object Loading : PurchasesState()
+    data class Success(val purchases: List<Purchase>) : PurchasesState()
+    data class Error(val message: String) : PurchasesState()
+}
+
+sealed class SalesState {
+    object Loading : SalesState()
+    data class Success(val sales: List<Sale>) : SalesState()
+    data class Error(val message: String) : SalesState()
 }
 
 class ProfileViewModelFactory(private val context: Context) : ViewModelProvider.Factory {

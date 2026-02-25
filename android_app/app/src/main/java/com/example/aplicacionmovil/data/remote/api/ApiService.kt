@@ -97,14 +97,23 @@ interface ApiService {
     /**
      * Obtener mis compras
      */
-    @GET("api/v1/purchases/my-purchases")
-    suspend fun getMyPurchases(): Response<JsonRpcResponse<ApiResponse<PurchasesResponse>>>
+    @POST("api/v1/purchases/my-purchases")
+    suspend fun getMyPurchases(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<PurchasesResponse>>>
 
     /**
      * Obtener mis ventas
      */
-    @GET("api/v1/purchases/my-sales")
-    suspend fun getMySales(): Response<JsonRpcResponse<ApiResponse<SalesResponse>>>
+    @POST("api/v1/purchases/my-sales")
+    suspend fun getMySales(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<SalesResponse>>>
+
+    /**
+     * Confirmar una compra (Aceptar venta)
+     */
+    @POST("api/v1/purchases/{id}/confirm")
+    suspend fun confirmPurchase(
+        @Path("id") purchaseId: Int,
+        @Body body: JsonObject = JsonObject()
+    ): Response<JsonRpcResponse<ApiResponse<Any>>>
 
     // ==================== COMMENTS ENDPOINTS ====================
     
@@ -127,4 +136,12 @@ interface ApiService {
      */
     @POST("api/v1/categories")
     suspend fun getCategories(@Body body: JsonRpcRequest<Unit> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<Map<String, List<Category>>>>>
+
+    // ==================== RATINGS ENDPOINTS ====================
+
+    /**
+     * Crear una valoración para un usuario
+     */
+    @POST("api/v1/ratings")
+    suspend fun createRating(@Body request: JsonRpcRequest<CreateRatingRequest>): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
 }
