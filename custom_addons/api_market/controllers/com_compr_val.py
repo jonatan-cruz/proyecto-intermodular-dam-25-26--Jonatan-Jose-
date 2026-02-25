@@ -194,7 +194,7 @@ class SecondMarketCommentController(http.Controller):
                 'error_code': 'DELETE_COMMENT_ERROR'
             }
 
-    @http.route('/api/v1/comments/received', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/comments/received', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def get_received_comments(self, **kwargs):
         """Obtener comentarios recibidos por el usuario"""
         try:
@@ -457,7 +457,7 @@ class SecondMarketPurchaseController(http.Controller):
                 'error_code': 'CANCEL_PURCHASE_ERROR'
             }
 
-    @http.route('/api/v1/purchases/my-purchases', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/purchases/my-purchases', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def get_my_purchases(self, **kwargs):
         """Obtener compras realizadas por el usuario"""
         try:
@@ -513,7 +513,7 @@ class SecondMarketPurchaseController(http.Controller):
                 'error_code': 'GET_PURCHASES_ERROR'
             }
 
-    @http.route('/api/v1/purchases/my-sales', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/purchases/my-sales', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def get_my_sales(self, **kwargs):
         """Obtener ventas del usuario"""
         try:
@@ -656,7 +656,7 @@ class SecondMarketRatingController(http.Controller):
                 'error_code': 'CREATE_RATING_ERROR'
             }
 
-    @http.route('/api/v1/ratings/user/<int:user_id>', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
+    @http.route('/api/v1/ratings/user/<int:user_id>', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def get_user_ratings(self, user_id, **kwargs):
         """Obtener valoraciones de un usuario"""
         try:

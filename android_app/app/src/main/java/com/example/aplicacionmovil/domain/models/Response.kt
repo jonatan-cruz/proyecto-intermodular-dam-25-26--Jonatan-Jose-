@@ -12,7 +12,7 @@ import com.google.gson.annotations.SerializedName
 data class JsonRpcRequest<T : Any>(
     @SerializedName("jsonrpc") val jsonrpc: String = "2.0",
     @SerializedName("method")  val method: String  = "call",
-    @SerializedName("params")  val params: T? = null
+    @SerializedName("params")  val params: T = mapOf<String, Any>() as T
 )
 
 // ==================== RESPUESTA BASE ====================

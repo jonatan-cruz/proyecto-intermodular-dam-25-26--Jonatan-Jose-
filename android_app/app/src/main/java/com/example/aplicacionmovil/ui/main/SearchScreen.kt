@@ -1,11 +1,13 @@
 package com.example.aplicacionmovil.ui.main
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -63,8 +65,10 @@ fun SearchScreen(navController: NavController) {
                             }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         )
                     )
                 },
@@ -162,7 +166,7 @@ fun SearchScreen(navController: NavController) {
                 }
                 is ArticlesState.Success -> {
                     if (state.articles.isEmpty()) {
-                        EmptySearchState()
+                        SearchEmptyState()
                     } else {
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
@@ -171,7 +175,7 @@ fun SearchScreen(navController: NavController) {
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items(state.articles) { article ->
+                            items(state.articles) { article: com.example.aplicacionmovil.domain.models.Article ->
                                 ArticleCard(
                                     article = article,
                                     onClick = {
@@ -183,7 +187,7 @@ fun SearchScreen(navController: NavController) {
                     }
                 }
                 is ArticlesState.Error -> {
-                    ErrorState(state.message) { viewModel.loadArticles() }
+                    SearchErrorState(state.message) { viewModel.loadArticles() }
                 }
             }
         }
@@ -213,7 +217,7 @@ fun SearchScreen(navController: NavController) {
                                     }
                                 )
                             }
-                            items(state.categories) { category ->
+                            items(state.categories) { category: com.example.aplicacionmovil.domain.models.Category ->
                                 CategoryChip(
                                     name = category.displayName,
                                     count = category.conteoArticulos,
@@ -261,7 +265,7 @@ fun SearchScreen(navController: NavController) {
 }
 
 @Composable
-fun EmptySearchState() {
+fun SearchEmptyState() {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -291,7 +295,7 @@ fun EmptySearchState() {
 }
 
 @Composable
-fun ErrorState(message: String, onRetry: () -> Unit) {
+fun SearchErrorState(message: String, onRetry: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -306,11 +310,9 @@ fun ErrorState(message: String, onRetry: () -> Unit) {
             modifier = Modifier.size(48.dp)
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = message ?: "Error desconocido", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
+        Text(text = message, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
         Button(onClick = onRetry) {
             Text("Reintentar")
         }
     }
 }
-
-
