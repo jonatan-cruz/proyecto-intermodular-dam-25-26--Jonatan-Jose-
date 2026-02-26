@@ -36,6 +36,7 @@ import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
 import com.example.aplicacionmovil.R
 import com.example.aplicacionmovil.domain.models.Article
+import com.example.aplicacionmovil.utils.ImageDisplayUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,25 +91,49 @@ fun HomeScreen(
                     )
                 },
                 actions = {
-                    IconButton(
-                        onClick = { navController.navigate("profile") },
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        if (userState?.fotoPerfil != null) {
-                            AsyncImage(
-                                model = userState?.fotoPerfil,
-                                contentDescription = "Perfil",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
+                        // Avatar de usuario
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .clickable { navController.navigate("profile") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (userState?.fotoPerfil != null) {
+                                AsyncImage(
+                                    model = userState?.fotoPerfil,
+                                    contentDescription = "Foto de perfil",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else if (userState?.name?.isNotEmpty() == true) {
+                                Text(
+                                    text = userState?.name?.firstOrNull()?.uppercase() ?: "U",
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Usuario",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // Botón de ajustes
+                        IconButton(onClick = { navController.navigate("settings") }) {
                             Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Perfil",
-                                tint = MaterialTheme.colorScheme.primary
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Ajustes"
                             )
                         }
                     }

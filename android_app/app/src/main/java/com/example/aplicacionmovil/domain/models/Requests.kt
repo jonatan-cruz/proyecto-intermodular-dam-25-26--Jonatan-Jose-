@@ -99,6 +99,17 @@ data class CreateRatingRequest(
     @SerializedName("calificacion") val calificacion: Int,
     @SerializedName("comentario") val comentario: String? = null
 )
+/**
+ * Request de Actualización de Perfil
+ */
+data class UpdateProfileRequest(
+    @SerializedName("name") val name: String? = null,
+    @SerializedName("login") val email: String? = null,
+    @SerializedName("telefono") val telefono: String? = null,
+    @SerializedName("ubicacion") val ubicacion: String? = null,
+    @SerializedName("biografia") val biografia: String? = null,
+    @SerializedName("avatar") val avatar: String? = null
+)
 
 // ==================== CHAT REQUESTS ====================
 

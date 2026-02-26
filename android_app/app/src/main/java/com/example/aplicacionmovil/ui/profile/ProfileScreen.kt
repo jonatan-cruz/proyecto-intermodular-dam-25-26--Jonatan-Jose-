@@ -30,6 +30,8 @@ import coil.compose.AsyncImage
 import com.example.aplicacionmovil.domain.models.User
 import com.example.aplicacionmovil.ui.main.ArticleCard
 import com.example.aplicacionmovil.ui.main.ArticlesState
+import com.example.aplicacionmovil.ui.profile.EditProfileDialog
+import com.example.aplicacionmovil.utils.ImageDisplayUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +75,7 @@ fun ProfileScreen(navController: NavController) {
                 .padding(padding)
         ) {
             userState?.let { user ->
-                ProfileHeader(user)
+                ProfileHeader(user, viewModel)
                 
                 Divider(
                     modifier = Modifier.padding(vertical = 8.dp),
@@ -121,7 +123,7 @@ fun ProfileScreen(navController: NavController) {
 }
 
 @Composable
-fun ProfileHeader(user: User) {
+fun ProfileHeader(user: User, viewModel: ProfileViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -138,7 +140,7 @@ fun ProfileHeader(user: User) {
         ) {
             if (user.fotoPerfil != null) {
                 AsyncImage(
-                    model = user.fotoPerfil,
+                    model = ImageDisplayUtils.ensureDisplayableImage(user.fotoPerfil),
                     contentDescription = "Foto de perfil",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop

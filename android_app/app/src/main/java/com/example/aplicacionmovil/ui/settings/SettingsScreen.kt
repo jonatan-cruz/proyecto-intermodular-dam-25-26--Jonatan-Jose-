@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.aplicacionmovil.ui.profile.EditProfileDialog
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,7 +26,9 @@ fun SettingsScreen(navController: NavController) {
         factory = SettingsViewModelFactory(context)
     )
 
+    val userState by viewModel.userState.collectAsState()
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.logoutEvents.collectLatest {
@@ -58,13 +61,7 @@ fun SettingsScreen(navController: NavController) {
                     icon = Icons.Default.Person,
                     title = "Editar Perfil",
                     subtitle = "Cambia tus datos personales",
-                    onClick = { /* Implementar */ }
-                )
-                SettingsItem(
-                    icon = Icons.Default.Email,
-                    title = "Correo Electrónico",
-                    subtitle = "Gestiona tu email",
-                    onClick = { /* Implementar */ }
+                    onClick = { showEditDialog = true }
                 )
             }
 
@@ -117,6 +114,24 @@ fun SettingsScreen(navController: NavController) {
                     Text("Cancelar")
                 }
             }
+        )
+    }
+
+    if (showEditDialog && userState != null) {
+        EditProfileDialog(
+            user = userState!!,
+            onUpdateProfile = { request ->
+                viewModel.updateProfile(request) { success ->
+                    if (success) showEditDialog = false
+                }
+            },
+            onChangePassword = { current, new, onComplete ->
+                viewModel.changePassword(current, new, onComplete)
+            },
+            onDeactivateAccount = { password, onComplete ->
+                viewModel.deactivateAccount(password, onComplete)
+            },
+            onDismiss = { showEditDialog = false }
         )
     }
 }

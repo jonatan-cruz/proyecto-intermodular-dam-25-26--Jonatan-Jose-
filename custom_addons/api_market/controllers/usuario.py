@@ -92,7 +92,7 @@ class SecondMarketUserController(http.Controller):
                 'error_code': 'GET_PROFILE_ERROR'
             }
 
-    @http.route('/api/v1/users/profile', type='json', auth='public', methods=['PUT'], csrf=False, cors='*')
+    @http.route('/api/v1/users/update-profile', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def update_profile(self, **kwargs):
         """
         Actualizar perfil del usuario autenticado
@@ -125,17 +125,48 @@ class SecondMarketUserController(http.Controller):
                     'error_code': 'USER_NOT_FOUND'
                 }
             
-            data = request.params or request.httprequest.get_json(force=True) or {}
+            # Intentar obtener datos de varias fuentes (Odoo dispatcher varía según el método y tipo)
+            data = {}
+            if request.params:
+                data.update(request.params)
+            
+            # Si es una petición JSON-RPC, los datos reales suelen estar en request.params
+            # Pero por seguridad, si está vacío, intentamos leer el body crudo
+            if not data:
+                try:
+                    json_body = request.httprequest.get_json(force=True)
+                    if json_body:
+                        if 'params' in json_body:
+                            data.update(json_body['params'])
+                        else:
+                            data.update(json_body)
+                except Exception as e:
+                    _logger.debug(f"No se pudo leer el body JSON: {str(e)}")
+            
+            # Finalmente, kwargs suele tener los mismos datos que request.params en type='json'
+            if kwargs:
+                data.update(kwargs)
+            
+            _logger.info(f"Datos recibidos para actualización: {list(data.keys())}")
             
             # Campos actualizables
             update_vals = {}
-            updatable_fields = ['name', 'telefono', 'ubicacion', 'biografia', 'avatar']
+            updatable_fields = ['name', 'telefono', 'ubicacion', 'biografia', 'avatar', 'login']
             
             for field in updatable_fields:
                 if field in data and data[field] is not None:
+                    # Especial atención al avatar: si viene una cadena vacía, ignorar o limpiar
+                    if field == 'avatar' and data[field] == '':
+                        continue
                     update_vals[field] = data[field]
             
             if update_vals:
+                if 'avatar' in update_vals:
+                    avatar_val = update_vals['avatar']
+                    avatar_len = len(avatar_val) if avatar_val else 0
+                    prefix = avatar_val[:30] if avatar_val else "None"
+                    _logger.info(f"Actualizando avatar: {avatar_len} caracteres. Empieza por: {prefix}")
+                
                 user.sudo().write(update_vals)
                 _logger.info(f"Perfil actualizado para usuario {user.id}")
             

@@ -27,24 +27,59 @@ object ImageUtils {
         quality: Int = 80
     ): String? {
         return try {
-            val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
-            val originalBitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
-
-            if (originalBitmap == null) return null
-
-            // Reescalar si es necesario para ahorrar espacio y memoria
-            val scaledBitmap = scaleBitmapIfNeeded(originalBitmap, maxWidth, maxHeight)
+            val contentResolver = context.contentResolver
             
+            // 1. Obtener dimensiones originales sin cargar el bitmap completo
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            contentResolver.openInputStream(uri)?.use { inputStream ->
+                BitmapFactory.decodeStream(inputStream, null, options)
+            }
+
+            // 2. Calcular inSampleSize para decodear una versión ya reducida
+            options.inSampleSize = calculateInSampleSize(options, maxWidth, maxHeight)
+            options.inJustDecodeBounds = false
+            
+            // 3. Decodear el bitmap con el tamaño reducido
+            val sampledBitmap = contentResolver.openInputStream(uri)?.use { inputStream ->
+                BitmapFactory.decodeStream(inputStream, null, options)
+            } ?: return null
+
+            // 4. Reescalar exactamente si el sampledBitmap sigue siendo mayor que maxWidth/maxHeight
+            val finalBitmap = scaleBitmapIfNeeded(sampledBitmap, maxWidth, maxHeight)
+            
+            // 5. Comprimir y convertir a Base64
             val outputStream = ByteArrayOutputStream()
-            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+            finalBitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
             val byteArray = outputStream.toByteArray()
+            
+            // Liberar memoria si el bitmap fue una copia
+            if (finalBitmap != sampledBitmap) {
+                finalBitmap.recycle()
+            }
+            sampledBitmap.recycle()
             
             Base64.encodeToString(byteArray, Base64.NO_WRAP)
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
+    }
+
+    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+        val (height: Int, width: Int) = options.outHeight to options.outWidth
+        var inSampleSize = 1
+
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight: Int = height / 2
+            val halfWidth: Int = width / 2
+
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
     }
 
     private fun scaleBitmapIfNeeded(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
