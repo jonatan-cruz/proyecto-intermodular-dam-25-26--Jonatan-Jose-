@@ -59,12 +59,12 @@ fun ProfileScreen(navController: NavController) {
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            FloatingActionButton(
                 onClick = { navController.navigate("create_article") },
-                icon = { Icon(Icons.Default.Add, contentDescription = "Publicar") },
-                text = { Text("Vender") },
                 containerColor = MaterialTheme.colorScheme.primary
-            )
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Publicar")
+            }
         }
     ) { padding ->
         Column(

@@ -6,7 +6,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "http://10.0.2.2:8069/" // Cambiar por la URL real de la API
+    private const val BASE_URL = "http://10.0.2.27:8069/" // Cambiar por la URL real de la API
 
     // SessionManager para inyectar el token en las peticiones
     var sessionManager: com.example.aplicacionmovil.data.local.SessionManager? = null

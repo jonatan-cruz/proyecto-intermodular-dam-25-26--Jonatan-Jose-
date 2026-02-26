@@ -99,3 +99,21 @@ data class CreateRatingRequest(
     @SerializedName("calificacion") val calificacion: Int,
     @SerializedName("comentario") val comentario: String? = null
 )
+
+// ==================== CHAT REQUESTS ====================
+
+/**
+ * Request para crear o recuperar un chat existente sobre un artículo
+ * El vendedor se obtiene automáticamente del artículo en el backend
+ */
+data class CreateChatRequest(
+    @SerializedName("articulo_id") val articuloId: Int
+)
+
+/**
+ * Request para enviar un mensaje en un chat
+ * El chat_id va en el path URL, no en el body
+ */
+data class SendMessageRequest(
+    @SerializedName("contenido") val contenido: String
+)

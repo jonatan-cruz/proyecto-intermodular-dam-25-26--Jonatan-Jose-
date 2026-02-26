@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.LocationOn
@@ -33,6 +34,8 @@ import com.example.aplicacionmovil.domain.models.ArticlePropietario
 import com.example.aplicacionmovil.domain.models.Category
 import com.example.aplicacionmovil.domain.models.ArticleTag
 import com.example.aplicacionmovil.ui.main.BuyButton
+import com.example.aplicacionmovil.ui.chat.ChatViewModel
+import com.example.aplicacionmovil.ui.chat.ChatViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +46,9 @@ fun ArticleDetailScreen(
     val context = LocalContext.current
     val viewModel: ArticleDetailViewModel = viewModel(
         factory = ArticleDetailViewModelFactory(context)
+    )
+    val chatViewModel: ChatViewModel = viewModel(
+        factory = ChatViewModelFactory(context)
     )
     val state by viewModel.state.collectAsState()
 
@@ -80,7 +86,12 @@ fun ArticleDetailScreen(
                     }
                 }
                 is ArticleDetailState.Success -> {
-                    ArticleDetailContent(currentState.article, context)
+                    ArticleDetailContent(
+                        article = currentState.article,
+                        context = context,
+                        navController = navController,
+                        chatViewModel = chatViewModel
+                    )
                 }
             }
         }
@@ -110,7 +121,19 @@ fun ArticleDetail.toArticle(): Article = Article(
 )
 
 @Composable
-fun ArticleDetailContent(article: ArticleDetail, context: android.content.Context) {
+fun ArticleDetailContent(
+    article: ArticleDetail,
+    context: android.content.Context,
+    navController: NavController,
+    chatViewModel: ChatViewModel
+) {
+    val currentUserId = remember { SessionManager(context).getUserId() }
+    val isOwner = article.propietario?.id == currentUserId
+
+    // Estado para el botón de contactar
+    var isCreatingChat by remember { mutableStateOf(false) }
+    var chatError by remember { mutableStateOf<String?>(null) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -283,6 +306,60 @@ fun ArticleDetailContent(article: ArticleDetail, context: android.content.Contex
                             }
                         }
                     }
+
+                    // Botón Contactar vendedor (solo si no es el propietario)
+                    if (!isOwner) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                isCreatingChat = true
+                                chatError = null
+                                chatViewModel.createOrGetChat(
+                                    articuloId = article.id,
+                                    onSuccess = { chatId ->
+                                        isCreatingChat = false
+                                        navController.navigate("chat_detail/$chatId")
+                                    },
+                                    onError = { error ->
+                                        isCreatingChat = false
+                                        chatError = error
+                                    }
+                                )
+                            },
+                            enabled = !isCreatingChat,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            if (isCreatingChat) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onSecondary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.Send,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            Text("Contactar vendedor")
+                        }
+
+                        // Mostrar error si existe
+                        chatError?.let { error ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -330,11 +407,6 @@ fun ArticleDetailContent(article: ArticleDetail, context: android.content.Contex
 
         // ─── Botón de compra ───
         item {
-            val currentUserId = remember {
-                SessionManager(context).getUserId()
-            }
-            val isOwner = article.propietario?.id == currentUserId
-
             // Solo mostramos el botón si el artículo está publicado
             if (article.estadoPublicacion == "publicado") {
                 Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {

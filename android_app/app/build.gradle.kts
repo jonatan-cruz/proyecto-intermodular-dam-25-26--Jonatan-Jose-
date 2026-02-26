@@ -2,6 +2,18 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.dokka)
+}
+
+// Configuración de Dokka para generar documentación
+tasks.dokkaHtml.configure {
+    outputDirectory.set(layout.buildDirectory.dir("dokka"))
+    dokkaSourceSets {
+        named("main") {
+            moduleName.set("Dalo Store")
+            includes.from("Module.md")
+        }
+    }
 }
 
 android {
@@ -81,6 +93,12 @@ dependencies {
     implementation(libs.litert.support.api)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.compose.foundation)
+
+    // Google Maps
+    implementation(libs.maps.compose)
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

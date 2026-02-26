@@ -20,12 +20,15 @@ class SecondMarketChatController(http.Controller):
         return get_authenticated_user_with_refresh()
 
     @http.route('/api/v1/chats', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
-    def create_chat(self, **kwargs):
+    def handle_chats(self, **kwargs):
         """
-        Crear o recuperar un chat existente sobre un artículo
-        
-        Parámetros requeridos:
-        - articulo_id: int
+        Endpoint unificado para chats.
+        - Si el body incluye 'articulo_id' → crea o recupera el chat de ese artículo.
+        - Si no incluye 'articulo_id'       → devuelve la lista de chats del usuario.
+
+        NOTA: Este método fusiona lo que antes eran create_chat y get_chats.
+        Ambos tenían el mismo @http.route, por lo que Odoo solo ejecutaba create_chat,
+        haciendo que la lista de chats nunca se devolviera correctamente.
         """
         try:
             auth_result = self._get_authenticated_user()
@@ -35,108 +38,80 @@ class SecondMarketChatController(http.Controller):
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
-            
+
             user_data = auth_result['user_data']
             new_token = auth_result.get('new_token')
-            
-            data = request.params or request.httprequest.get_json(force=True) or {}
-            
-            if not data.get('articulo_id'):
-                return {
-                    'success': False,
-                    'message': 'El artículo es requerido',
-                    'error_code': 'MISSING_FIELD'
-                }
-            
-            article = request.env['second_market.article'].sudo().browse(data['articulo_id'])
-            
-            if not article.exists():
-                return {
-                    'success': False,
-                    'message': 'Artículo no encontrado',
-                    'error_code': 'ARTICLE_NOT_FOUND'
-                }
-            
-            # Verificar que no sea el propietario
-            if article.id_propietario.id == user_data['user_id']:
-                return {
-                    'success': False,
-                    'message': 'No puedes chatear sobre tu propio artículo',
-                    'error_code': 'SELF_CHAT'
-                }
-            
-            # Buscar chat existente
-            existing_chat = request.env['second_market.chat'].sudo().search([
-                ('id_articulo', '=', article.id),
-                ('id_comprador', '=', user_data['user_id'])
-            ], limit=1)
-            
-            if existing_chat:
+
+            data = request.params or {}
+
+            # -------------------------------------------------------
+            # CREAR / RECUPERAR CHAT: si viene 'articulo_id'
+            # -------------------------------------------------------
+            if data.get('articulo_id'):
+                article = request.env['second_market.article'].sudo().browse(data['articulo_id'])
+
+                if not article.exists():
+                    return {
+                        'success': False,
+                        'message': 'Artículo no encontrado',
+                        'error_code': 'ARTICLE_NOT_FOUND'
+                    }
+
+                # Verificar que no sea el propietario
+                if article.id_propietario.id == user_data['user_id']:
+                    return {
+                        'success': False,
+                        'message': 'No puedes chatear sobre tu propio artículo',
+                        'error_code': 'SELF_CHAT'
+                    }
+
+                # Buscar chat existente
+                existing_chat = request.env['second_market.chat'].sudo().search([
+                    ('id_articulo', '=', article.id),
+                    ('id_comprador', '=', user_data['user_id'])
+                ], limit=1)
+
+                if existing_chat:
+                    response = {
+                        'success': True,
+                        'message': 'Chat recuperado',
+                        'data': {
+                            'chat_id': existing_chat.id,
+                            'new_chat': False
+                        }
+                    }
+                    if new_token:
+                        response['new_token'] = new_token
+                    return response
+
+                # Crear nuevo chat
+                chat = request.env['second_market.chat'].sudo().create({
+                    'id_articulo': article.id,
+                    'id_comprador': user_data['user_id']
+                })
+
                 response = {
                     'success': True,
-                    'message': 'Chat recuperado',
+                    'message': 'Chat creado exitosamente',
                     'data': {
-                        'chat_id': existing_chat.id,
-                        'new_chat': False
+                        'chat_id': chat.id,
+                        'new_chat': True
                     }
                 }
-                
                 if new_token:
                     response['new_token'] = new_token
-                    
                 return response
-            
-            # Crear nuevo chat
-            chat = request.env['second_market.chat'].sudo().create({
-                'id_articulo': article.id,
-                'id_comprador': user_data['user_id']
-            })
-            
-            response = {
-                'success': True,
-                'message': 'Chat creado exitosamente',
-                'data': {
-                    'chat_id': chat.id,
-                    'new_chat': True
-                }
-            }
-            
-            if new_token:
-                response['new_token'] = new_token
-                
-            return response
-            
-        except Exception as e:
-            _logger.error(f"Error al crear chat: {str(e)}", exc_info=True)
-            return {
-                'success': False,
-                'message': 'Error al crear chat',
-                'error_code': 'CREATE_CHAT_ERROR'
-            }
 
-    @http.route('/api/v1/chats', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
-    def get_chats(self, **kwargs):
-        """Obtener todos los chats del usuario autenticado"""
-        try:
-            auth_result = self._get_authenticated_user()
-            if not auth_result:
-                return {
-                    'success': False,
-                    'message': 'No autenticado',
-                    'error_code': 'UNAUTHORIZED'
-                }
-            
-            user_data = auth_result['user_data']
-            new_token = auth_result.get('new_token')
-            
-            # Chats donde el usuario es comprador o vendedor
+            # -------------------------------------------------------
+            # LISTAR CHATS: si NO viene 'articulo_id'
+            # -------------------------------------------------------
             chats = request.env['second_market.chat'].sudo().search([
                 '|',
                 ('id_comprador', '=', user_data['user_id']),
                 ('id_vendedor', '=', user_data['user_id']),
                 ('activo', '=', True)
             ], order='fecha_ultimo_mensaje desc')
-            
+
             chats_data = []
             for chat in chats:
                 # Determinar el otro usuario
@@ -144,7 +119,7 @@ class SecondMarketChatController(http.Controller):
                     otro_usuario = chat.id_vendedor
                 else:
                     otro_usuario = chat.id_comprador
-                
+
                 chats_data.append({
                     'id': chat.id,
                     'articulo': {
@@ -160,28 +135,36 @@ class SecondMarketChatController(http.Controller):
                     'fecha_ultimo_mensaje': chat.fecha_ultimo_mensaje.isoformat() if chat.fecha_ultimo_mensaje else None,
                     'conteo_mensajes': chat.conteo_mensajes
                 })
-            
+
             response = {
                 'success': True,
                 'data': {'chats': chats_data}
             }
-            
+
             if new_token:
                 response['new_token'] = new_token
-                
+
             return response
-            
+
         except Exception as e:
-            _logger.error(f"Error al obtener chats: {str(e)}", exc_info=True)
+            _logger.error(f"Error en handle_chats: {str(e)}", exc_info=True)
             return {
                 'success': False,
-                'message': 'Error al obtener chats',
-                'error_code': 'GET_CHATS_ERROR'
+                'message': 'Error al procesar la petición de chats',
+                'error_code': 'CHATS_ERROR'
             }
 
     @http.route('/api/v1/chats/<int:chat_id>/messages', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
-    def get_chat_messages(self, chat_id, **kwargs):
-        """Obtener mensajes de un chat"""
+    def handle_chat_messages(self, chat_id, **kwargs):
+        """
+        Endpoint unificado para mensajes de chat.
+        - Si el body incluye 'contenido' → envía y guarda el mensaje.
+        - Si no incluye 'contenido'       → devuelve la lista de mensajes del chat.
+
+        NOTA: Este método fusiona lo que antes eran get_chat_messages y send_message.
+        Ambos tenían el mismo @http.route, por lo que Odoo solo ejecutaba el primero
+        (get_chat_messages), haciendo que los mensajes nunca se guardaran en la BD.
+        """
         try:
             auth_result = self._get_authenticated_user()
             if not auth_result:
@@ -190,19 +173,22 @@ class SecondMarketChatController(http.Controller):
                     'message': 'No autenticado',
                     'error_code': 'UNAUTHORIZED'
                 }
-            
+
             user_data = auth_result['user_data']
             new_token = auth_result.get('new_token')
-            
+
+            # Leer parámetros del body JSON-RPC
+            data = request.params or {}
+
             chat = request.env['second_market.chat'].sudo().browse(chat_id)
-            
+
             if not chat.exists():
                 return {
                     'success': False,
                     'message': 'Chat no encontrado',
                     'error_code': 'CHAT_NOT_FOUND'
                 }
-            
+
             # Verificar que el usuario sea parte del chat
             if chat.id_comprador.id != user_data['user_id'] and chat.id_vendedor.id != user_data['user_id']:
                 return {
@@ -210,7 +196,34 @@ class SecondMarketChatController(http.Controller):
                     'message': 'No tienes acceso a este chat',
                     'error_code': 'FORBIDDEN'
                 }
-            
+
+            # -------------------------------------------------------
+            # ENVIAR MENSAJE: si viene 'contenido' en el body
+            # -------------------------------------------------------
+            if data.get('contenido'):
+                message = request.env['second_market.message'].sudo().create({
+                    'id_chat': chat.id,
+                    'id_usuario': user_data['user_id'],
+                    'contenido': data['contenido']
+                })
+
+                response = {
+                    'success': True,
+                    'message': 'Mensaje enviado',
+                    'data': {
+                        'message_id': message.id,
+                        'fecha_envio': message.fecha_envio.isoformat() if message.fecha_envio else None
+                    }
+                }
+
+                if new_token:
+                    response['new_token'] = new_token
+
+                return response
+
+            # -------------------------------------------------------
+            # OBTENER MENSAJES: si NO viene 'contenido'
+            # -------------------------------------------------------
             messages_data = []
             for message in chat.ids_mensajes:
                 messages_data.append({
@@ -224,7 +237,7 @@ class SecondMarketChatController(http.Controller):
                     },
                     'is_mine': message.id_usuario.id == user_data['user_id']
                 })
-            
+
             response = {
                 'success': True,
                 'data': {
@@ -237,93 +250,18 @@ class SecondMarketChatController(http.Controller):
                     }
                 }
             }
-            
-            if new_token:
-                response['new_token'] = new_token
-                
-            return response
-            
-        except Exception as e:
-            _logger.error(f"Error al obtener mensajes: {str(e)}", exc_info=True)
-            return {
-                'success': False,
-                'message': 'Error al obtener mensajes',
-                'error_code': 'GET_MESSAGES_ERROR'
-            }
 
-    @http.route('/api/v1/chats/<int:chat_id>/messages', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
-    def send_message(self, chat_id, **kwargs):
-        """
-        Enviar un mensaje en un chat
-        
-        Parámetros requeridos:
-        - contenido: str
-        """
-        try:
-            auth_result = self._get_authenticated_user()
-            if not auth_result:
-                return {
-                    'success': False,
-                    'message': 'No autenticado',
-                    'error_code': 'UNAUTHORIZED'
-                }
-            
-            user_data = auth_result['user_data']
-            new_token = auth_result.get('new_token')
-            
-            data = request.params or request.httprequest.get_json(force=True) or {}
-            
-            if not data.get('contenido'):
-                return {
-                    'success': False,
-                    'message': 'El contenido del mensaje es requerido',
-                    'error_code': 'MISSING_FIELD'
-                }
-            
-            chat = request.env['second_market.chat'].sudo().browse(chat_id)
-            
-            if not chat.exists():
-                return {
-                    'success': False,
-                    'message': 'Chat no encontrado',
-                    'error_code': 'CHAT_NOT_FOUND'
-                }
-            
-            # Verificar que el usuario sea parte del chat
-            if chat.id_comprador.id != user_data['user_id'] and chat.id_vendedor.id != user_data['user_id']:
-                return {
-                    'success': False,
-                    'message': 'No tienes acceso a este chat',
-                    'error_code': 'FORBIDDEN'
-                }
-            
-            # Crear mensaje
-            message = request.env['second_market.message'].sudo().create({
-                'id_chat': chat.id,
-                'id_usuario': user_data['user_id'],
-                'contenido': data['contenido']
-            })
-            
-            response = {
-                'success': True,
-                'message': 'Mensaje enviado',
-                'data': {
-                    'message_id': message.id,
-                    'fecha_envio': message.fecha_envio.isoformat() if message.fecha_envio else None
-                }
-            }
-            
             if new_token:
                 response['new_token'] = new_token
-                
+
             return response
-            
+
         except Exception as e:
-            _logger.error(f"Error al enviar mensaje: {str(e)}", exc_info=True)
+            _logger.error(f"Error en handle_chat_messages: {str(e)}", exc_info=True)
             return {
                 'success': False,
-                'message': 'Error al enviar mensaje',
-                'error_code': 'SEND_MESSAGE_ERROR'
+                'message': 'Error al procesar la petición de mensajes',
+                'error_code': 'CHAT_MESSAGES_ERROR'
             }
 
 

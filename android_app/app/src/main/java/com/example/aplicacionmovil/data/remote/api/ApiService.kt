@@ -144,4 +144,41 @@ interface ApiService {
      */
     @POST("api/v1/ratings")
     suspend fun createRating(@Body request: JsonRpcRequest<CreateRatingRequest>): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
+
+    // ==================== CHAT ENDPOINTS ====================
+
+    /**
+     * Obtener lista de conversaciones del usuario
+     * NOTA: El backend usa la misma ruta para crear y listar chats
+     * Si se envía sin articulo_id, devuelve la lista de chats
+     */
+    @POST("api/v1/chats")
+    suspend fun getMyChats(@Body body: JsonRpcRequest<Map<String, Any>> = JsonRpcRequest()): Response<JsonRpcResponse<ApiResponse<ChatsResponse>>>
+
+    /**
+     * Crear o recuperar un chat existente sobre un artículo
+     * Requiere: articulo_id
+     */
+    @POST("api/v1/chats")
+    suspend fun createOrGetChat(@Body request: JsonRpcRequest<CreateChatRequest>): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
+
+    /**
+     * Obtener mensajes de un chat específico
+     * Si se envía sin 'contenido', devuelve los mensajes
+     */
+    @POST("api/v1/chats/{id}/messages")
+    suspend fun getChatMessages(
+        @Path("id") chatId: Int,
+        @Body body: JsonRpcRequest<Map<String, Any>> = JsonRpcRequest()
+    ): Response<JsonRpcResponse<ApiResponse<ChatMessagesResponse>>>
+
+    /**
+     * Enviar un mensaje en un chat
+     * Requiere: contenido
+     */
+    @POST("api/v1/chats/{id}/messages")
+    suspend fun sendMessage(
+        @Path("id") chatId: Int,
+        @Body request: JsonRpcRequest<SendMessageRequest>
+    ): Response<JsonRpcResponse<ApiResponse<Map<String, Any>>>>
 }

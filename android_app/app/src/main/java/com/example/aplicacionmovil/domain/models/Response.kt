@@ -80,3 +80,73 @@ data class PurchasesResponse(
 data class SalesResponse(
     val sales: List<Sale>
 )
+
+// ==================== CHAT RESPONSES ====================
+
+data class ChatsResponse(
+    val chats: List<ChatConversation>
+)
+
+data class ChatMessagesResponse(
+    val messages: List<ChatMessage>,
+    @SerializedName("chat_info")
+    val chatInfo: ChatInfo?
+)
+
+data class ChatInfo(
+    val articulo: ChatArticuloInfo?
+)
+
+data class ChatArticuloInfo(
+    val id: Int,
+    val nombre: String?
+)
+
+/**
+ * Representa una conversación de chat
+ * Estructura según el backend de Odoo
+ */
+data class ChatConversation(
+    @SerializedName("id")
+    val id: Int,
+    @SerializedName("articulo")
+    val articulo: ChatArticulo?,
+    @SerializedName("otro_usuario")
+    val otroUsuario: ChatUsuario?,
+    @SerializedName("ultimo_mensaje")
+    val ultimoMensaje: String?,
+    @SerializedName("fecha_ultimo_mensaje")
+    val fechaUltimoMensaje: String?,
+    @SerializedName("conteo_mensajes")
+    val conteoMensajes: Int = 0
+)
+
+data class ChatArticulo(
+    val id: Int,
+    val nombre: String?,
+    val precio: Double?
+)
+
+data class ChatUsuario(
+    val id: Int,
+    val nombre: String?
+)
+
+/**
+ * Representa un mensaje individual de chat
+ * Estructura según el backend de Odoo
+ */
+data class ChatMessage(
+    @SerializedName("id")
+    val id: Int,
+    @SerializedName("contenido")
+    val contenido: String,
+    @SerializedName("fecha_envio")
+    val fechaEnvio: String?,
+    @SerializedName("leido")
+    val leido: Boolean = false,
+    @SerializedName("usuario")
+    val usuario: ChatUsuario?,
+    @SerializedName("is_mine")
+    val isMine: Boolean = false
+)

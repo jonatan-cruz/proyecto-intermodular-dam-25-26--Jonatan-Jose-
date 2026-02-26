@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +57,9 @@ fun HomeScreen(
     val articlesState by viewModel.articlesState.collectAsState()
     val userState by viewModel.userState.collectAsState()
     val categoriesState by viewModel.categoriesState.collectAsState()
+
+    // Estado para pull-to-refresh
+    val isRefreshing = articlesState is ArticlesState.Loading
 
     Scaffold(
         topBar = {
@@ -115,15 +119,16 @@ fun HomeScreen(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            FloatingActionButton(
                 onClick = { navController.navigate("create_article") },
-                icon = { Icon(Icons.Default.Add, "Publicar") },
-                text = { },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = RoundedCornerShape(20.dp),
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
-            )
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                modifier = Modifier.padding(bottom = 80.dp) // Espacio para BottomNavBar
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Publicar")
+            }
         }
     ) { paddingValues ->
         Column(
@@ -211,33 +216,40 @@ fun HomeScreen(
                 }
             }
 
-            // Lista de Artículos
-            when (val state = articlesState) {
-                is ArticlesState.Loading -> {
-                    Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
-                }
-                is ArticlesState.Success -> {
-                    if (state.articles.isEmpty()) {
-                        HomeEmptyState()
-                    } else {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            contentPadding = PaddingValues(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            items(state.articles) { article: com.example.aplicacionmovil.domain.models.Article ->
-                                ArticleCard(
-                                    article = article,
-                                    onClick = { navController.navigate("article_detail/${article.id}") }
-                                )
+            // Lista de Artículos con Pull-to-Refresh
+            @OptIn(ExperimentalMaterial3Api::class)
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = { viewModel.loadArticles() },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when (val state = articlesState) {
+                    is ArticlesState.Loading -> {
+                        Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
+                    }
+                    is ArticlesState.Success -> {
+                        if (state.articles.isEmpty()) {
+                            HomeEmptyState()
+                        } else {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(2),
+                                contentPadding = PaddingValues(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(state.articles) { article: com.example.aplicacionmovil.domain.models.Article ->
+                                    ArticleCard(
+                                        article = article,
+                                        onClick = { navController.navigate("article_detail/${article.id}") }
+                                    )
+                                }
                             }
                         }
                     }
-                }
-                is ArticlesState.Error -> {
-                    HomeErrorState(message = state.message) { viewModel.loadArticles() }
+                    is ArticlesState.Error -> {
+                        HomeErrorState(message = state.message) { viewModel.loadArticles() }
+                    }
                 }
             }
         }
