@@ -197,38 +197,6 @@ fun ProfileHeader(user: User, viewModel: ProfileViewModel) {
             StatItem(label = "Compras", value = user.numeroCompras.toString())
             StatItem(label = "Valoración", value = String.format("%.1f ★", user.calificacionPromedio))
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        var showEditDialog by remember { mutableStateOf(false) }
-
-        Button(
-            onClick = { showEditDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(Icons.Default.Edit, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Editar Perfil")
-        }
-
-        if (showEditDialog) {
-            EditProfileDialog(
-                user = user,
-                onUpdateProfile = { request ->
-                    viewModel.updateProfile(request) { success ->
-                        if (success) showEditDialog = false
-                    }
-                },
-                onChangePassword = { current, new, onComplete ->
-                    viewModel.changePassword(current, new, onComplete)
-                },
-                onDeactivateAccount = { password, onComplete ->
-                    viewModel.deactivateAccount(password, onComplete)
-                },
-                onDismiss = { showEditDialog = false }
-            )
-        }
     }
 }
 

@@ -63,12 +63,6 @@ fun SettingsScreen(navController: NavController) {
                     subtitle = "Cambia tus datos personales",
                     onClick = { showEditDialog = true }
                 )
-                SettingsItem(
-                    icon = Icons.Default.Email,
-                    title = "Correo Electrónico",
-                    subtitle = "Gestiona tu email",
-                    onClick = { /* Implementar */ }
-                )
             }
 
             item {
