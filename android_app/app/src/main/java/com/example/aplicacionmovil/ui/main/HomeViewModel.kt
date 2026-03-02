@@ -107,25 +107,30 @@ class HomeViewModel(context: Context) : ViewModel() {
             _articlesState.value = ArticlesState.Loading
             try {
                 val response = api.getArticles(JsonRpcRequest(params = SearchArticlesRequest()))
+                android.util.Log.d("HOME_ARTICLES", "HTTP code: ${response.code()}, isSuccessful: ${response.isSuccessful}")
                 if (response.isSuccessful) {
-                    // FIXED: Unwrap JsonRpcResponse first, then ApiResponse
                     val jsonRpcResponse = response.body()
+                    android.util.Log.d("HOME_ARTICLES", "body null? ${jsonRpcResponse == null}")
+                    android.util.Log.d("HOME_ARTICLES", "result null? ${jsonRpcResponse?.result == null}")
                     val apiResponse = jsonRpcResponse?.result
+                    android.util.Log.d("HOME_ARTICLES", "success? ${apiResponse?.success}, data null? ${apiResponse?.data == null}")
 
                     if (apiResponse?.success == true) {
                         val articles: List<Article> = apiResponse.data?.articles ?: emptyList()
+                        android.util.Log.d("HOME_ARTICLES", "Articles loaded: ${articles.size}")
                         _articlesState.value = ArticlesState.Success(articles)
                     } else {
-                        _articlesState.value = ArticlesState.Error(
-                            apiResponse?.message ?: "Error al cargar artículos"
-                        )
+                        val errMsg = apiResponse?.message ?: "Error al cargar artículos (success=false o body nulo)"
+                        android.util.Log.e("HOME_ARTICLES", "API error: $errMsg")
+                        _articlesState.value = ArticlesState.Error(errMsg)
                     }
                 } else {
-                    _articlesState.value = ArticlesState.Error(
-                        "Error ${response.code()}: ${response.message()}"
-                    )
+                    val errMsg = "Error HTTP ${response.code()}: ${response.message()}"
+                    android.util.Log.e("HOME_ARTICLES", errMsg)
+                    _articlesState.value = ArticlesState.Error(errMsg)
                 }
             } catch (e: Exception) {
+                android.util.Log.e("HOME_ARTICLES", "Exception: ${e.javaClass.simpleName} - ${e.localizedMessage}", e)
                 _articlesState.value = ArticlesState.Error(
                     "Error de conexión: ${e.localizedMessage ?: "desconocido"}"
                 )

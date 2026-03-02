@@ -158,7 +158,7 @@ fun MapScreen(navController: NavController) {
                             Marker(
                                 state = MarkerState(position = position),
                                 title = article.nombre,
-                                snippet = "${article.precio}€ - ${article.localidad ?: ""}",
+                                snippet = "%.2f€ - ${article.localidad ?: ""}".format(article.precio),
                                 onClick = {
                                     selectedArticle = article
                                     true
@@ -375,7 +375,7 @@ fun ArticleBottomCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${article.precio}€",
+                        text = "%.2f€".format(article.precio),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold

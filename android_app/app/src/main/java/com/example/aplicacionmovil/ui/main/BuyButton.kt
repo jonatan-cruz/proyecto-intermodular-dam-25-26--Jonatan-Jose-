@@ -133,7 +133,7 @@ fun BuyButton(
             onConfirm = {
                 viewModel.createPurchase(
                     articuloId = article.id,
-                    precio = article.precio.toDouble()
+                    precio = article.precio
                 )
             },
             onDismiss = {

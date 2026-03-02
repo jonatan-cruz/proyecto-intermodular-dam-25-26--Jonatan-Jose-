@@ -107,7 +107,7 @@ fun ArticleDetail.toArticle(): Article = Article(
     codigo = codigo,
     nombre = nombre,
     descripcion = descripcion,
-    precio = precio.toFloat(),
+    precio = precio,
     estadoProducto = estadoProducto,
     estadoPublicacion = estadoPublicacion,
     localidad = localidad,
@@ -156,7 +156,7 @@ fun ArticleDetailContent(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = "${article.precio} €",
+                        text = "%.2f €".format(article.precio),
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold

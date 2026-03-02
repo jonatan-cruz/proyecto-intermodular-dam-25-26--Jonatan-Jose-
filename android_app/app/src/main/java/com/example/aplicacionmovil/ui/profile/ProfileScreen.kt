@@ -446,7 +446,7 @@ fun SaleItemCard(
                     )
                 }
                 Text(
-                    text = "${sale.precio}€",
+                    text = "%.2f€".format(sale.precio),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.primary
@@ -532,7 +532,7 @@ fun PurchaseItemCard(
                     )
                 }
                 Text(
-                    text = "${purchase.precio}€",
+                    text = "%.2f€".format(purchase.precio),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
                     color = MaterialTheme.colorScheme.secondary

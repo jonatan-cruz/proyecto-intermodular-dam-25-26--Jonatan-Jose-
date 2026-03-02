@@ -42,12 +42,19 @@ fun ArticleCard(
                     .fillMaxWidth()
                     .height(160.dp)
             ) {
-                if (article.imagenPrincipal != null) {
-                    val imageBytes = remember(article.imagenPrincipal) {
-                        try { Base64.decode(article.imagenPrincipal, Base64.DEFAULT) } catch (e: Exception) { null }
+                val imageModel: Any? = when {
+                    // Primero: URL directa al endpoint de imagen (lista del home)
+                    article.imagenUrl != null -> "http://10.0.2.2:8069${article.imagenUrl}"
+                    // Fallback: base64 (detalle u otras pantallas)
+                    article.imagenPrincipal != null -> remember(article.imagenPrincipal) {
+                        try { android.util.Base64.decode(article.imagenPrincipal, android.util.Base64.DEFAULT) } catch (e: Exception) { null }
                     }
+                    else -> null
+                }
+
+                if (imageModel != null) {
                     AsyncImage(
-                        model = imageBytes,
+                        model = imageModel,
                         contentDescription = article.nombre,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -65,7 +72,7 @@ fun ArticleCard(
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "${article.precio}€",
+                        text = "%.2f€".format(article.precio),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
                         style = MaterialTheme.typography.labelLarge,

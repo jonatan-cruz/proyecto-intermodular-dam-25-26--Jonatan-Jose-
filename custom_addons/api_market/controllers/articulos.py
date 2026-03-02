@@ -80,7 +80,6 @@ class SecondMarketArticleController(http.Controller):
             
             total_count = request.env['second_market.article'].sudo().search_count(domain)
             
-            # Formatear respuesta
             articles_data = []
             for article in articles:
                 articles_data.append({
@@ -101,7 +100,9 @@ class SecondMarketArticleController(http.Controller):
                         'nombre': article.id_propietario.name,
                         'calificacion_promedio': article.id_propietario.calificacion_promedio
                     } if article.id_propietario else None,
-                    'imagen_principal': article.imagen_principal.decode('utf-8') if article.imagen_principal else None,
+                    # Sin base64 en la lista — la imagen se carga por URL desde Android
+                    'imagen_principal': None,
+                    'imagen_url': f'/api/v1/articles/{article.id}/image' if article.imagen_principal else None,
                     'conteo_imagenes': article.conteo_imagenes,
                     'conteo_favoritos': article.conteo_favoritos,
                     'conteo_vistas': article.conteo_vistas,
@@ -126,6 +127,32 @@ class SecondMarketArticleController(http.Controller):
                 'message': 'Error al obtener artículos',
                 'error_code': 'GET_ARTICLES_ERROR'
             }
+
+    @http.route('/api/v1/articles/<int:article_id>/image', type='http', auth='public', methods=['GET'], csrf=False, cors='*')
+    def get_article_image(self, article_id, **kwargs):
+        """
+        Devuelve la imagen principal de un artículo directamente en binario.
+        - type='http' permite devolver datos binarios (no JSON).
+        - Android carga esta URL con Coil de forma lazy (solo cuando la tarjeta es visible).
+        - Cache-Control de 1 día para que Coil no vuelva a pedirla.
+        """
+        try:
+            article = request.env['second_market.article'].sudo().browse(article_id)
+            if not article.exists() or not article.imagen_principal:
+                return request.not_found()
+
+            image_data = base64.b64decode(article.imagen_principal)
+            return request.make_response(
+                image_data,
+                headers=[
+                    ('Content-Type', 'image/jpeg'),
+                    ('Content-Length', str(len(image_data))),
+                    ('Cache-Control', 'public, max-age=86400'),
+                ]
+            )
+        except Exception as e:
+            _logger.error(f"Error al servir imagen del artículo {article_id}: {e}")
+            return request.not_found()
 
     @http.route('/api/v1/articles/<int:article_id>', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_article_detail(self, article_id, **kwargs):

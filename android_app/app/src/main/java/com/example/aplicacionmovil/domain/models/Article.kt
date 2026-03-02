@@ -10,7 +10,7 @@ data class Article(
     val codigo: String,
     val nombre: String,
     val descripcion: String?,
-    val precio: Float,
+    val precio: Double,
 
     @SerializedName("estado_producto")
     val estadoProducto: String,
@@ -30,7 +30,11 @@ data class Article(
     // La API devuelve un objeto "propietario"
     val propietario: ArticlePropietario? = null,
 
-    // La API devuelve "imagen_principal" como string (base64 o URL), no una lista
+    // La lista devuelve imagen_url con la ruta al endpoint de imagen (sin base64)
+    // La imagen completa en base64 sigue disponible en el detalle del artículo
+    @SerializedName("imagen_url")
+    val imagenUrl: String? = null,
+
     @SerializedName("imagen_principal")
     val imagenPrincipal: String? = null,
 
