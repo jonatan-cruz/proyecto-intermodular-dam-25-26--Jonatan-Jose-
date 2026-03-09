@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+
+<html lang="es" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>second_market.models.second_market_categoria &#8212; documentación de Dalo - 1.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=4936afed"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/translations.js?v=f85f4cfb"></script>
+    <link rel="index" title="Índice" href="../../../genindex.html" />
+    <link rel="search" title="Búsqueda" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Código fuente para second_market.models.second_market_categoria</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Módulo de gestión de categorías de artículos.</span>
+
+<span class="sd">Define el modelo :class:`CategoriaSegundaMano` que agrupa los artículos</span>
+<span class="sd">de la plataforma Second Market en categorías temáticas.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">_</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span>
+
+
+<div class="viewcode-block" id="CategoriaSegundaMano">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_categoria.CategoriaSegundaMano">[documentos]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CategoriaSegundaMano</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Modelo que representa una categoría de artículos de segunda mano.</span>
+
+<span class="sd">    Las categorías permiten clasificar los artículos para facilitar</span>
+<span class="sd">    su búsqueda y filtrado en la plataforma.</span>
+
+<span class="sd">    :cvar _name: Nombre técnico del modelo en Odoo.</span>
+<span class="sd">    :cvar _description: Descripción legible del modelo.</span>
+<span class="sd">    :cvar _order: Orden alfabético por nombre.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_name</span> <span class="o">=</span> <span class="s1">&#39;second_market.category&#39;</span>
+    <span class="n">_description</span> <span class="o">=</span> <span class="s1">&#39;Categoría de Artículos de Segunda Mano&#39;</span>
+    <span class="n">_order</span> <span class="o">=</span> <span class="s1">&#39;name&#39;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Nombre&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Nombre de la categoría&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">descripcion</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Descripción&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Descripción de la categoría&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">imagen</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Binary</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Imagen&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Imagen representativa de la categoría&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">activo</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Boolean</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Activo&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Si está desmarcado, la categoría no aparecerá en las opciones&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">color</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Color&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Color para visualización en Kanban&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">icono</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Icono&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Nombre del icono Font Awesome (ej: fa-laptop)&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">articulos_ids</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.article&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;id_categoria&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Artículos&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">conteo_articulos</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Número de Artículos&#39;</span><span class="p">,</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_compute_conteo_articulos&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;articulos_ids&#39;</span><span class="p">,</span> <span class="s1">&#39;articulos_ids.estado_publicacion&#39;</span><span class="p">,</span> <span class="s1">&#39;articulos_ids.activo&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_conteo_articulos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Contar los artículos publicados que pertenecen a la categoría.</span>
+
+<span class="sd">        Solo se contabilizan artículos cuyo ``estado_publicacion`` sea</span>
+<span class="sd">        ``&#39;publicado&#39;``. Almacena el resultado en :attr:`conteo_articulos`.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            Si ocurre un error durante el cálculo, asigna ``0`` y registra</span>
+<span class="sd">            una advertencia en el log del servidor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">categoria</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">categoria</span><span class="o">.</span><span class="n">articulos_ids</span><span class="p">:</span>
+                    <span class="n">articulos_publicados</span> <span class="o">=</span> <span class="n">categoria</span><span class="o">.</span><span class="n">articulos_ids</span><span class="o">.</span><span class="n">filtered</span><span class="p">(</span>
+                        <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">estado_publicacion</span> <span class="o">==</span> <span class="s1">&#39;publicado&#39;</span>
+                    <span class="p">)</span>
+                    <span class="n">categoria</span><span class="o">.</span><span class="n">conteo_articulos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">articulos_publicados</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">categoria</span><span class="o">.</span><span class="n">conteo_articulos</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+                <span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+                <span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error calculando conteo de artículos para categoría </span><span class="si">{</span><span class="n">categoria</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">categoria</span><span class="o">.</span><span class="n">conteo_articulos</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_name_unique</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que el nombre de la categoría sea único (insensible a mayúsculas).</span>
+
+<span class="sd">        :raises ValidationError: Si ya existe otra categoría con el mismo nombre.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">categoria</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_count</span><span class="p">([(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;=ilike&#39;</span><span class="p">,</span> <span class="n">categoria</span><span class="o">.</span><span class="n">name</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;!=&#39;</span><span class="p">,</span> <span class="n">categoria</span><span class="o">.</span><span class="n">id</span><span class="p">)])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Ya existe una categoría con este nombre.&#39;</span><span class="p">))</span>
+
+    <span class="n">_sql_constraints</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s1">&#39;name_unique&#39;</span><span class="p">,</span> <span class="s1">&#39;unique(name)&#39;</span><span class="p">,</span> <span class="s1">&#39;El nombre de la categoría debe ser único.&#39;</span><span class="p">)</span>
+    <span class="p">]</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Dalo</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Ir a" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navegación</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Código de módulo</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Jonatan C. and Jose S..
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

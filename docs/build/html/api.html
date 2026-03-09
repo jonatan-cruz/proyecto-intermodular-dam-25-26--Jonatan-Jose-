@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+
+<html lang="es" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>API REST (api_market) &#8212; documentación de Dalo - 1.0</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=4936afed"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/translations.js?v=f85f4cfb"></script>
+    <link rel="index" title="Índice" href="genindex.html" />
+    <link rel="search" title="Búsqueda" href="search.html" />
+    <link rel="prev" title="Modelos (second_market)" href="models.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="api-rest-api-market">
+<h1>API REST (api_market)<a class="headerlink" href="#api-rest-api-market" title="Link to this heading">¶</a></h1>
+<p>Documentación de los controladores de la API REST del módulo <strong>api_market</strong>.</p>
+<nav class="contents local" id="indice-de-endpoints">
+<p class="topic-title">Índice de endpoints</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#module-api_market.controllers.articulos" id="id1">Artículos</a></p></li>
+<li><p><a class="reference internal" href="#module-api_market.controllers.auth_controller" id="id2">Autenticación</a></p></li>
+<li><p><a class="reference internal" href="#module-api_market.controllers.login" id="id3">Login / Registro</a></p></li>
+<li><p><a class="reference internal" href="#module-api_market.controllers.usuario" id="id4">Usuarios</a></p></li>
+<li><p><a class="reference internal" href="#module-api_market.controllers.chat_den_cat" id="id5">Chats, Denuncias y Categorías</a></p></li>
+<li><p><a class="reference internal" href="#module-api_market.controllers.com_compr_val" id="id6">Comentarios, Compras y Valoraciones</a></p></li>
+</ul>
+</nav>
+<section id="module-api_market.controllers.articulos">
+<span id="articulos"></span><h2><a class="toc-backref" href="#id1" role="doc-backlink">Artículos</a><a class="headerlink" href="#module-api_market.controllers.articulos" title="Link to this heading">¶</a></h2>
+<p>Controlador de artículos para la API REST de Second Market.</p>
+<p><strong>Endpoints disponibles:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GET/POST</span> <span class="pre">/api/v1/articles/list</span></code>             — Listar artículos con filtros.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">/api/v1/articles/&lt;id&gt;/image</span></code>       — Servir imagen principal (binario HTTP).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET/POST</span> <span class="pre">/api/v1/articles/&lt;id&gt;</span></code>             — Detalle completo de un artículo.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">/api/v1/articles</span></code>                 — Crear un nuevo artículo.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PUT</span>&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">/api/v1/articles/&lt;id&gt;</span></code>            — Actualizar un artículo existente.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span>&#160;&#160;&#160;&#160;&#160; <span class="pre">/api/v1/articles/&lt;id&gt;/publish</span></code>    — Publicar un artículo en borrador.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DELETE</span>&#160;&#160;&#160; <span class="pre">/api/v1/articles/&lt;id&gt;</span></code>            — Desactivar (borrado lógico) un artículo.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET/POST</span> <span class="pre">/api/v1/articles/my-articles</span></code>     — Listar artículos del usuario autenticado.</p></li>
+</ul>
+<p>Los endpoints de creación, edición y eliminación requieren autenticación JWT
+mediante el header <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="api_market.controllers.articulos.SecondMarketArticleController">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">api_market.controllers.articulos.</span></span><span class="sig-name descname"><span class="pre">SecondMarketArticleController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/articulos.html#SecondMarketArticleController"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.articulos.SecondMarketArticleController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Controller</span></code></p>
+<p>Controlador para la gestión de artículos de segunda mano — API v1.</p>
+<p>Proporciona endpoints para listar, consultar, crear, editar, publicar y
+eliminar artículos. Los endpoints de escritura requieren autenticación JWT.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.articulos.SecondMarketArticleController.create_article">
+<span class="sig-name descname"><span class="pre">create_article</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.articulos.SecondMarketArticleController.create_article" title="Link to this definition">¶</a></dt>
+<dd><p>Crear un nuevo artículo y publicarlo directamente.</p>
+<p>El usuario autenticado se convierte en el propietario. El artículo se crea
+directamente en estado <code class="docutils literal notranslate"><span class="pre">publicado</span></code>. Se admiten entre 1 y 10 imágenes.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;nombre&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Bicicleta de montaña&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;descripcion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;En buen estado&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;precio&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">150.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;estado_producto&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bueno&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;localidad&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sevilla&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;categoria_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;antiguedad&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;latitud&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">37.38</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;longitud&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">-5.99</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;etiquetas_ids&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;imagenes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;image&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;base64&gt;&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;foto1.jpg&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;sequence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Los campos <code class="docutils literal notranslate"><span class="pre">antiguedad</span></code>, <code class="docutils literal notranslate"><span class="pre">latitud</span></code>, <code class="docutils literal notranslate"><span class="pre">longitud</span></code> y <code class="docutils literal notranslate"><span class="pre">etiquetas_ids</span></code> son opcionales.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code> y <code class="docutils literal notranslate"><span class="pre">data.article_id</span></code> + <code class="docutils literal notranslate"><span class="pre">data.codigo</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.articulos.SecondMarketArticleController.delete_article">
+<span class="sig-name descname"><span class="pre">delete_article</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">article_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.articulos.SecondMarketArticleController.delete_article" title="Link to this definition">¶</a></dt>
+<dd><p>Desactivar (borrado lógico) un artículo.</p>
+<p>Solo el propietario puede eliminar su artículo. El artículo pasa a
+<code class="docutils literal notranslate"><span class="pre">activo</span> <span class="pre">=</span> <span class="pre">False</span></code> y <code class="docutils literal notranslate"><span class="pre">estado_publicacion</span> <span class="pre">=</span> <span class="pre">'eliminado'</span></code>, sin borrar
+el registro de la base de datos.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>article_id</strong> (<em>int</em>) – ID del artículo a desactivar.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.articulos.SecondMarketArticleController.get_article_detail">
+<span class="sig-name descname"><span class="pre">get_article_detail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">article_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.articulos.SecondMarketArticleController.get_article_detail" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener el detalle completo de un artículo e incrementar su contador de vistas.</p>
+<p>Devuelve todos los campos del artículo, sus imágenes en base64, los comentarios
+activos y datos públicos del propietario.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>article_id</strong> (<em>int</em>) – ID del artículo a consultar.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data</span></code> (detalle completo del artículo).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.articulos.SecondMarketArticleController.get_article_image">
+<span class="sig-name descname"><span class="pre">get_article_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">article_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.articulos.SecondMarketArticleController.get_article_image" title="Link to this definition">¶</a></dt>
+<dd><p>Servir la imagen principal de un artículo en formato binario.</p>
+<p>Endpoint de tipo <code class="docutils literal notranslate"><span class="pre">http</span></code> (no JSON) que devuelve los bytes de la imagen
+directamente con su <code class="docutils literal notranslate"><span class="pre">Content-Type</span></code>. Usado por Android con Coil para
+carga lazy de imágenes (solo cuando la tarjeta es visible en pantalla).</p>
+<p>Incluye <code class="docutils literal notranslate"><span class="pre">Cache-Control:</span> <span class="pre">public,</span> <span class="pre">max-age=86400</span></code> para evitar peticiones
+repetidas durante 24 horas.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>article_id</strong> (<em>int</em>) – ID del artículo cuya imagen se quiere servir.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Respuesta HTTP con la imagen en binario, o <code class="docutils literal notranslate"><span class="pre">404</span> <span class="pre">Not</span> <span class="pre">Found</span></code>
+si el artículo no existe o no tiene imagen.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">odoo.http.Response</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.articulos.SecondMarketArticleController.get_articles">
+<span class="sig-name descname"><span class="pre">get_articles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.articulos.SecondMarketArticleController.get_articles" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener la lista paginada de artículos publicados con filtros opcionales.</p>
+<p>La imagen principal <strong>no</strong> se incluye en la respuesta de lista; en su lugar se
+devuelve <code class="docutils literal notranslate"><span class="pre">imagen_url</span></code> apuntando al endpoint binario
+<code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/v1/articles/&lt;id&gt;/image</span></code>, que Android carga de forma lazy con Coil.</p>
+<p><strong>Body JSON (todos los campos son opcionales):</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;limit&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;offset&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;categoria_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;search&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bicicleta&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;precio_min&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">10.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;precio_max&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">500.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;estado_producto&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bueno&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;localidad&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sevilla&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">data.articles</span></code>, <code class="docutils literal notranslate"><span class="pre">data.total</span></code>,
+<code class="docutils literal notranslate"><span class="pre">data.limit</span></code> y <code class="docutils literal notranslate"><span class="pre">data.offset</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.articulos.SecondMarketArticleController.get_my_articles">
+<span class="sig-name descname"><span class="pre">get_my_articles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.articulos.SecondMarketArticleController.get_my_articles" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener todos los artículos del usuario autenticado (todos los estados).</p>
+<p>Incluye artículos en borrador, publicados, reservados y eliminados.
+Admite paginación mediante los parámetros <code class="docutils literal notranslate"><span class="pre">limit</span></code> y <code class="docutils literal notranslate"><span class="pre">offset</span></code>.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros opcionales: <code class="docutils literal notranslate"><span class="pre">limit</span></code> (por defecto 20)
+y <code class="docutils literal notranslate"><span class="pre">offset</span></code> (por defecto 0).</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">data.articles</span></code> y <code class="docutils literal notranslate"><span class="pre">data.total</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.articulos.SecondMarketArticleController.publish_article">
+<span class="sig-name descname"><span class="pre">publish_article</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">article_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.articulos.SecondMarketArticleController.publish_article" title="Link to this definition">¶</a></dt>
+<dd><p>Cambiar el estado de un artículo a <code class="docutils literal notranslate"><span class="pre">publicado</span></code>.</p>
+<p>Solo el propietario puede publicar su artículo. Útil para artículos
+creados previamente en estado <code class="docutils literal notranslate"><span class="pre">borrador</span></code>.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>article_id</strong> (<em>int</em>) – ID del artículo a publicar.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.articulos.SecondMarketArticleController.update_article">
+<span class="sig-name descname"><span class="pre">update_article</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">article_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.articulos.SecondMarketArticleController.update_article" title="Link to this definition">¶</a></dt>
+<dd><p>Actualizar uno o varios campos de un artículo existente.</p>
+<p>Solo el propietario del artículo puede editarlo. Se actualizan únicamente
+los campos enviados en el body.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON (campos editables):</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;nombre&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Nuevo nombre&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;precio&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">120.0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;localidad&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Málaga&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;categoria_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>article_id</strong> (<em>int</em>) – ID del artículo a actualizar.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-api_market.controllers.auth_controller">
+<span id="autenticacion"></span><h2><a class="toc-backref" href="#id2" role="doc-backlink">Autenticación</a><a class="headerlink" href="#module-api_market.controllers.auth_controller" title="Link to this heading">¶</a></h2>
+<p>Módulo de autenticación JWT para la API de Second Market.</p>
+<p>Proporciona funciones auxiliares reutilizables para extraer, verificar
+y renovar automáticamente tokens JWT en los distintos controladores
+de la API.</p>
+<p>Variables de configuración (importadas desde <code class="docutils literal notranslate"><span class="pre">config.py</span></code> con fallback):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">JWT_SECRET_KEY</span></code>: Clave secreta para firmar/verificar tokens.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">JWT_ALGORITHM</span></code>: Algoritmo de cifrado (por defecto <code class="docutils literal notranslate"><span class="pre">HS256</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">JWT_EXP_DELTA_SECONDS</span></code>: Duración del token en segundos (por defecto 86 400 = 24h).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">JWT_REFRESH_THRESHOLD_SECONDS</span></code>: Segundos restantes a partir de los cuales se
+renueva automáticamente el token (por defecto 7 200 = 2h).</p></li>
+</ul>
+<dl class="py function">
+<dt class="sig sig-object py" id="api_market.controllers.auth_controller.auto_refresh_token_if_needed">
+<span class="sig-prename descclassname"><span class="pre">api_market.controllers.auth_controller.</span></span><span class="sig-name descname"><span class="pre">auto_refresh_token_if_needed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/auth_controller.html#auto_refresh_token_if_needed"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.auth_controller.auto_refresh_token_if_needed" title="Link to this definition">¶</a></dt>
+<dd><p>Renovar automáticamente un token JWT si está próximo a expirar.</p>
+<p>Si al token le quedan menos de <code class="docutils literal notranslate"><span class="pre">JWT_REFRESH_THRESHOLD_SECONDS</span></code> segundos
+de vida, genera y devuelve un nuevo token con la fecha de expiración
+reiniciada. El usuario no nota la renovación.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>token</strong> (<em>str</em>) – Token JWT actual del cliente.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Nuevo token JWT si la renovación fue necesaria, o <code class="docutils literal notranslate"><span class="pre">None</span></code> si
+todavía le queda suficiente tiempo de vida o si ocurre algún error.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str or None</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Nota</p>
+<p>Si el token ya está expirado (<code class="docutils literal notranslate"><span class="pre">ExpiredSignatureError</span></code>), esta función
+devuelve <code class="docutils literal notranslate"><span class="pre">None</span></code> sin intentar la renovación.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="api_market.controllers.auth_controller.get_authenticated_user_with_refresh">
+<span class="sig-prename descclassname"><span class="pre">api_market.controllers.auth_controller.</span></span><span class="sig-name descname"><span class="pre">get_authenticated_user_with_refresh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/auth_controller.html#get_authenticated_user_with_refresh"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.auth_controller.get_authenticated_user_with_refresh" title="Link to this definition">¶</a></dt>
+<dd><p>Verificar la autenticación del usuario actual e incluir auto-refresh del token.</p>
+<p>Función helper completa que encadena:</p>
+<ol class="arabic simple">
+<li><p>Extracción del token del header <code class="docutils literal notranslate"><span class="pre">Authorization</span></code>.</p></li>
+<li><p>Verificación de validez y existencia del usuario.</p></li>
+<li><p>Comprobación de si el token necesita renovación automática.</p></li>
+</ol>
+<p>Uso típico en controladores:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">auth_result</span> <span class="o">=</span> <span class="n">get_authenticated_user_with_refresh</span><span class="p">()</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">}</span>
+
+<span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+<span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>  <span class="c1"># None si no se renovó</span>
+
+<span class="c1"># ...lógica de negocio...</span>
+
+<span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">}</span>
+<span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>  <span class="c1"># El cliente debe guardar el nuevo token</span>
+<span class="k">return</span> <span class="n">response</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>Diccionario con los datos de autenticación:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;user_data&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>      <span class="c1"># Resultado de verify_jwt_token()</span>
+    <span class="s1">&#39;new_token&#39;</span><span class="p">:</span> <span class="nb">str</span>        <span class="c1"># Solo presente si el token fue renovado</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Devuelve <code class="docutils literal notranslate"><span class="pre">None</span></code> si no hay token, el token es inválido o el usuario
+está inactivo.</p>
+</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="api_market.controllers.auth_controller.get_token_from_request">
+<span class="sig-prename descclassname"><span class="pre">api_market.controllers.auth_controller.</span></span><span class="sig-name descname"><span class="pre">get_token_from_request</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/auth_controller.html#get_token_from_request"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.auth_controller.get_token_from_request" title="Link to this definition">¶</a></dt>
+<dd><p>Extraer el token JWT del header <code class="docutils literal notranslate"><span class="pre">Authorization</span></code> de la petición actual.</p>
+<p>Solo se admite el formato <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Token JWT como cadena de texto, o <code class="docutils literal notranslate"><span class="pre">None</span></code> si no está presente.</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>str or None</p>
+</dd>
+</dl>
+<p>Ejemplo de header esperado:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Authorization</span><span class="p">:</span> <span class="n">Bearer</span> <span class="n">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span><span class="o">...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="api_market.controllers.auth_controller.verify_jwt_token">
+<span class="sig-prename descclassname"><span class="pre">api_market.controllers.auth_controller.</span></span><span class="sig-name descname"><span class="pre">verify_jwt_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/auth_controller.html#verify_jwt_token"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.auth_controller.verify_jwt_token" title="Link to this definition">¶</a></dt>
+<dd><p>Verificar un token JWT y devolver los datos del usuario asociado.</p>
+<p>Decodifica el token, extrae el <code class="docutils literal notranslate"><span class="pre">user_id</span></code> del payload, y comprueba
+que el usuario exista y esté activo en <code class="docutils literal notranslate"><span class="pre">second_market.user</span></code>.</p>
+<p>Uso típico desde otros controladores:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">.auth_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">verify_jwt_token</span>
+
+<span class="n">user_data</span> <span class="o">=</span> <span class="n">verify_jwt_token</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">user_data</span><span class="p">:</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># Token inválido o usuario inactivo</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>token</strong> (<em>str</em>) – Token JWT a verificar.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Diccionario con datos del usuario si el token es válido:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;user_id&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="s1">&#39;id_usuario&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="s1">&#39;login&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">second_market</span><span class="o">.</span><span class="n">user</span>  <span class="c1"># Recordset completo</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Devuelve <code class="docutils literal notranslate"><span class="pre">None</span></code> si el token ha expirado, es inválido o el
+usuario no existe / está inactivo.</p>
+</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-api_market.controllers.login">
+<span id="login-registro"></span><h2><a class="toc-backref" href="#id3" role="doc-backlink">Login / Registro</a><a class="headerlink" href="#module-api_market.controllers.login" title="Link to this heading">¶</a></h2>
+<p>Controlador de autenticación para la API REST de Second Market.</p>
+<p>Gestiona el login, registro, verificación y logout de usuarios mediante
+tokens JWT (JSON Web Tokens) firmados con el algoritmo HS256.</p>
+<p><strong>Endpoints disponibles:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/auth/login</span></code>    — Autenticar usuario y obtener token.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/auth/register</span></code> — Registrar nuevo usuario y obtener token.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/auth/verify</span></code>   — Verificar validez de un token existente.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/auth/logout</span></code>   — Cerrar sesión (logging del evento).</p></li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="api_market.controllers.login.SecondMarketAuthController">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">api_market.controllers.login.</span></span><span class="sig-name descname"><span class="pre">SecondMarketAuthController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/login.html#SecondMarketAuthController"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.login.SecondMarketAuthController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Controller</span></code></p>
+<p>Controlador de autenticación para Second Market — API v1.</p>
+<p>Proporciona endpoints de login, registro, verificación de token y logout.
+Todos los endpoints son de tipo <code class="docutils literal notranslate"><span class="pre">json</span></code> y no requieren autenticación
+previa de Odoo (<code class="docutils literal notranslate"><span class="pre">auth='public'</span></code>).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.login.SecondMarketAuthController.login">
+<span class="sig-name descname"><span class="pre">login</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.login.SecondMarketAuthController.login" title="Link to this definition">¶</a></dt>
+<dd><p>Autenticar un usuario y devolver un token JWT.</p>
+<p>Verifica las credenciales contra <code class="docutils literal notranslate"><span class="pre">second_market.user</span></code>, comprueba que la
+cuenta esté activa y genera un token JWT con expiración configurada en
+<code class="docutils literal notranslate"><span class="pre">JWT_EXP_DELTA_SECONDS</span></code>.</p>
+<p><strong>Body JSON esperado:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;login&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;usuario@ejemplo.com&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;miContraseña123&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Respuesta exitosa:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Login exitoso&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;token&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;JWT&gt;&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;expires_in&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;id_usuario&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0000001&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Jonatan&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;login&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;jonatan@ejemplo.com&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;calificacion_promedio&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.5</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;productos_en_venta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo (no se usan directamente).</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code> y <code class="docutils literal notranslate"><span class="pre">data</span></code> (token + datos de usuario).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.login.SecondMarketAuthController.logout">
+<span class="sig-name descname"><span class="pre">logout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.login.SecondMarketAuthController.logout" title="Link to this definition">¶</a></dt>
+<dd><p>Registrar el cierre de sesión del usuario.</p>
+<p>JWT es stateless: el logout real se realiza en el cliente eliminando
+el token almacenado. Este endpoint se usa principalmente para registrar
+el evento en los logs del servidor.</p>
+<div class="admonition note">
+<p class="admonition-title">Nota</p>
+<p>No invalida el token en el servidor. El cliente debe eliminar
+el token de su almacenamiento local tras llamar a este endpoint.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span> <span class="pre">=</span> <span class="pre">True</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.login.SecondMarketAuthController.register">
+<span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.login.SecondMarketAuthController.register" title="Link to this definition">¶</a></dt>
+<dd><p>Registrar un nuevo usuario y devolver un token JWT.</p>
+<p>Valida los campos requeridos, verifica que el login no esté en uso,
+crea el usuario (la contraseña se hashea automáticamente en
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">create()</span></code>) y genera un
+token JWT de sesión.</p>
+<p><strong>Body JSON esperado:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Jonatan&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;login&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;jonatan@ejemplo.com&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;miContraseña123&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;telefono&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;612345678&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ubicacion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sevilla&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;biografia&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hola, soy Jonatan&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Los campos <code class="docutils literal notranslate"><span class="pre">telefono</span></code>, <code class="docutils literal notranslate"><span class="pre">ubicacion</span></code> y <code class="docutils literal notranslate"><span class="pre">biografia</span></code> son opcionales.</p>
+<p><strong>Respuesta exitosa:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Usuario registrado exitosamente&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;token&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;JWT&gt;&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;expires_in&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code> y <code class="docutils literal notranslate"><span class="pre">data</span></code> (token + datos de usuario).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.login.SecondMarketAuthController.verify_token">
+<span class="sig-name descname"><span class="pre">verify_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.login.SecondMarketAuthController.verify_token" title="Link to this definition">¶</a></dt>
+<dd><p>Verificar la validez de un token JWT.</p>
+<p>El token debe enviarse en el header HTTP <code class="docutils literal notranslate"><span class="pre">Authorization</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Authorization</span><span class="p">:</span> <span class="n">Bearer</span> <span class="o">&lt;</span><span class="n">token</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Si el token es válido, devuelve los datos del usuario asociado.</p>
+<p><strong>Respuesta exitosa:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Token válido&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;user&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Jonatan&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;login&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;jonatan@ejemplo.com&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;calificacion_promedio&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.5</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code> y <code class="docutils literal notranslate"><span class="pre">data</span></code> (perfil del usuario).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="api_market.controllers.login.crypt_context">
+<span class="sig-prename descclassname"><span class="pre">api_market.controllers.login.</span></span><span class="sig-name descname"><span class="pre">crypt_context</span></span><a class="headerlink" href="#api_market.controllers.login.crypt_context" title="Link to this definition">¶</a></dt>
+<dd><p>Contexto de hashing de contraseñas (mismo esquema que en <cite>second_market.user</cite>).</p>
+</dd></dl>
+
+</section>
+<section id="module-api_market.controllers.usuario">
+<span id="usuarios"></span><h2><a class="toc-backref" href="#id4" role="doc-backlink">Usuarios</a><a class="headerlink" href="#module-api_market.controllers.usuario" title="Link to this heading">¶</a></h2>
+<p>Controlador de gestión de perfiles de usuario para la API REST de Second Market.</p>
+<p><strong>Endpoints disponibles:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GET/POST</span> <span class="pre">/api/v1/users/profile</span></code>              — Perfil del usuario autenticado.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span>&#160;&#160;&#160;&#160; <span class="pre">/api/v1/users/update-profile</span></code>       — Actualizar perfil propio.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span>&#160;&#160;&#160;&#160; <span class="pre">/api/v1/users/change-password</span></code>      — Cambiar contraseña.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET/POST</span> <span class="pre">/api/v1/users/&lt;id&gt;</span></code>                 — Perfil público de un usuario.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET/POST</span> <span class="pre">/api/v1/users/&lt;id&gt;/articles</span></code>        — Artículos publicados de un usuario.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET/POST</span> <span class="pre">/api/v1/users/&lt;id&gt;/ratings</span></code>         — Valoraciones de un usuario.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET/POST</span> <span class="pre">/api/v1/users/statistics</span></code>           — Estadísticas detalladas del usuario autenticado.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span>&#160;&#160;&#160;&#160; <span class="pre">/api/v1/users/deactivate</span></code>           — Desactivar cuenta propia.</p></li>
+</ul>
+<p>Todos los endpoints protegidos requieren el header <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="api_market.controllers.usuario.SecondMarketUserController">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">api_market.controllers.usuario.</span></span><span class="sig-name descname"><span class="pre">SecondMarketUserController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/usuario.html#SecondMarketUserController"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.usuario.SecondMarketUserController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Controller</span></code></p>
+<p>Controlador para la gestión de perfiles y cuentas de usuario.</p>
+<p>Todos los métodos que requieren autenticación comprueban el token JWT
+mediante <a class="reference internal" href="#api_market.controllers.auth_controller.get_authenticated_user_with_refresh" title="api_market.controllers.auth_controller.get_authenticated_user_with_refresh"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_authenticated_user_with_refresh()</span></code></a>.
+Si el token está próximo a expirar, se renueva automáticamente y se devuelve
+en el campo <code class="docutils literal notranslate"><span class="pre">new_token</span></code> de la respuesta.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.usuario.SecondMarketUserController.change_password">
+<span class="sig-name descname"><span class="pre">change_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.usuario.SecondMarketUserController.change_password" title="Link to this definition">¶</a></dt>
+<dd><p>Cambiar la contraseña del usuario autenticado.</p>
+<p>Requiere la contraseña actual para confirmar la identidad. La nueva
+contraseña debe tener al menos 8 caracteres.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;current_password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;contraseñaActual&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;new_password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nuevaContraseña123&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.usuario.SecondMarketUserController.deactivate_account">
+<span class="sig-name descname"><span class="pre">deactivate_account</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.usuario.SecondMarketUserController.deactivate_account" title="Link to this definition">¶</a></dt>
+<dd><p>Desactivar la cuenta del usuario autenticado.</p>
+<p>El usuario confirma su identidad con la contraseña actual. Al desactivarse,
+todos sus artículos en venta también se desactivan automáticamente.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;password&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;contraseñaActual&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.usuario.SecondMarketUserController.get_my_profile">
+<span class="sig-name descname"><span class="pre">get_my_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.usuario.SecondMarketUserController.get_my_profile" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener el perfil completo del usuario autenticado.</p>
+<p>Devuelve todos los campos del perfil, incluyendo el avatar en base64,
+estadísticas de venta/compra y calificación promedio.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Respuesta exitosa:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Jonatan&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;login&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;jonatan@ejemplo.com&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;avatar&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;base64&gt;&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;calificacion_promedio&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.5</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;productos_en_venta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data</span></code> (perfil del usuario).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.usuario.SecondMarketUserController.get_my_statistics">
+<span class="sig-name descname"><span class="pre">get_my_statistics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.usuario.SecondMarketUserController.get_my_statistics" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener estadísticas detalladas de actividad del usuario autenticado.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Respuesta exitosa:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;productos_en_venta&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;productos_vendidos&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;calificacion_promedio&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">4.2</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;ventas_completadas&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;compras_pendientes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data</span></code> (estadísticas completas).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.usuario.SecondMarketUserController.get_user_articles">
+<span class="sig-name descname"><span class="pre">get_user_articles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.usuario.SecondMarketUserController.get_user_articles" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener los artículos publicados de un usuario.</p>
+<p>Devuelve solo artículos en estado <code class="docutils literal notranslate"><span class="pre">publicado</span></code> y activos.
+Admite paginación mediante <code class="docutils literal notranslate"><span class="pre">limit</span></code> y <code class="docutils literal notranslate"><span class="pre">offset</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>user_id</strong> (<em>int</em>) – ID interno del usuario propietario.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros opcionales: <code class="docutils literal notranslate"><span class="pre">limit</span></code> (int, por defecto 20) y
+<code class="docutils literal notranslate"><span class="pre">offset</span></code> (int, por defecto 0).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data.articles</span></code> (lista de artículos).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.usuario.SecondMarketUserController.get_user_profile">
+<span class="sig-name descname"><span class="pre">get_user_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.usuario.SecondMarketUserController.get_user_profile" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener el perfil público de un usuario por su ID.</p>
+<p>No requiere autenticación. Devuelve solo los campos públicos del
+perfil (no incluye email/login ni información privada).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>user_id</strong> (<em>int</em>) – ID interno de Odoo del usuario a consultar.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data</span></code> (perfil público).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.usuario.SecondMarketUserController.get_user_ratings">
+<span class="sig-name descname"><span class="pre">get_user_ratings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.usuario.SecondMarketUserController.get_user_ratings" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener las valoraciones recibidas por un usuario.</p>
+<p>Devuelve la lista de valoraciones activas y el promedio de calificación.
+Admite paginación mediante <code class="docutils literal notranslate"><span class="pre">limit</span></code> y <code class="docutils literal notranslate"><span class="pre">offset</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>user_id</strong> (<em>int</em>) – ID interno del usuario valorado.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros opcionales: <code class="docutils literal notranslate"><span class="pre">limit</span></code> (int, por defecto 10) y
+<code class="docutils literal notranslate"><span class="pre">offset</span></code> (int, por defecto 0).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">data.ratings</span></code> y
+<code class="docutils literal notranslate"><span class="pre">data.calificacion_promedio</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.usuario.SecondMarketUserController.update_profile">
+<span class="sig-name descname"><span class="pre">update_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.usuario.SecondMarketUserController.update_profile" title="Link to this definition">¶</a></dt>
+<dd><p>Actualizar campos del perfil del usuario autenticado.</p>
+<p>Solo se actualizan los campos enviados en el body. El campo <code class="docutils literal notranslate"><span class="pre">avatar</span></code>
+acepta una cadena base64; si se envía vacío, se ignora.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON (campos opcionales):</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Jonatan Cruz&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;telefono&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;612345678&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;ubicacion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sevilla&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;biografia&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Nueva bio&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;avatar&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;base64&gt;&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;login&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nuevo@email.com&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="api_market.controllers.usuario.crypt_context">
+<span class="sig-prename descclassname"><span class="pre">api_market.controllers.usuario.</span></span><span class="sig-name descname"><span class="pre">crypt_context</span></span><a class="headerlink" href="#api_market.controllers.usuario.crypt_context" title="Link to this definition">¶</a></dt>
+<dd><p>Contexto de hashing de contraseñas (mismo esquema que en <code class="docutils literal notranslate"><span class="pre">login.py</span></code>).</p>
+</dd></dl>
+
+</section>
+<section id="module-api_market.controllers.chat_den_cat">
+<span id="chats-denuncias-y-categorias"></span><h2><a class="toc-backref" href="#id5" role="doc-backlink">Chats, Denuncias y Categorías</a><a class="headerlink" href="#module-api_market.controllers.chat_den_cat" title="Link to this heading">¶</a></h2>
+<p>Controladores de chats, denuncias y categorías para la API REST de Second Market.</p>
+<p><strong>Endpoints de Chats</strong> (<code class="docutils literal notranslate"><span class="pre">SecondMarketChatController</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/chats</span></code>                            — Crear o listar chats del usuario.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/chats/&lt;id&gt;/messages</span></code>              — Enviar o listar mensajes de un chat.</p></li>
+</ul>
+<p><strong>Endpoints de Denuncias</strong> (<code class="docutils literal notranslate"><span class="pre">SecondMarketReportController</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/reports</span></code>                          — Crear una denuncia.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/reports/my-reports</span></code>               — Listar denuncias del usuario.</p></li>
+</ul>
+<p><strong>Endpoints de Categorías y Etiquetas</strong> (<code class="docutils literal notranslate"><span class="pre">SecondMarketCategoryController</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/categories</span></code>                       — Listar todas las categorías activas.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/categories/&lt;id&gt;/articles</span></code>         — Artículos de una categoría.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/tags</span></code>                             — Listar todas las etiquetas.</p></li>
+</ul>
+<p>Todos los endpoints de Chats y Denuncias requieren el header
+<code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code>.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="api_market.controllers.chat_den_cat.SecondMarketCategoryController">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">api_market.controllers.chat_den_cat.</span></span><span class="sig-name descname"><span class="pre">SecondMarketCategoryController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/chat_den_cat.html#SecondMarketCategoryController"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.chat_den_cat.SecondMarketCategoryController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Controller</span></code></p>
+<p>Controlador para la consulta de categorías y etiquetas.</p>
+<p>Todos los endpoints son públicos (no requieren autenticación).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.chat_den_cat.SecondMarketCategoryController.get_categories">
+<span class="sig-name descname"><span class="pre">get_categories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.chat_den_cat.SecondMarketCategoryController.get_categories" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener todas las categorías activas de la plataforma.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data.categories</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+<p><strong>Respuesta exitosa:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;categories&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Electrónica&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;icono&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;fa-laptop&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;color&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;conteo_articulos&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">24</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.chat_den_cat.SecondMarketCategoryController.get_category_articles">
+<span class="sig-name descname"><span class="pre">get_category_articles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">category_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.chat_den_cat.SecondMarketCategoryController.get_category_articles" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener los artículos publicados de una categoría específica.</p>
+<p>Admite paginación mediante los parámetros opcionales <code class="docutils literal notranslate"><span class="pre">limit</span></code> y <code class="docutils literal notranslate"><span class="pre">offset</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>category_id</strong> (<em>int</em>) – ID de la categoría a consultar.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros opcionales: <code class="docutils literal notranslate"><span class="pre">limit</span></code> (por defecto 20)
+y <code class="docutils literal notranslate"><span class="pre">offset</span></code> (por defecto 0).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data.articles</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.chat_den_cat.SecondMarketCategoryController.get_tags">
+<span class="sig-name descname"><span class="pre">get_tags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.chat_den_cat.SecondMarketCategoryController.get_tags" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener todas las etiquetas disponibles en la plataforma.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data.tags</span></code> (lista de etiquetas).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="api_market.controllers.chat_den_cat.SecondMarketChatController">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">api_market.controllers.chat_den_cat.</span></span><span class="sig-name descname"><span class="pre">SecondMarketChatController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/chat_den_cat.html#SecondMarketChatController"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.chat_den_cat.SecondMarketChatController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Controller</span></code></p>
+<p>Controlador para la gestión de chats y mensajes entre usuarios.</p>
+<p>Los endpoints de chat son <strong>unificados</strong>: la presencia o ausencia del campo
+<code class="docutils literal notranslate"><span class="pre">articulo_id</span></code> / <code class="docutils literal notranslate"><span class="pre">contenido</span></code> en el body determina la operación a realizar,
+evitando conflictos de rutas duplicadas en Odoo.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.chat_den_cat.SecondMarketChatController.handle_chat_messages">
+<span class="sig-name descname"><span class="pre">handle_chat_messages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chat_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.chat_den_cat.SecondMarketChatController.handle_chat_messages" title="Link to this definition">¶</a></dt>
+<dd><p>Enviar un mensaje o listar los mensajes de un chat (endpoint unificado).</p>
+<p>La lógica depende del body recibido:</p>
+<ul class="simple">
+<li><p><strong>Con</strong> <code class="docutils literal notranslate"><span class="pre">contenido</span></code> → Crea y guarda el mensaje en la base de datos.</p></li>
+<li><p><strong>Sin</strong> <code class="docutils literal notranslate"><span class="pre">contenido</span></code> → Devuelve todos los mensajes del chat ordenados
+cronológicamente. Incluye el flag <code class="docutils literal notranslate"><span class="pre">is_mine</span></code> para distinguir mensajes propios.</p></li>
+</ul>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON para enviar mensaje:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;contenido&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hola, ¿sigue disponible?&quot;</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Respuesta (mensaje enviado):</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;message_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;fecha_envio&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-03-02T18:00:00&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chat_id</strong> (<em>int</em>) – ID del chat sobre el que se opera.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.chat_den_cat.SecondMarketChatController.handle_chats">
+<span class="sig-name descname"><span class="pre">handle_chats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.chat_den_cat.SecondMarketChatController.handle_chats" title="Link to this definition">¶</a></dt>
+<dd><p>Crear un chat o listar los chats del usuario autenticado (endpoint unificado).</p>
+<p>La lógica depende del body recibido:</p>
+<ul class="simple">
+<li><p><strong>Con</strong> <code class="docutils literal notranslate"><span class="pre">articulo_id</span></code> → Busca o crea el chat entre el usuario y el
+propietario del artículo. Si ya existe, devuelve el ID existente.</p></li>
+<li><p><strong>Sin</strong> <code class="docutils literal notranslate"><span class="pre">articulo_id</span></code> → Devuelve la lista de todos los chats activos del
+usuario (como comprador o como vendedor).</p></li>
+</ul>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON para crear/recuperar chat:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;articulo_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Body JSON para listar chats:</strong> cuerpo vacío o sin <code class="docutils literal notranslate"><span class="pre">articulo_id</span></code>.</p>
+<p><strong>Respuesta (crear/recuperar):</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;chat_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;new_chat&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Respuesta (listar):</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;chats&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">7</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;articulo&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;nombre&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Bici&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;precio&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">150.0</span><span class="w"> </span><span class="p">},</span>
+<span class="w">                </span><span class="nt">&quot;otro_usuario&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;nombre&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Jose&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">                </span><span class="nt">&quot;ultimo_mensaje&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hola, ¿sigue disponible?&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;conteo_mensajes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="api_market.controllers.chat_den_cat.SecondMarketReportController">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">api_market.controllers.chat_den_cat.</span></span><span class="sig-name descname"><span class="pre">SecondMarketReportController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/chat_den_cat.html#SecondMarketReportController"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.chat_den_cat.SecondMarketReportController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Controller</span></code></p>
+<p>Controlador para la gestión de denuncias/reportes.</p>
+<p>Permite a los usuarios denunciar artículos, comentarios o usuarios.
+Los registros creados son visibles para los moderadores en el backend de Odoo.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.chat_den_cat.SecondMarketReportController.create_report">
+<span class="sig-name descname"><span class="pre">create_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.chat_den_cat.SecondMarketReportController.create_report" title="Link to this definition">¶</a></dt>
+<dd><p>Crear una denuncia sobre un artículo, comentario o usuario.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;tipo_denuncia&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;articulo&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;motivo&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;contenido_inapropiado&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;descripcion&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Este artículo contiene imágenes inapropiadas&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;articulo_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Los valores válidos para <code class="docutils literal notranslate"><span class="pre">tipo_denuncia</span></code> son: <code class="docutils literal notranslate"><span class="pre">'articulo'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'comentario'</span></code> o <code class="docutils literal notranslate"><span class="pre">'usuario'</span></code>. Según el tipo, se requiere el campo
+<code class="docutils literal notranslate"><span class="pre">articulo_id</span></code>, <code class="docutils literal notranslate"><span class="pre">comentario_id</span></code> o <code class="docutils literal notranslate"><span class="pre">usuario_id</span></code> respectivamente.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code> y <code class="docutils literal notranslate"><span class="pre">data.report_id</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.chat_den_cat.SecondMarketReportController.get_my_reports">
+<span class="sig-name descname"><span class="pre">get_my_reports</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.chat_den_cat.SecondMarketReportController.get_my_reports" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener las denuncias realizadas por el usuario autenticado.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data.reports</span></code> (lista de denuncias).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-api_market.controllers.com_compr_val">
+<span id="comentarios-compras-y-valoraciones"></span><h2><a class="toc-backref" href="#id6" role="doc-backlink">Comentarios, Compras y Valoraciones</a><a class="headerlink" href="#module-api_market.controllers.com_compr_val" title="Link to this heading">¶</a></h2>
+<p>Controladores de comentarios, compras y valoraciones para la API REST de Second Market.</p>
+<p><strong>Endpoints de Comentarios</strong> (<code class="docutils literal notranslate"><span class="pre">SecondMarketCommentController</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span>&#160;&#160; <span class="pre">/api/v1/comments</span></code>                     — Publicar un comentario en un artículo.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span>&#160;&#160; <span class="pre">/api/v1/comments/&lt;id&gt;/read</span></code>           — Marcar un comentario como leído.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DELETE</span> <span class="pre">/api/v1/comments/&lt;id&gt;</span></code>                — Eliminar (borrado lógico) un comentario.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span>&#160;&#160; <span class="pre">/api/v1/comments/received</span></code>            — Listar comentarios recibidos.</p></li>
+</ul>
+<p><strong>Endpoints de Compras</strong> (<code class="docutils literal notranslate"><span class="pre">SecondMarketPurchaseController</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/purchases</span></code>                      — Iniciar una compra.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/purchases/&lt;id&gt;/confirm</span></code>         — Confirmar una compra (vendedor).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/purchases/&lt;id&gt;/cancel</span></code>          — Cancelar una compra.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/purchases/my-purchases</span></code>         — Listar compras del usuario.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/purchases/my-sales</span></code>             — Listar ventas del usuario.</p></li>
+</ul>
+<p><strong>Endpoints de Valoraciones</strong> (<code class="docutils literal notranslate"><span class="pre">SecondMarketRatingController</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/ratings</span></code>                        — Crear una valoración.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/ratings/user/&lt;id&gt;</span></code>              — Listar valoraciones de un usuario.</p></li>
+</ul>
+<p>Todos los endpoints requieren el header <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code>,
+excepto <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/v1/ratings/user/&lt;id&gt;</span></code> que es público.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketCommentController">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">api_market.controllers.com_compr_val.</span></span><span class="sig-name descname"><span class="pre">SecondMarketCommentController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/com_compr_val.html#SecondMarketCommentController"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketCommentController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Controller</span></code></p>
+<p>Controlador para la gestión de comentarios en artículos.</p>
+<p>Los comentarios vinculan a un emisor, un receptor (el propietario del
+artículo) y un artículo concreto. El receptor recibe una notificación
+en el chatter de Odoo al crearse el comentario.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketCommentController.create_comment">
+<span class="sig-name descname"><span class="pre">create_comment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketCommentController.create_comment" title="Link to this definition">¶</a></dt>
+<dd><p>Publicar un comentario público en un artículo.</p>
+<p>El receptor del comentario es automáticamente el propietario del artículo.
+Se envía una notificación en el chatter del artículo y del receptor.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;articulo_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;texto&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;¿Tiene algún defecto el artículo?&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code> y <code class="docutils literal notranslate"><span class="pre">data.comment_id</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketCommentController.delete_comment">
+<span class="sig-name descname"><span class="pre">delete_comment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comment_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketCommentController.delete_comment" title="Link to this definition">¶</a></dt>
+<dd><p>Eliminar (borrado lógico) un comentario.</p>
+<p>Solo el emisor del comentario puede eliminarlo. Se establece
+<code class="docutils literal notranslate"><span class="pre">activo</span> <span class="pre">=</span> <span class="pre">False</span></code> sin borrar el registro de la base de datos.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>comment_id</strong> (<em>int</em>) – ID del comentario a eliminar.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketCommentController.get_received_comments">
+<span class="sig-name descname"><span class="pre">get_received_comments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketCommentController.get_received_comments" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener los comentarios recibidos por el usuario autenticado.</p>
+<p>Admite paginación mediante los parámetros opcionales <code class="docutils literal notranslate"><span class="pre">limit</span></code> y <code class="docutils literal notranslate"><span class="pre">offset</span></code>.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros opcionales: <code class="docutils literal notranslate"><span class="pre">limit</span></code> (por defecto 20)
+y <code class="docutils literal notranslate"><span class="pre">offset</span></code> (por defecto 0).</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data.comments</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketCommentController.mark_comment_read">
+<span class="sig-name descname"><span class="pre">mark_comment_read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comment_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketCommentController.mark_comment_read" title="Link to this definition">¶</a></dt>
+<dd><p>Marcar un comentario como leído.</p>
+<p>Solo el receptor del comentario puede marcarlo como leído.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>comment_id</strong> (<em>int</em>) – ID del comentario a marcar como leído.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketPurchaseController">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">api_market.controllers.com_compr_val.</span></span><span class="sig-name descname"><span class="pre">SecondMarketPurchaseController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/com_compr_val.html#SecondMarketPurchaseController"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketPurchaseController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Controller</span></code></p>
+<p>Controlador para la gestión del ciclo de vida de compras.</p>
+<p>El flujo típico de una compra es:</p>
+<ol class="arabic simple">
+<li><p>El comprador llama a <code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/purchases</span></code> → estado <code class="docutils literal notranslate"><span class="pre">pendiente</span></code>, artículo <code class="docutils literal notranslate"><span class="pre">reservado</span></code>.</p></li>
+<li><p>El vendedor llama a <code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/purchases/&lt;id&gt;/confirm</span></code> → estado <code class="docutils literal notranslate"><span class="pre">completada</span></code>, artículo <code class="docutils literal notranslate"><span class="pre">vendido</span></code>.</p></li>
+<li><p>Cualquiera puede llamar a <code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/purchases/&lt;id&gt;/cancel</span></code> → estado <code class="docutils literal notranslate"><span class="pre">cancelada</span></code>, artículo vuelve a <code class="docutils literal notranslate"><span class="pre">publicado</span></code>.</p></li>
+</ol>
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketPurchaseController.cancel_purchase">
+<span class="sig-name descname"><span class="pre">cancel_purchase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">purchase_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketPurchaseController.cancel_purchase" title="Link to this definition">¶</a></dt>
+<dd><p>Cancelar una compra y devolver el artículo a estado publicado.</p>
+<p>Tanto el comprador como el vendedor pueden cancelar la compra,
+siempre que no esté ya completada.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>purchase_id</strong> (<em>int</em>) – ID de la compra a cancelar.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketPurchaseController.confirm_purchase">
+<span class="sig-name descname"><span class="pre">confirm_purchase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">purchase_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketPurchaseController.confirm_purchase" title="Link to this definition">¶</a></dt>
+<dd><p>Confirmar la entrega y marcar la compra como completada.</p>
+<p>Solo el vendedor puede confirmar la transacción. Al confirmar,
+el artículo pasa a estado <code class="docutils literal notranslate"><span class="pre">vendido</span></code>.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>purchase_id</strong> (<em>int</em>) – ID de la compra a confirmar.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y mensaje de confirmación.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketPurchaseController.create_purchase">
+<span class="sig-name descname"><span class="pre">create_purchase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketPurchaseController.create_purchase" title="Link to this definition">¶</a></dt>
+<dd><p>Iniciar el proceso de compra de un artículo.</p>
+<p>Crea la compra en estado <code class="docutils literal notranslate"><span class="pre">pendiente</span></code> y cambia el artículo a <code class="docutils literal notranslate"><span class="pre">reservado</span></code>.
+El comprador no puede ser el propietario del artículo.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;articulo_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Respuesta exitosa:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;success&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;purchase_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;id_compra&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0000005&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;precio&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">150.0</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code> y <code class="docutils literal notranslate"><span class="pre">data</span></code> de la compra.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketPurchaseController.get_my_purchases">
+<span class="sig-name descname"><span class="pre">get_my_purchases</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketPurchaseController.get_my_purchases" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener todas las compras realizadas por el usuario autenticado.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data.purchases</span></code> (lista de compras).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketPurchaseController.get_my_sales">
+<span class="sig-name descname"><span class="pre">get_my_sales</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketPurchaseController.get_my_sales" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener todas las ventas realizadas por el usuario autenticado.</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data.sales</span></code> (lista de ventas).</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketRatingController">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">api_market.controllers.com_compr_val.</span></span><span class="sig-name descname"><span class="pre">SecondMarketRatingController</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api_market/controllers/com_compr_val.html#SecondMarketRatingController"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketRatingController" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Controller</span></code></p>
+<p>Controlador para la gestión de valoraciones entre usuarios.</p>
+<p>Permite a los usuarios calificarse mutuamente tras una transacción.
+Las valoraciones son únicas por par valorador-valorado.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketRatingController.create_rating">
+<span class="sig-name descname"><span class="pre">create_rating</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketRatingController.create_rating" title="Link to this definition">¶</a></dt>
+<dd><p>Crear una valoración para otro usuario.</p>
+<p>Un usuario no puede valorarse a sí mismo ni valorar al mismo usuario
+dos veces (restricción del modelo).</p>
+<p><strong>Header requerido:</strong> <code class="docutils literal notranslate"><span class="pre">Authorization:</span> <span class="pre">Bearer</span> <span class="pre">&lt;token&gt;</span></code></p>
+<p><strong>Body JSON:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;usuario_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;calificacion&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;comentario&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Trato muy amable y envío rápido&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>El campo <code class="docutils literal notranslate"><span class="pre">comentario</span></code> es opcional.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code>, <code class="docutils literal notranslate"><span class="pre">message</span></code> y <code class="docutils literal notranslate"><span class="pre">data.rating_id</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="api_market.controllers.com_compr_val.SecondMarketRatingController.get_user_ratings">
+<span class="sig-name descname"><span class="pre">get_user_ratings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#api_market.controllers.com_compr_val.SecondMarketRatingController.get_user_ratings" title="Link to this definition">¶</a></dt>
+<dd><p>Obtener las valoraciones recibidas por un usuario.</p>
+<p>Endpoint público — no requiere autenticación.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>user_id</strong> (<em>int</em>) – ID del usuario cuyas valoraciones se quieren listar.</p></li>
+<li><p><strong>kwargs</strong> – Parámetros adicionales del dispatcher de Odoo.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Diccionario con <code class="docutils literal notranslate"><span class="pre">success</span></code> y <code class="docutils literal notranslate"><span class="pre">data.ratings</span></code>.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Dalo</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Ir a" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navegación</h3>
+<p class="caption" role="heading"><span class="caption-text">Secciones:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="models.html">Modelos (second_market)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API REST (api_market)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-api_market.controllers.articulos">Artículos</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-api_market.controllers.auth_controller">Autenticación</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-api_market.controllers.login">Login / Registro</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-api_market.controllers.usuario">Usuarios</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-api_market.controllers.chat_den_cat">Chats, Denuncias y Categorías</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-api_market.controllers.com_compr_val">Comentarios, Compras y Valoraciones</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="models.html" title="capítulo anterior">Modelos (second_market)</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Jonatan C. and Jose S..
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/api.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

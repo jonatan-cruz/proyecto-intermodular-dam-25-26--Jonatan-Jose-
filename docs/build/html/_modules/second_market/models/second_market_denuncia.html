@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+
+<html lang="es" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>second_market.models.second_market_denuncia &#8212; documentación de Dalo - 1.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=4936afed"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/translations.js?v=f85f4cfb"></script>
+    <link rel="index" title="Índice" href="../../../genindex.html" />
+    <link rel="search" title="Búsqueda" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Código fuente para second_market.models.second_market_denuncia</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Módulo de gestión de denuncias y reportes.</span>
+
+<span class="sd">Define el modelo :class:`Denuncia` que permite a los usuarios de la plataforma</span>
+<span class="sd">Second Market reportar contenido inapropiado (artículos, comentarios o usuarios)</span>
+<span class="sd">para que los moderadores puedan revisarlo y tomar las acciones oportunas.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">_</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">UserError</span>
+
+
+<div class="viewcode-block" id="Denuncia">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_denuncia.Denuncia">[documentos]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Denuncia</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Modelo que representa una denuncia o reporte dentro de la plataforma.</span>
+
+<span class="sd">    Una denuncia puede estar dirigida a un artículo, un comentario o un usuario.</span>
+<span class="sd">    El ciclo de vida de la denuncia va desde ``pendiente`` hasta ``resuelta``,</span>
+<span class="sd">    ``rechazada`` o ``cerrada``, gestionado por un moderador.</span>
+
+<span class="sd">    :cvar _name: Nombre técnico del modelo en Odoo.</span>
+<span class="sd">    :cvar _description: Descripción legible del modelo.</span>
+<span class="sd">    :cvar _inherit: Mixins heredados para chatter y actividades.</span>
+<span class="sd">    :cvar _order: Ordenación por fecha de creación (más reciente primero).</span>
+<span class="sd">    :cvar _rec_name: Campo usado como nombre representativo del registro.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_name</span> <span class="o">=</span> <span class="s1">&#39;second_market.report&#39;</span>
+    <span class="n">_description</span> <span class="o">=</span> <span class="s1">&#39;Denuncia/Reporte de Artículo&#39;</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mail.thread&#39;</span><span class="p">,</span> <span class="s1">&#39;mail.activity.mixin&#39;</span><span class="p">]</span>
+    <span class="n">_order</span> <span class="o">=</span> <span class="s1">&#39;create_date desc&#39;</span>
+    <span class="n">_rec_name</span> <span class="o">=</span> <span class="s1">&#39;num_denuncia&#39;</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CAMPOS BÁSICOS</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">num_denuncia</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Número de Denuncia&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;REP-0000X&#39;</span><span class="p">),</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Identificador único de la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">motivo</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Selection</span><span class="p">([</span>
+        <span class="p">(</span><span class="s1">&#39;contenido_inapropiado&#39;</span><span class="p">,</span> <span class="s1">&#39;Contenido Inapropiado&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;spam&#39;</span><span class="p">,</span> <span class="s1">&#39;Spam o Publicidad&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;informacion_falsa&#39;</span><span class="p">,</span> <span class="s1">&#39;Información Falsa o Engañosa&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;precio_sospechoso&#39;</span><span class="p">,</span> <span class="s1">&#39;Precio Sospechoso&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;producto_prohibido&#39;</span><span class="p">,</span> <span class="s1">&#39;Producto Prohibido&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;acoso&#39;</span><span class="p">,</span> <span class="s1">&#39;Acoso o Abuso&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;otro&#39;</span><span class="p">,</span> <span class="s1">&#39;Otro&#39;</span><span class="p">)</span>
+    <span class="p">],</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Motivo&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Razón de la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">descripcion</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Descripción&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Detalle de la denuncia (máx 500 caracteres)&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># RELACIONES - ¿SOBRE QUÉ ES LA DENUNCIA?</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">tipo_denuncia</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Selection</span><span class="p">([</span>
+        <span class="p">(</span><span class="s1">&#39;articulo&#39;</span><span class="p">,</span> <span class="s1">&#39;Artículo&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;comentario&#39;</span><span class="p">,</span> <span class="s1">&#39;Comentario&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;usuario&#39;</span><span class="p">,</span> <span class="s1">&#39;Usuario&#39;</span><span class="p">)</span>
+    <span class="p">],</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Tipo de Denuncia&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;articulo&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Indica si la denuncia es sobre un artículo, un comentario o un usuario&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">id_usuario_denunciado</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.user&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Usuario Denunciado&#39;</span><span class="p">,</span>
+        <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;cascade&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Usuario sobre el que se realiza la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">id_comentario</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.comment&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Comentario Denunciado&#39;</span><span class="p">,</span>
+        <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;cascade&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Comentario sobre el que se realiza la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">id_articulo</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.article&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Artículo Denunciado&#39;</span><span class="p">,</span>
+        <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;cascade&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Artículo sobre el que se realiza la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># RELACIONES - USUARIOS</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">id_denunciante</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.user&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Denunciante&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;restrict&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Usuario de la app que realiza la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">id_moderador</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span>
+        <span class="s1">&#39;res.users&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Moderador Asignado&#39;</span><span class="p">,</span>
+        <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;set null&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Empleado o moderador que gestiona la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># ESTADO Y RESOLUCIÓN</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">estado</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Selection</span><span class="p">([</span>
+        <span class="p">(</span><span class="s1">&#39;pendiente&#39;</span><span class="p">,</span> <span class="s1">&#39;Pendiente&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;en_revision&#39;</span><span class="p">,</span> <span class="s1">&#39;En Revisión&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;resuelta&#39;</span><span class="p">,</span> <span class="s1">&#39;Resuelta&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;rechazada&#39;</span><span class="p">,</span> <span class="s1">&#39;Rechazada&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;cerrada&#39;</span><span class="p">,</span> <span class="s1">&#39;Cerrada&#39;</span><span class="p">)</span>
+    <span class="p">],</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Estado&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;pendiente&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Estado actual de la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">fecha_resolucion</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Fecha de Resolución&#39;</span><span class="p">,</span>
+        <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Fecha en que se resolvió o rechazó la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">resolucion</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Resolución&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Descripción de la resolución tomada&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">accion_tomada</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Selection</span><span class="p">([</span>
+        <span class="p">(</span><span class="s1">&#39;ninguna&#39;</span><span class="p">,</span> <span class="s1">&#39;Ninguna&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;advertencia&#39;</span><span class="p">,</span> <span class="s1">&#39;Advertencia al Usuario&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;eliminado_contenido&#39;</span><span class="p">,</span> <span class="s1">&#39;Contenido Eliminado&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;suspendido_usuario&#39;</span><span class="p">,</span> <span class="s1">&#39;Usuario Suspendido&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;bloqueado_usuario&#39;</span><span class="p">,</span> <span class="s1">&#39;Usuario Bloqueado&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;otra&#39;</span><span class="p">,</span> <span class="s1">&#39;Otra Acción&#39;</span><span class="p">)</span>
+    <span class="p">],</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Acción Tomada&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;ninguna&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Acción aplicada tras revisar la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CAMPOS ADICIONALES</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">prioridad</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Selection</span><span class="p">([</span>
+        <span class="p">(</span><span class="s1">&#39;baja&#39;</span><span class="p">,</span> <span class="s1">&#39;Baja&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;media&#39;</span><span class="p">,</span> <span class="s1">&#39;Media&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;alta&#39;</span><span class="p">,</span> <span class="s1">&#39;Alta&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;urgente&#39;</span><span class="p">,</span> <span class="s1">&#39;Urgente&#39;</span><span class="p">)</span>
+    <span class="p">],</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Prioridad&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;media&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Prioridad de la denuncia&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">activo</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Boolean</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Activo&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Si está desmarcado, la denuncia está archivada&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CAMPOS COMPUTADOS</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">nombre_denunciado</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Usuario Denunciado&#39;</span><span class="p">,</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_computar_nombre_denunciado&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Propietario del artículo o autor del comentario denunciado&#39;</span>
+    <span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;id_articulo&#39;</span><span class="p">,</span> <span class="s1">&#39;id_comentario&#39;</span><span class="p">,</span> <span class="s1">&#39;id_usuario_denunciado&#39;</span><span class="p">,</span> <span class="s1">&#39;tipo_denuncia&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computar_nombre_denunciado</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calcular el nombre del usuario denunciado según el tipo de denuncia.</span>
+
+<span class="sd">        - Si ``tipo_denuncia == &#39;articulo&#39;``: obtiene el propietario del artículo.</span>
+<span class="sd">        - Si ``tipo_denuncia == &#39;comentario&#39;``: obtiene el emisor del comentario.</span>
+<span class="sd">        - Si ``tipo_denuncia == &#39;usuario&#39;``: obtiene directamente el usuario denunciado.</span>
+
+<span class="sd">        Almacena el resultado en :attr:`nombre_denunciado`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">denuncia</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">nombre</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">if</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">tipo_denuncia</span> <span class="o">==</span> <span class="s1">&#39;articulo&#39;</span> <span class="ow">and</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_articulo</span><span class="p">:</span>
+                <span class="n">propietario</span> <span class="o">=</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">id_propietario</span>
+                <span class="n">nombre</span> <span class="o">=</span> <span class="n">propietario</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">propietario</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="k">if</span> <span class="n">propietario</span> <span class="k">else</span> <span class="s1">&#39;Usuario eliminado&#39;</span>
+            <span class="k">elif</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">tipo_denuncia</span> <span class="o">==</span> <span class="s1">&#39;comentario&#39;</span> <span class="ow">and</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_comentario</span><span class="p">:</span>
+                <span class="n">nombre</span> <span class="o">=</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_comentario</span><span class="o">.</span><span class="n">id_emisor</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_comentario</span><span class="o">.</span><span class="n">id_emisor</span> <span class="k">else</span> <span class="s1">&#39;Por implementar&#39;</span>
+            <span class="k">elif</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">tipo_denuncia</span> <span class="o">==</span> <span class="s1">&#39;usuario&#39;</span> <span class="ow">and</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_usuario_denunciado</span><span class="p">:</span>
+                <span class="n">nombre</span> <span class="o">=</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_usuario_denunciado</span><span class="o">.</span><span class="n">name</span>
+
+            <span class="n">denuncia</span><span class="o">.</span><span class="n">nombre_denunciado</span> <span class="o">=</span> <span class="n">nombre</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CONSTRAINTS Y VALIDACIONES</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;id_articulo&#39;</span><span class="p">,</span> <span class="s1">&#39;id_comentario&#39;</span><span class="p">,</span> <span class="s1">&#39;id_usuario_denunciado&#39;</span><span class="p">,</span> <span class="s1">&#39;tipo_denuncia&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_tipo_denuncia</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verificar que la denuncia tenga el elemento relacionado según su tipo.</span>
+
+<span class="sd">        :raises ValidationError: Si el tipo es ``&#39;articulo&#39;`` y no hay artículo,</span>
+<span class="sd">            si el tipo es ``&#39;comentario&#39;`` y no hay comentario, o si el tipo</span>
+<span class="sd">            es ``&#39;usuario&#39;`` y no hay usuario denunciado.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">denuncia</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">tipo_denuncia</span> <span class="o">==</span> <span class="s1">&#39;articulo&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_articulo</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Debes seleccionar un artículo para denunciar.&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">tipo_denuncia</span> <span class="o">==</span> <span class="s1">&#39;comentario&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_comentario</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Debes seleccionar un comentario para denunciar.&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">tipo_denuncia</span> <span class="o">==</span> <span class="s1">&#39;usuario&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_usuario_denunciado</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Debes seleccionar un usuario para denunciar.&#39;</span><span class="p">))</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;descripcion&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_descripcion_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que la descripción de la denuncia no supere 500 caracteres.</span>
+
+<span class="sd">        :raises ValidationError: Si la descripción tiene más de 500 caracteres.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">denuncia</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">descripcion</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">denuncia</span><span class="o">.</span><span class="n">descripcion</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">500</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;La descripción no puede tener más de 500 caracteres.&#39;</span><span class="p">))</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;id_denunciante&#39;</span><span class="p">,</span> <span class="s1">&#39;id_articulo&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_no_auto_denuncia_articulo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evitar que un usuario denuncie su propio artículo.</span>
+
+<span class="sd">        :raises ValidationError: Si el denunciante es el propietario del artículo.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">denuncia</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_articulo</span> <span class="ow">and</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_denunciante</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_denunciante</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;No puedes denunciar tu propio artículo.&#39;</span><span class="p">))</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># MÉTODOS CREATE Y WRITE</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model_create_multi</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Crear una o varias denuncias generando el número único de cada una.</span>
+
+<span class="sd">        Asigna un código desde la secuencia ``second_market.report`` y</span>
+<span class="sd">        notifica a los moderadores sobre la nueva denuncia.</span>
+
+<span class="sd">        :param vals_list: Lista de diccionarios con los valores de cada denuncia.</span>
+<span class="sd">        :type vals_list: list[dict]</span>
+<span class="sd">        :return: Recordset con las denuncias creadas.</span>
+<span class="sd">        :rtype: second_market.report</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">vals</span> <span class="ow">in</span> <span class="n">vals_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">vals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num_denuncia&#39;</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nueva&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nueva&#39;</span><span class="p">):</span>
+                <span class="n">vals</span><span class="p">[</span><span class="s1">&#39;num_denuncia&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;ir.sequence&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">next_by_code</span><span class="p">(</span><span class="s1">&#39;second_market.report&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nueva&#39;</span><span class="p">)</span>
+
+        <span class="n">denuncias</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">Denuncia</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">vals_list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">denuncia</span> <span class="ow">in</span> <span class="n">denuncias</span><span class="p">:</span>
+            <span class="n">denuncia</span><span class="o">.</span><span class="n">_notificar_nueva_denuncia</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">denuncias</span>
+
+<div class="viewcode-block" id="Denuncia.write">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_denuncia.Denuncia.write">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Actualizar la denuncia registrando la fecha de resolución si cambia el estado.</span>
+
+<span class="sd">        Si el nuevo estado es ``&#39;resuelta&#39;``, ``&#39;rechazada&#39;`` o ``&#39;cerrada&#39;``,</span>
+<span class="sd">        se asigna automáticamente ``fecha_resolucion`` con la fecha y hora actuales.</span>
+<span class="sd">        Además notifica al denunciante sobre el cambio de estado.</span>
+
+<span class="sd">        :param vals: Diccionario con los campos a actualizar.</span>
+<span class="sd">        :type vals: dict</span>
+<span class="sd">        :return: Resultado de la operación de escritura.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;estado&#39;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">vals</span><span class="p">[</span><span class="s1">&#39;estado&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;resuelta&#39;</span><span class="p">,</span> <span class="s1">&#39;rechazada&#39;</span><span class="p">,</span> <span class="s1">&#39;cerrada&#39;</span><span class="p">]:</span>
+                <span class="n">vals</span><span class="p">[</span><span class="s1">&#39;fecha_resolucion&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">Denuncia</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;estado&#39;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_notificar_cambio_estado</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># MÉTODOS DE ACCIÓN</span>
+    <span class="c1"># ============================================</span>
+
+<div class="viewcode-block" id="Denuncia.accion_asignar_moderador">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_denuncia.Denuncia.accion_asignar_moderador">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">accion_asignar_moderador</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Asignar el usuario actual como moderador de la denuncia y pasarla a revisión.</span>
+
+<span class="sd">        :return: Notificación de éxito en forma de acción de cliente.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;id_moderador&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="s1">&#39;estado&#39;</span><span class="p">:</span> <span class="s1">&#39;en_revision&#39;</span><span class="p">})</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.client&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="s1">&#39;display_notification&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Denuncia Asignada&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Te has asignado esta denuncia.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sticky&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="Denuncia.accion_resolver">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_denuncia.Denuncia.accion_resolver">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">accion_resolver</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Marcar la denuncia como resuelta.</span>
+
+<span class="sd">        :raises UserError: Si no se ha proporcionado una descripción de resolución.</span>
+<span class="sd">        :return: Notificación de éxito en forma de acción de cliente.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolucion</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Debes proporcionar una descripción de la resolución.&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado&#39;</span><span class="p">:</span> <span class="s1">&#39;resuelta&#39;</span><span class="p">})</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.client&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="s1">&#39;display_notification&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Denuncia Resuelta&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;La denuncia ha sido marcada como resuelta.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sticky&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="Denuncia.accion_rechazar">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_denuncia.Denuncia.accion_rechazar">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">accion_rechazar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Rechazar la denuncia indicando la razón en el campo de resolución.</span>
+
+<span class="sd">        :raises UserError: Si no se ha proporcionado la razón del rechazo.</span>
+<span class="sd">        :return: Notificación informativa en forma de acción de cliente.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolucion</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Debes proporcionar una razón para rechazar la denuncia.&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado&#39;</span><span class="p">:</span> <span class="s1">&#39;rechazada&#39;</span><span class="p">})</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.client&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="s1">&#39;display_notification&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Denuncia Rechazada&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;La denuncia ha sido rechazada.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;info&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sticky&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="Denuncia.accion_cerrar">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_denuncia.Denuncia.accion_cerrar">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">accion_cerrar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cerrar la denuncia desactivándola.</span>
+
+<span class="sd">        :return: ``True`` si la operación se realizó con éxito.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado&#39;</span><span class="p">:</span> <span class="s1">&#39;cerrada&#39;</span><span class="p">,</span> <span class="s1">&#39;activo&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="Denuncia.accion_ver_articulo">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_denuncia.Denuncia.accion_ver_articulo">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">accion_ver_articulo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir el formulario del artículo denunciado.</span>
+
+<span class="sd">        :raises UserError: Si la denuncia no está relacionada con un artículo.</span>
+<span class="sd">        :return: Acción de ventana para abrir el artículo en modo formulario.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Esta denuncia no está relacionada con un artículo.&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Artículo Denunciado&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;second_market.article&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;form&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;target&#39;</span><span class="p">:</span> <span class="s1">&#39;current&#39;</span>
+        <span class="p">}</span></div>
+
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># MÉTODOS AUXILIARES</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_notificar_nueva_denuncia</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Publicar un mensaje en el chatter de la denuncia para alertar a los moderadores.</span>
+
+<span class="sd">        El mensaje incluye el nombre del denunciante y el motivo de la denuncia.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_post</span><span class="p">(</span>
+            <span class="n">body</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nueva denuncia creada por </span><span class="si">{}</span><span class="s1">. Motivo: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">id_denunciante</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="s1">&#39;motivo&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">selection</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">motivo</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">subject</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nueva Denuncia: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_denuncia</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_notificar_cambio_estado</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Notificar al denunciante sobre el cambio de estado de su denuncia.</span>
+
+<span class="sd">        Publica un mensaje en el chatter de la denuncia con el nuevo estado</span>
+<span class="sd">        para que el denunciante esté informado.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">denuncia</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">denuncia</span><span class="o">.</span><span class="n">id_denunciante</span><span class="p">:</span>
+                <span class="n">denuncia</span><span class="o">.</span><span class="n">message_post</span><span class="p">(</span>
+                    <span class="n">body</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El estado de la denuncia de </span><span class="si">{}</span><span class="s1"> ha cambiado a: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">denuncia</span><span class="o">.</span><span class="n">id_denunciante</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                        <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="s1">&#39;estado&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">selection</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">denuncia</span><span class="o">.</span><span class="n">estado</span><span class="p">)</span>
+                    <span class="p">),</span>
+                    <span class="n">subject</span><span class="o">=</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Actualización de Denuncia: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">denuncia</span><span class="o">.</span><span class="n">num_denuncia</span><span class="p">)</span>
+                <span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Dalo</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Ir a" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navegación</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Código de módulo</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Jonatan C. and Jose S..
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

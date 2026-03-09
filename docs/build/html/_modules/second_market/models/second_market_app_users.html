@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+
+<html lang="es" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>second_market.models.second_market_app_users &#8212; documentación de Dalo - 1.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=4936afed"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/translations.js?v=f85f4cfb"></script>
+    <link rel="index" title="Índice" href="../../../genindex.html" />
+    <link rel="search" title="Búsqueda" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Código fuente para second_market.models.second_market_app_users</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Módulo de gestión de usuarios de la plataforma.</span>
+
+<span class="sd">Define el modelo :class:`SecondMarketUser` que representa a los usuarios</span>
+<span class="sd">registrados en Second Market. Gestiona autenticación, estadísticas del usuario,</span>
+<span class="sd">ciclo de vida de sus artículos y valoraciones recibidas.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">_</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">UserError</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">passlib.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">CryptContext</span>
+
+<span class="c1">#: Contexto de hashing de contraseñas usando el estándar de Odoo (PBKDF2-SHA512).</span>
+<span class="n">crypt_context</span> <span class="o">=</span> <span class="n">CryptContext</span><span class="p">(</span><span class="n">schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;pbkdf2_sha512&quot;</span><span class="p">,</span> <span class="s2">&quot;plaintext&quot;</span><span class="p">],</span> <span class="n">deprecated</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SecondMarketUser">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser">[documentos]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SecondMarketUser</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Modelo que representa un usuario de la plataforma Second Market.</span>
+
+<span class="sd">    Extiende ``mail.thread`` y ``mail.activity.mixin`` para soporte de chatter</span>
+<span class="sd">    y actividades. Gestiona el cifrado de contraseñas con PBKDF2-SHA512,</span>
+<span class="sd">    la generación de IDs únicos y las estadísticas derivadas de las relaciones</span>
+<span class="sd">    con artículos, compras y valoraciones.</span>
+
+<span class="sd">    :cvar _name: Nombre técnico del modelo en Odoo.</span>
+<span class="sd">    :cvar _description: Descripción legible del modelo.</span>
+<span class="sd">    :cvar _inherit: Mixins heredados para chatter y actividades.</span>
+<span class="sd">    :cvar _order: Ordenación por fecha de registro (más reciente primero).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_name</span> <span class="o">=</span> <span class="s1">&#39;second_market.user&#39;</span>
+    <span class="n">_description</span> <span class="o">=</span> <span class="s1">&#39;Usuario de Second Market&#39;</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mail.thread&#39;</span><span class="p">,</span> <span class="s1">&#39;mail.activity.mixin&#39;</span><span class="p">]</span>
+    <span class="n">_order</span> <span class="o">=</span> <span class="s1">&#39;create_date desc&#39;</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CAMPOS PRINCIPALES</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">id_usuario</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;ID Usuario&#39;</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;ID único de usuario de 7 dígitos&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Nombre&#39;</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Nombre del usuario (máx 50 caracteres)&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">password</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Contraseña&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">password</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Contraseña (8-50 caracteres)&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">login</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Login/Email&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Email o nombre de usuario para iniciar sesión&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># ESTADÍSTICAS DEL USUARIO</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">productos_en_venta</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Productos en Venta&#39;</span><span class="p">,</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_computar_productos_en_venta&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Número de productos actualmente en venta&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">productos_vendidos</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Productos Vendidos&#39;</span><span class="p">,</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_computar_productos_vendidos&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Total de productos vendidos&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">productos_comprados</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Productos Comprados&#39;</span><span class="p">,</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_computar_productos_comprados&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Total de productos comprados&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">antiguedad</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Antigüedad (años)&#39;</span><span class="p">,</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_computar_antiguedad&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Años desde el registro del usuario&#39;</span>
+    <span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;id_usuario&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_id_usuario</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que el ID de usuario tenga exactamente 7 dígitos numéricos.</span>
+
+<span class="sd">        :raises ValidationError: Si el ID no es un número de 7 dígitos.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">rec</span><span class="o">.</span><span class="n">id_usuario</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">id_usuario</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">7</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s1">&#39;El ID de usuario debe tener exactamente 7 dígitos numéricos.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validar_password_segura</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que la contraseña en texto plano cumpla los requisitos mínimos.</span>
+
+<span class="sd">        La contraseña debe tener entre 8 y 50 caracteres.</span>
+
+<span class="sd">        :param password: Contraseña en texto plano a validar.</span>
+<span class="sd">        :type password: str</span>
+<span class="sd">        :raises ValidationError: Si la contraseña tiene menos de 8 o más de 50 caracteres.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">password</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">password</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;La contraseña debe tener al menos 8 caracteres.&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">password</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;La contraseña no puede tener más de 50 caracteres.&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_hash_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Hashear una contraseña en texto plano usando PBKDF2-SHA512.</span>
+
+<span class="sd">        :param password: Contraseña en texto plano.</span>
+<span class="sd">        :type password: str</span>
+<span class="sd">        :return: Hash de la contraseña.</span>
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">crypt_context</span><span class="o">.</span><span class="n">hash</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_eliminar_usuario</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Eliminar físicamente el registro del usuario de la base de datos.</span>
+
+<span class="sd">        .. warning::</span>
+<span class="sd">            Este método borra el registro permanentemente. Considerar usar</span>
+<span class="sd">            :meth:`action_eliminar_usuario` del bloque de métodos principales</span>
+<span class="sd">            que realiza un borrado lógico.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># RELACIONES CON OTROS MODELOS</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">ids_articulos_venta</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.article&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;id_propietario&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Artículos en Venta&#39;</span><span class="p">,</span>
+        <span class="n">domain</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;estado_publicacion&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;borrador&#39;</span><span class="p">,</span> <span class="s1">&#39;publicado&#39;</span><span class="p">,</span> <span class="s1">&#39;reservado&#39;</span><span class="p">])],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Artículos que el usuario tiene publicados&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">ids_comentarios_enviados</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.comment&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;id_emisor&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Comentarios Enviados&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">ids_comentarios_recibidos</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.comment&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;id_receptor&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Comentarios Recibidos&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">ids_compras</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.purchase&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;id_comprador&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Compras Realizadas&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">ids_ventas</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.purchase&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;id_vendedor&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Ventas Realizadas&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">ids_valoraciones</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.rating&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;id_usuario&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Valoraciones Recibidas&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CAMPOS ADICIONALES</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">activo</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Boolean</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Activo&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Si está desmarcado, el usuario está deshabilitado&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">fecha_registro</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Fecha de Registro&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
+        <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Fecha en que se registró el usuario&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">calificacion_promedio</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Float</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Calificación Promedio&#39;</span><span class="p">,</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_computar_calificacion_promedio&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">digits</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Promedio de calificaciones recibidas (1-5)&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">total_valoraciones</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Total de Valoraciones&#39;</span><span class="p">,</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_computar_total_valoraciones&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">avatar</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Binary</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Foto de Perfil&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Imagen del perfil del usuario&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">telefono</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Teléfono&#39;</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Número de contacto&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">ubicacion</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Ubicación&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Ciudad o localidad del usuario&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">biografia</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Biografía&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Descripción breve del usuario (máx 200 caracteres)&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CAMPOS COMPUTADOS</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;ids_articulos_venta&#39;</span><span class="p">,</span> <span class="s1">&#39;ids_articulos_venta.estado_publicacion&#39;</span><span class="p">,</span> <span class="s1">&#39;ids_articulos_venta.activo&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computar_productos_en_venta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Contar los artículos activos en estado ``publicado`` o ``reservado``.</span>
+
+<span class="sd">        Almacena el resultado en :attr:`productos_en_venta`.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            En caso de error durante el cálculo, asigna ``0`` y registra</span>
+<span class="sd">            una advertencia en el log del servidor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">ids_articulos_venta</span><span class="p">:</span>
+                    <span class="n">articulos_venta</span> <span class="o">=</span> <span class="n">usuario</span><span class="o">.</span><span class="n">ids_articulos_venta</span><span class="o">.</span><span class="n">filtered</span><span class="p">(</span>
+                        <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">a</span><span class="o">.</span><span class="n">estado_publicacion</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;publicado&#39;</span><span class="p">,</span> <span class="s1">&#39;reservado&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">a</span><span class="o">.</span><span class="n">activo</span>
+                    <span class="p">)</span>
+                    <span class="n">usuario</span><span class="o">.</span><span class="n">productos_en_venta</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">articulos_venta</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">usuario</span><span class="o">.</span><span class="n">productos_en_venta</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+                <span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+                <span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error calculando productos en venta para usuario </span><span class="si">{</span><span class="n">usuario</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">usuario</span><span class="o">.</span><span class="n">productos_en_venta</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;ids_ventas&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computar_productos_vendidos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Contar el total de ventas realizadas por el usuario.</span>
+
+<span class="sd">        Almacena el resultado en :attr:`productos_vendidos`.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            En caso de error, asigna ``0`` y registra una advertencia en el log.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">usuario</span><span class="o">.</span><span class="n">productos_vendidos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">usuario</span><span class="o">.</span><span class="n">ids_ventas</span><span class="p">)</span> <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">ids_ventas</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+                <span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+                <span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error calculando productos vendidos para usuario </span><span class="si">{</span><span class="n">usuario</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">usuario</span><span class="o">.</span><span class="n">productos_vendidos</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;ids_compras&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computar_productos_comprados</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Contar el total de compras realizadas por el usuario.</span>
+
+<span class="sd">        Almacena el resultado en :attr:`productos_comprados`.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            En caso de error, asigna ``0`` y registra una advertencia en el log.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">usuario</span><span class="o">.</span><span class="n">productos_comprados</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">usuario</span><span class="o">.</span><span class="n">ids_compras</span><span class="p">)</span> <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">ids_compras</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+                <span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+                <span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error calculando productos comprados para usuario </span><span class="si">{</span><span class="n">usuario</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">usuario</span><span class="o">.</span><span class="n">productos_comprados</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;fecha_registro&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computar_antiguedad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calcular los años transcurridos desde la fecha de registro del usuario.</span>
+
+<span class="sd">        Almacena el resultado en :attr:`antiguedad`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">fecha_registro</span><span class="p">:</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">usuario</span><span class="o">.</span><span class="n">fecha_registro</span>
+                <span class="n">usuario</span><span class="o">.</span><span class="n">antiguedad</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">delta</span><span class="o">.</span><span class="n">days</span> <span class="o">/</span> <span class="mi">365</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">usuario</span><span class="o">.</span><span class="n">antiguedad</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;ids_valoraciones&#39;</span><span class="p">,</span> <span class="s1">&#39;ids_valoraciones.calificacion&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computar_calificacion_promedio</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calcular el promedio de calificaciones recibidas por el usuario.</span>
+
+<span class="sd">        Solo se incluyen valoraciones con calificación mayor que 0.</span>
+<span class="sd">        El resultado se redondea a 2 decimales.</span>
+
+<span class="sd">        Almacena el resultado en :attr:`calificacion_promedio`.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            En caso de error, asigna ``0.0`` y registra una advertencia en el log.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">ids_valoraciones</span><span class="p">:</span>
+                    <span class="n">valoraciones</span> <span class="o">=</span> <span class="n">usuario</span><span class="o">.</span><span class="n">ids_valoraciones</span><span class="o">.</span><span class="n">filtered</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">calificacion</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">valoraciones</span><span class="p">:</span>
+                        <span class="n">usuario</span><span class="o">.</span><span class="n">calificacion_promedio</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span>
+                            <span class="nb">sum</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">calificacion</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">valoraciones</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">valoraciones</span><span class="p">),</span> <span class="mi">2</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">usuario</span><span class="o">.</span><span class="n">calificacion_promedio</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">usuario</span><span class="o">.</span><span class="n">calificacion_promedio</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+                <span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+                <span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error calculando calificación promedio para usuario </span><span class="si">{</span><span class="n">usuario</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">usuario</span><span class="o">.</span><span class="n">calificacion_promedio</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;ids_valoraciones&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computar_total_valoraciones</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Contar el número total de valoraciones recibidas por el usuario.</span>
+
+<span class="sd">        Almacena el resultado en :attr:`total_valoraciones`.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            En caso de error, asigna ``0`` y registra una advertencia en el log.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">usuario</span><span class="o">.</span><span class="n">total_valoraciones</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">usuario</span><span class="o">.</span><span class="n">ids_valoraciones</span><span class="p">)</span> <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">ids_valoraciones</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+                <span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+                <span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error calculando total valoraciones para usuario </span><span class="si">{</span><span class="n">usuario</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">usuario</span><span class="o">.</span><span class="n">total_valoraciones</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CONSTRAINTS Y VALIDACIONES</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;id_usuario&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_id_usuario</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que el ID de usuario tenga exactamente 7 dígitos numéricos.</span>
+
+<span class="sd">        Solo se valida cuando el valor no es el placeholder ``&#39;Nuevo&#39;``.</span>
+
+<span class="sd">        :raises ValidationError: Si el ID no es un número de exactamente 7 dígitos.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">id_usuario</span> <span class="o">!=</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nuevo&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">usuario</span><span class="o">.</span><span class="n">id_usuario</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">usuario</span><span class="o">.</span><span class="n">id_usuario</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">7</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El ID de usuario debe tener exactamente 7 dígitos numéricos.&#39;</span><span class="p">))</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_nombre_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que el nombre del usuario no supere 50 caracteres.</span>
+
+<span class="sd">        :raises ValidationError: Si el nombre tiene más de 50 caracteres.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">usuario</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El nombre no puede tener más de 50 caracteres.&#39;</span><span class="p">))</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_login_unique</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que el login sea único en la plataforma.</span>
+
+<span class="sd">        :raises ValidationError: Si ya existe otro usuario con el mismo login/email.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">login</span><span class="p">:</span>
+                <span class="n">duplicados</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search</span><span class="p">([</span>
+                    <span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">usuario</span><span class="o">.</span><span class="n">login</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;!=&#39;</span><span class="p">,</span> <span class="n">usuario</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                <span class="p">])</span>
+                <span class="k">if</span> <span class="n">duplicados</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Ya existe un usuario con este login/email.&#39;</span><span class="p">))</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_email_format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar el formato del email cuando el login contiene el símbolo ``@``.</span>
+
+<span class="sd">        Solo se aplica validación de formato email si el login contiene ``@``.</span>
+
+<span class="sd">        :raises ValidationError: Si el login parece un email pero su formato no es válido.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">login</span> <span class="ow">and</span> <span class="s1">&#39;@&#39;</span> <span class="ow">in</span> <span class="n">usuario</span><span class="o">.</span><span class="n">login</span><span class="p">:</span>
+                <span class="n">email_regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$&#39;</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">email_regex</span><span class="p">,</span> <span class="n">usuario</span><span class="o">.</span><span class="n">login</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El formato del email no es válido.&#39;</span><span class="p">))</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;biografia&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_biografia_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que la biografía no supere 200 caracteres.</span>
+
+<span class="sd">        :raises ValidationError: Si la biografía tiene más de 200 caracteres.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">biografia</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">usuario</span><span class="o">.</span><span class="n">biografia</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">200</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;La biografía no puede tener más de 200 caracteres.&#39;</span><span class="p">))</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;telefono&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_telefono_format</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar el formato del número de teléfono.</span>
+
+<span class="sd">        Solo se permiten dígitos, espacios, guiones, paréntesis y el símbolo ``+``.</span>
+
+<span class="sd">        :raises ValidationError: Si el teléfono contiene caracteres no permitidos.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">usuario</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">usuario</span><span class="o">.</span><span class="n">telefono</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^[\d\s\-\(\)\+]+$&#39;</span><span class="p">,</span> <span class="n">usuario</span><span class="o">.</span><span class="n">telefono</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span>
+                        <span class="s1">&#39;El formato del teléfono no es válido. &#39;</span>
+                        <span class="s1">&#39;Solo números, espacios, guiones y paréntesis.&#39;</span>
+                    <span class="p">))</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># MÉTODOS CREATE Y WRITE</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model_create_multi</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Crear uno o varios usuarios generando el ID único y hasheando la contraseña.</span>
+
+<span class="sd">        Para cada usuario:</span>
+<span class="sd">        - Genera un ID de 7 dígitos desde la secuencia ``second_market.user``.</span>
+<span class="sd">        - Valida y hashea la contraseña antes de guardarla.</span>
+
+<span class="sd">        :param vals_list: Lista de diccionarios con los valores de cada usuario.</span>
+<span class="sd">        :type vals_list: list[dict]</span>
+<span class="sd">        :return: Recordset con los usuarios creados.</span>
+<span class="sd">        :rtype: second_market.user</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">vals</span> <span class="ow">in</span> <span class="n">vals_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">vals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id_usuario&#39;</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nuevo&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nuevo&#39;</span><span class="p">):</span>
+                <span class="n">vals</span><span class="p">[</span><span class="s1">&#39;id_usuario&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;ir.sequence&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">next_by_code</span><span class="p">(</span><span class="s1">&#39;second_market.user&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nuevo&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">vals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_validar_password_segura</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">])</span>
+                <span class="n">vals</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash_password</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">])</span>
+
+        <span class="n">usuarios</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">SecondMarketUser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">vals_list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">usuarios</span>
+
+<div class="viewcode-block" id="SecondMarketUser.write">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.write">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Actualizar un usuario, hasheando la contraseña si se modifica.</span>
+
+<span class="sd">        :param vals: Diccionario con los campos a actualizar.</span>
+<span class="sd">        :type vals: dict</span>
+<span class="sd">        :return: Resultado de la operación de escritura.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;password&#39;</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validar_password_segura</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">])</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hash_password</span><span class="p">(</span><span class="n">vals</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">SecondMarketUser</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># MÉTODOS PRINCIPALES (FUNCIONES DEL DIAGRAMA)</span>
+    <span class="c1"># ============================================</span>
+
+<div class="viewcode-block" id="SecondMarketUser.comprar">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.comprar">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">comprar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">articulo_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iniciar el proceso de compra de un artículo.</span>
+
+<span class="sd">        Crea un registro de compra en estado ``pendiente`` vinculado al artículo</span>
+<span class="sd">        y al usuario actual como comprador.</span>
+
+<span class="sd">        :param articulo_id: ID del artículo a comprar.</span>
+<span class="sd">        :type articulo_id: int</span>
+<span class="sd">        :raises UserError: Si la cuenta del usuario está deshabilitada,</span>
+<span class="sd">            el artículo no existe, el usuario intenta comprar su propio artículo</span>
+<span class="sd">            o el artículo no está publicado.</span>
+<span class="sd">        :return: Acción de notificación de éxito.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Tu cuenta está deshabilitada.&#39;</span><span class="p">))</span>
+
+        <span class="n">articulo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">articulo_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">articulo</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El artículo no existe.&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">articulo</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;No puedes comprar tu propio artículo.&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">articulo</span><span class="o">.</span><span class="n">estado_publicacion</span> <span class="o">!=</span> <span class="s1">&#39;publicado&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Este artículo no está disponible para compra.&#39;</span><span class="p">))</span>
+
+        <span class="n">compra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.purchase&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
+            <span class="s1">&#39;id_comprador&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;id_vendedor&#39;</span><span class="p">:</span> <span class="n">articulo</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;id_articulo&#39;</span><span class="p">:</span> <span class="n">articulo</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;precio&#39;</span><span class="p">:</span> <span class="n">articulo</span><span class="o">.</span><span class="n">precio</span><span class="p">,</span>
+            <span class="s1">&#39;fecha_hora&#39;</span><span class="p">:</span> <span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="p">})</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.client&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="s1">&#39;display_notification&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;¡Compra Iniciada!&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Has iniciado la compra de &quot;</span><span class="si">%s</span><span class="s1">&quot; por </span><span class="si">%.2f</span><span class="s1">€. Confirma la transacción para reservarlo.&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">articulo</span><span class="o">.</span><span class="n">nombre</span><span class="p">,</span> <span class="n">articulo</span><span class="o">.</span><span class="n">precio</span><span class="p">),</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sticky&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketUser.vender">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.vender">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals_articulo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Publicar un nuevo artículo para vender.</span>
+
+<span class="sd">        Asigna automáticamente el usuario actual como propietario del artículo</span>
+<span class="sd">        y crea el registro en el modelo ``second_market.article``.</span>
+
+<span class="sd">        :param vals_articulo: Diccionario con los valores del artículo a publicar.</span>
+<span class="sd">        :type vals_articulo: dict</span>
+<span class="sd">        :raises UserError: Si la cuenta del usuario está deshabilitada.</span>
+<span class="sd">        :return: Registro del artículo creado.</span>
+<span class="sd">        :rtype: second_market.article</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Tu cuenta está deshabilitada.&#39;</span><span class="p">))</span>
+
+        <span class="n">vals_articulo</span><span class="p">[</span><span class="s1">&#39;id_propietario&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span>
+        <span class="n">articulo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">vals_articulo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">articulo</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketUser.chatear">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.chatear">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">chatear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">destinatario_id</span><span class="p">,</span> <span class="n">mensaje</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iniciar o continuar un chat con otro usuario.</span>
+
+<span class="sd">        :param destinatario_id: ID del usuario con el que se quiere chatear.</span>
+<span class="sd">        :type destinatario_id: int</span>
+<span class="sd">        :param mensaje: Texto del mensaje inicial.</span>
+<span class="sd">        :type mensaje: str</span>
+<span class="sd">        :raises UserError: Si la cuenta del usuario o del destinatario está deshabilitada,</span>
+<span class="sd">            o si el usuario intenta chatear consigo mismo.</span>
+<span class="sd">        :return: ``True`` si la operación se realizó con éxito.</span>
+<span class="sd">        :rtype: bool</span>
+
+<span class="sd">        .. todo::</span>
+<span class="sd">            Implementar la creación real del chat y del mensaje inicial.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Tu cuenta está deshabilitada.&#39;</span><span class="p">))</span>
+
+        <span class="n">destinatario</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.user&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">destinatario_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">destinatario</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">destinatario</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El destinatario no existe o está deshabilitado.&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">destinatario</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;No puedes chatear contigo mismo.&#39;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketUser.valorar">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.valorar">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">valorar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">usuario_id</span><span class="p">,</span> <span class="n">calificacion</span><span class="p">,</span> <span class="n">comentario</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Valorar a otro usuario de la plataforma.</span>
+
+<span class="sd">        :param usuario_id: ID del usuario a valorar.</span>
+<span class="sd">        :type usuario_id: int</span>
+<span class="sd">        :param calificacion: Calificación del 1 al 5.</span>
+<span class="sd">        :type calificacion: str</span>
+<span class="sd">        :param comentario: Comentario opcional sobre la valoración.</span>
+<span class="sd">        :type comentario: str or bool</span>
+<span class="sd">        :raises UserError: Si la cuenta está deshabilitada, el usuario no existe</span>
+<span class="sd">            o el usuario intenta valorarse a sí mismo.</span>
+<span class="sd">        :return: Registro de valoración creado.</span>
+<span class="sd">        :rtype: second_market.rating</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Tu cuenta está deshabilitada.&#39;</span><span class="p">))</span>
+
+        <span class="n">usuario_valorado</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.user&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">usuario_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">usuario_valorado</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El usuario no existe.&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">usuario_valorado</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;No puedes valorarte a ti mismo.&#39;</span><span class="p">))</span>
+
+        <span class="n">valoracion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
+            <span class="s1">&#39;id_usuario&#39;</span><span class="p">:</span> <span class="n">usuario_valorado</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;id_valorador&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;calificacion&#39;</span><span class="p">:</span> <span class="n">calificacion</span><span class="p">,</span>
+            <span class="s1">&#39;comentario&#39;</span><span class="p">:</span> <span class="n">comentario</span>
+        <span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">valoracion</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketUser.comentar">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.comentar">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">comentar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">articulo_id</span><span class="p">,</span> <span class="n">texto</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Publicar un comentario en un artículo dirigido a su propietario.</span>
+
+<span class="sd">        :param articulo_id: ID del artículo en el que se comenta.</span>
+<span class="sd">        :type articulo_id: int</span>
+<span class="sd">        :param texto: Contenido del comentario.</span>
+<span class="sd">        :type texto: str</span>
+<span class="sd">        :raises UserError: Si la cuenta está deshabilitada o el artículo no existe.</span>
+<span class="sd">        :return: Registro de comentario creado.</span>
+<span class="sd">        :rtype: second_market.comment</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Tu cuenta está deshabilitada.&#39;</span><span class="p">))</span>
+
+        <span class="n">articulo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">articulo_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">articulo</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El artículo no existe.&#39;</span><span class="p">))</span>
+
+        <span class="n">comentario</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.comment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
+            <span class="s1">&#39;id_articulo&#39;</span><span class="p">:</span> <span class="n">articulo</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;id_emisor&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;id_receptor&#39;</span><span class="p">:</span> <span class="n">articulo</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;texto&#39;</span><span class="p">:</span> <span class="n">texto</span><span class="p">,</span>
+            <span class="s1">&#39;fecha_hora&#39;</span><span class="p">:</span> <span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">comentario</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketUser.reportar">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.reportar">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reportar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tipo_reporte</span><span class="p">,</span> <span class="n">id_reportado</span><span class="p">,</span> <span class="n">motivo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reportar un usuario o artículo por comportamiento inapropiado.</span>
+
+<span class="sd">        :param tipo_reporte: Tipo de elemento reportado (``&#39;articulo&#39;``, ``&#39;comentario&#39;`` o ``&#39;usuario&#39;``).</span>
+<span class="sd">        :type tipo_reporte: str</span>
+<span class="sd">        :param id_reportado: ID del elemento a reportar.</span>
+<span class="sd">        :type id_reportado: int</span>
+<span class="sd">        :param motivo: Motivo del reporte.</span>
+<span class="sd">        :type motivo: str</span>
+<span class="sd">        :raises UserError: Si la cuenta del usuario está deshabilitada.</span>
+<span class="sd">        :return: ``True`` si la operación se realizó con éxito.</span>
+<span class="sd">        :rtype: bool</span>
+
+<span class="sd">        .. todo::</span>
+<span class="sd">            Implementar la creación del registro de denuncia en ``second_market.report``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Tu cuenta está deshabilitada.&#39;</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># MÉTODOS AUXILIARES</span>
+    <span class="c1"># ============================================</span>
+
+<div class="viewcode-block" id="SecondMarketUser.action_ver_articulos">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.action_ver_articulos">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_ver_articulos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir la vista de artículos del usuario.</span>
+
+<span class="sd">        :return: Acción de ventana para ver los artículos del usuario.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Artículos de </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;second_market.article&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;list,kanban,form&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;domain&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="s1">&#39;id_propietario&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)],</span>
+            <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;default_id_propietario&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketUser.action_ver_compras">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.action_ver_compras">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_ver_compras</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir la vista de compras realizadas por el usuario.</span>
+
+<span class="sd">        :return: Acción de ventana para ver las compras del usuario.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Compras de </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;second_market.purchase&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;list,form&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;domain&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="s1">&#39;id_comprador&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)]</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketUser.action_ver_ventas">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.action_ver_ventas">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_ver_ventas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir la vista de ventas realizadas por el usuario.</span>
+
+<span class="sd">        :return: Acción de ventana para ver las ventas del usuario.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Ventas de </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;second_market.purchase&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;list,form&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;domain&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="s1">&#39;id_vendedor&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)]</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketUser.action_ver_valoraciones">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.action_ver_valoraciones">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_ver_valoraciones</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir la vista de valoraciones recibidas por el usuario (lista, formulario y gráfico).</span>
+
+<span class="sd">        :return: Acción de ventana para ver las valoraciones del usuario.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Valoraciones de </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;second_market.rating&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;list,form,graph&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;domain&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="s1">&#39;id_usuario&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)],</span>
+            <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;default_id_usuario&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketUser.action_ver_grafico_valoraciones">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.action_ver_grafico_valoraciones">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_ver_grafico_valoraciones</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir directamente la vista de gráfico de valoraciones del usuario.</span>
+
+<span class="sd">        :return: Acción de ventana apuntando a la vista de gráfico de valoraciones.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Gráfico de Valoraciones: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;second_market.rating&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;graph&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="s1">&#39;second_market.view_second_market_rating_graph&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;domain&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="s1">&#39;id_usuario&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)],</span>
+            <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;default_id_usuario&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;search_default_group_by_calificacion&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;target&#39;</span><span class="p">:</span> <span class="s1">&#39;current&#39;</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketUser.action_eliminar_usuario">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_app_users.SecondMarketUser.action_eliminar_usuario">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_eliminar_usuario</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deshabilitar (borrado lógico) al usuario y despublicar sus artículos.</span>
+
+<span class="sd">        Solo los moderadores pueden ejecutar esta acción. Establece ``activo = False``</span>
+<span class="sd">        tanto en el usuario como en todos sus artículos en venta.</span>
+
+<span class="sd">        :raises UserError: Si el usuario actual no pertenece al grupo de moderadores.</span>
+<span class="sd">        :return: Notificación de advertencia en forma de acción de cliente.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">has_group</span><span class="p">(</span><span class="s1">&#39;second_market.group_second_market_moderator&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;No tienes permisos para eliminar usuarios.&#39;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;activo&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ids_articulos_venta</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;activo&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.client&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="s1">&#39;display_notification&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Usuario Eliminado&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;El usuario ha sido deshabilitado correctamente.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;warning&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sticky&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_enviar_email_bienvenida</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enviar un email de bienvenida al nuevo usuario tras su registro.</span>
+
+<span class="sd">        .. todo::</span>
+<span class="sd">            Implementar el envío del email de bienvenida usando la plantilla</span>
+<span class="sd">            de correo correspondiente.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">pass</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Dalo</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Ir a" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navegación</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Código de módulo</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Jonatan C. and Jose S..
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

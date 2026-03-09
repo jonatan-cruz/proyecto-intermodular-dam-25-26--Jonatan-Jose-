@@ -1,5 +1,23 @@
 # -*- coding: utf-8 -*-
 
+"""
+Controlador de artículos para la API REST de Second Market.
+
+**Endpoints disponibles:**
+
+- ``GET/POST /api/v1/articles/list``             — Listar artículos con filtros.
+- ``GET       /api/v1/articles/<id>/image``       — Servir imagen principal (binario HTTP).
+- ``GET/POST /api/v1/articles/<id>``             — Detalle completo de un artículo.
+- ``POST      /api/v1/articles``                 — Crear un nuevo artículo.
+- ``PUT       /api/v1/articles/<id>``            — Actualizar un artículo existente.
+- ``POST      /api/v1/articles/<id>/publish``    — Publicar un artículo en borrador.
+- ``DELETE    /api/v1/articles/<id>``            — Desactivar (borrado lógico) un artículo.
+- ``GET/POST /api/v1/articles/my-articles``     — Listar artículos del usuario autenticado.
+
+Los endpoints de creación, edición y eliminación requieren autenticación JWT
+mediante el header ``Authorization: Bearer <token>``.
+"""
+
 from odoo import http, _
 from odoo.http import request
 import logging
@@ -11,30 +29,51 @@ _logger = logging.getLogger(__name__)
 
 
 class SecondMarketArticleController(http.Controller):
-    """Controlador para gestión de artículos - API v1"""
+    """Controlador para la gestión de artículos de segunda mano — API v1.
+
+    Proporciona endpoints para listar, consultar, crear, editar, publicar y
+    eliminar artículos. Los endpoints de escritura requieren autenticación JWT.
+    """
 
     def _get_authenticated_user(self):
-        """
-        Obtener usuario autenticado desde el token
-        Incluye renovación automática de tokens si es necesario
+        """Obtener el usuario autenticado a partir del token JWT del request.
+
+        Delega en :func:`~api_market.controllers.auth_controller.get_authenticated_user_with_refresh`,
+        incluyendo renovación automática del token si le queda poco tiempo de vida.
+
+        :return: Diccionario ``{'user_data': dict, 'new_token': str}`` o ``None``
+            si el usuario no está autenticado.
+        :rtype: dict or None
         """
         return get_authenticated_user_with_refresh()
 
     @http.route('/api/v1/articles/list', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_articles(self, **kwargs):
-        """
-        Obtener lista de artículos publicados filtrados por diversos criterios.
-        Permite la búsqueda global por texto y filtrado por categoría, precio, estado y localidad.
-        
-        Parámetros opcionales:
-        - limit: int (default: 20)
-        - offset: int (default: 0)
-        - categoria_id: int
-        - search: str (búsqueda por nombre o descripción)
-        - precio_min: float
-        - precio_max: float
-        - estado_producto: str
-        - localidad: str
+        """Obtener la lista paginada de artículos publicados con filtros opcionales.
+
+        La imagen principal **no** se incluye en la respuesta de lista; en su lugar se
+        devuelve ``imagen_url`` apuntando al endpoint binario
+        ``GET /api/v1/articles/<id>/image``, que Android carga de forma lazy con Coil.
+
+        **Body JSON (todos los campos son opcionales):**
+
+        .. code-block:: json
+
+            {
+                "limit": 20,
+                "offset": 0,
+                "categoria_id": 1,
+                "search": "bicicleta",
+                "precio_min": 10.0,
+                "precio_max": 500.0,
+                "estado_producto": "bueno",
+                "localidad": "Sevilla"
+            }
+
+        :param kwargs: Parámetros adicionales del dispatcher de Odoo.
+        :return: Diccionario con ``success``, ``data.articles``, ``data.total``,
+            ``data.limit`` y ``data.offset``.
+        :rtype: dict
         """
         try:
             data = request.params or request.httprequest.get_json(force=True) or {}
@@ -130,11 +169,21 @@ class SecondMarketArticleController(http.Controller):
 
     @http.route('/api/v1/articles/<int:article_id>/image', type='http', auth='public', methods=['GET'], csrf=False, cors='*')
     def get_article_image(self, article_id, **kwargs):
-        """
-        Devuelve la imagen principal de un artículo directamente en binario.
-        - type='http' permite devolver datos binarios (no JSON).
-        - Android carga esta URL con Coil de forma lazy (solo cuando la tarjeta es visible).
-        - Cache-Control de 1 día para que Coil no vuelva a pedirla.
+        """Servir la imagen principal de un artículo en formato binario.
+
+        Endpoint de tipo ``http`` (no JSON) que devuelve los bytes de la imagen
+        directamente con su ``Content-Type``. Usado por Android con Coil para
+        carga lazy de imágenes (solo cuando la tarjeta es visible en pantalla).
+
+        Incluye ``Cache-Control: public, max-age=86400`` para evitar peticiones
+        repetidas durante 24 horas.
+
+        :param article_id: ID del artículo cuya imagen se quiere servir.
+        :type article_id: int
+        :param kwargs: Parámetros adicionales del dispatcher de Odoo.
+        :return: Respuesta HTTP con la imagen en binario, o ``404 Not Found``
+            si el artículo no existe o no tiene imagen.
+        :rtype: :class:`odoo.http.Response`
         """
         try:
             article = request.env['second_market.article'].sudo().browse(article_id)
@@ -156,9 +205,16 @@ class SecondMarketArticleController(http.Controller):
 
     @http.route('/api/v1/articles/<int:article_id>', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_article_detail(self, article_id, **kwargs):
-        """
-        Obtener detalle de un artículo específico
-        Incrementa el contador de vistas
+        """Obtener el detalle completo de un artículo e incrementar su contador de vistas.
+
+        Devuelve todos los campos del artículo, sus imágenes en base64, los comentarios
+        activos y datos públicos del propietario.
+
+        :param article_id: ID del artículo a consultar.
+        :type article_id: int
+        :param kwargs: Parámetros adicionales del dispatcher de Odoo.
+        :return: Diccionario con ``success`` y ``data`` (detalle completo del artículo).
+        :rtype: dict
         """
         try:
             article = request.env['second_market.article'].sudo().browse(article_id)
@@ -246,27 +302,38 @@ class SecondMarketArticleController(http.Controller):
 
     @http.route('/api/v1/articles', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def create_article(self, **kwargs):
-        """
-        Crear un nuevo artículo en estado borrador.
-        Requiere autenticación mediante token JWT. El usuario autenticado se convertirá en el propietario.
-        Permite subir múltiples imágenes (1-10) y asignar etiquetas existentes.
-        
-        Requiere autenticación mediante token JWT en header Authorization
-        
-        Parámetros requeridos:
-        - nombre: str
-        - descripcion: str
-        - precio: float
-        - estado_producto: str
-        - localidad: str
-        - categoria_id: int
-        - imagenes: list de dict [{image: base64, name: str, sequence: int}]
-        
-        Parámetros opcionales:
-        - antiguedad: int
-        - latitud: float
-        - longitud: float
-        - etiquetas_ids: list de int
+        """Crear un nuevo artículo y publicarlo directamente.
+
+        El usuario autenticado se convierte en el propietario. El artículo se crea
+        directamente en estado ``publicado``. Se admiten entre 1 y 10 imágenes.
+
+        **Header requerido:** ``Authorization: Bearer <token>``
+
+        **Body JSON:**
+
+        .. code-block:: json
+
+            {
+                "nombre": "Bicicleta de montaña",
+                "descripcion": "En buen estado",
+                "precio": 150.0,
+                "estado_producto": "bueno",
+                "localidad": "Sevilla",
+                "categoria_id": 1,
+                "antiguedad": 2,
+                "latitud": 37.38,
+                "longitud": -5.99,
+                "etiquetas_ids": [1, 3],
+                "imagenes": [
+                    {"image": "<base64>", "name": "foto1.jpg", "sequence": 10}
+                ]
+            }
+
+        Los campos ``antiguedad``, ``latitud``, ``longitud`` y ``etiquetas_ids`` son opcionales.
+
+        :param kwargs: Parámetros adicionales del dispatcher de Odoo.
+        :return: Diccionario con ``success``, ``message`` y ``data.article_id`` + ``data.codigo``.
+        :rtype: dict
         """
         try:
             # Verificar autenticación
@@ -375,7 +442,30 @@ class SecondMarketArticleController(http.Controller):
 
     @http.route('/api/v1/articles/<int:article_id>', type='json', auth='public', methods=['PUT'], csrf=False, cors='*')
     def update_article(self, article_id, **kwargs):
-        """Actualizar campos específicos de un artículo existente (propietario solamente)"""
+        """Actualizar uno o varios campos de un artículo existente.
+
+        Solo el propietario del artículo puede editarlo. Se actualizan únicamente
+        los campos enviados en el body.
+
+        **Header requerido:** ``Authorization: Bearer <token>``
+
+        **Body JSON (campos editables):**
+
+        .. code-block:: json
+
+            {
+                "nombre": "Nuevo nombre",
+                "precio": 120.0,
+                "localidad": "Málaga",
+                "categoria_id": 2
+            }
+
+        :param article_id: ID del artículo a actualizar.
+        :type article_id: int
+        :param kwargs: Parámetros adicionales del dispatcher de Odoo.
+        :return: Diccionario con ``success`` y mensaje de confirmación.
+        :rtype: dict
+        """
         try:
             auth_result = self._get_authenticated_user()
             if not auth_result:
@@ -442,9 +532,18 @@ class SecondMarketArticleController(http.Controller):
 
     @http.route('/api/v1/articles/<int:article_id>/publish', type='json', auth='public', methods=['POST'], csrf=False, cors='*')
     def publish_article(self, article_id, **kwargs):
-        """
-        Publicar un artículo (cambiar estado a 'publicado')
-        Requiere autenticación mediante token JWT en header Authorization
+        """Cambiar el estado de un artículo a ``publicado``.
+
+        Solo el propietario puede publicar su artículo. Útil para artículos
+        creados previamente en estado ``borrador``.
+
+        **Header requerido:** ``Authorization: Bearer <token>``
+
+        :param article_id: ID del artículo a publicar.
+        :type article_id: int
+        :param kwargs: Parámetros adicionales del dispatcher de Odoo.
+        :return: Diccionario con ``success`` y mensaje de confirmación.
+        :rtype: dict
         """
         try:
             auth_result = self._get_authenticated_user()
@@ -497,9 +596,19 @@ class SecondMarketArticleController(http.Controller):
 
     @http.route('/api/v1/articles/<int:article_id>', type='json', auth='public', methods=['DELETE'], csrf=False, cors='*')
     def delete_article(self, article_id, **kwargs):
-        """
-        Eliminar (desactivar) un artículo
-        Requiere autenticación mediante token JWT en header Authorization
+        """Desactivar (borrado lógico) un artículo.
+
+        Solo el propietario puede eliminar su artículo. El artículo pasa a
+        ``activo = False`` y ``estado_publicacion = 'eliminado'``, sin borrar
+        el registro de la base de datos.
+
+        **Header requerido:** ``Authorization: Bearer <token>``
+
+        :param article_id: ID del artículo a desactivar.
+        :type article_id: int
+        :param kwargs: Parámetros adicionales del dispatcher de Odoo.
+        :return: Diccionario con ``success`` y mensaje de confirmación.
+        :rtype: dict
         """
         try:
             auth_result = self._get_authenticated_user()
@@ -555,9 +664,17 @@ class SecondMarketArticleController(http.Controller):
 
     @http.route('/api/v1/articles/my-articles', type='json', auth='public', methods=['GET', 'POST'], csrf=False, cors='*')
     def get_my_articles(self, **kwargs):
-        """
-        Obtener artículos del usuario autenticado
-        Requiere autenticación mediante token JWT en header Authorization
+        """Obtener todos los artículos del usuario autenticado (todos los estados).
+
+        Incluye artículos en borrador, publicados, reservados y eliminados.
+        Admite paginación mediante los parámetros ``limit`` y ``offset``.
+
+        **Header requerido:** ``Authorization: Bearer <token>``
+
+        :param kwargs: Parámetros opcionales: ``limit`` (por defecto 20)
+            y ``offset`` (por defecto 0).
+        :return: Diccionario con ``success``, ``data.articles`` y ``data.total``.
+        :rtype: dict
         """
         try:
             auth_result = self._get_authenticated_user()

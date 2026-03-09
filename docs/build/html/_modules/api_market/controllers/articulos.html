@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+
+<html lang="es" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>api_market.controllers.articulos &#8212; documentación de Dalo - 1.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=4936afed"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/translations.js?v=f85f4cfb"></script>
+    <link rel="index" title="Índice" href="../../../genindex.html" />
+    <link rel="search" title="Búsqueda" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Código fuente para api_market.controllers.articulos</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Controlador de artículos para la API REST de Second Market.</span>
+
+<span class="sd">**Endpoints disponibles:**</span>
+
+<span class="sd">- ``GET/POST /api/v1/articles/list``             — Listar artículos con filtros.</span>
+<span class="sd">- ``GET       /api/v1/articles/&lt;id&gt;/image``       — Servir imagen principal (binario HTTP).</span>
+<span class="sd">- ``GET/POST /api/v1/articles/&lt;id&gt;``             — Detalle completo de un artículo.</span>
+<span class="sd">- ``POST      /api/v1/articles``                 — Crear un nuevo artículo.</span>
+<span class="sd">- ``PUT       /api/v1/articles/&lt;id&gt;``            — Actualizar un artículo existente.</span>
+<span class="sd">- ``POST      /api/v1/articles/&lt;id&gt;/publish``    — Publicar un artículo en borrador.</span>
+<span class="sd">- ``DELETE    /api/v1/articles/&lt;id&gt;``            — Desactivar (borrado lógico) un artículo.</span>
+<span class="sd">- ``GET/POST /api/v1/articles/my-articles``     — Listar artículos del usuario autenticado.</span>
+
+<span class="sd">Los endpoints de creación, edición y eliminación requieren autenticación JWT</span>
+<span class="sd">mediante el header ``Authorization: Bearer &lt;token&gt;``.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">http</span><span class="p">,</span> <span class="n">_</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">request</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">base64</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.auth_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">verify_jwt_token</span><span class="p">,</span> <span class="n">get_token_from_request</span><span class="p">,</span> <span class="n">get_authenticated_user_with_refresh</span>
+
+<span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SecondMarketArticleController">
+<a class="viewcode-back" href="../../../api.html#api_market.controllers.articulos.SecondMarketArticleController">[documentos]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SecondMarketArticleController</span><span class="p">(</span><span class="n">http</span><span class="o">.</span><span class="n">Controller</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Controlador para la gestión de artículos de segunda mano — API v1.</span>
+
+<span class="sd">    Proporciona endpoints para listar, consultar, crear, editar, publicar y</span>
+<span class="sd">    eliminar artículos. Los endpoints de escritura requieren autenticación JWT.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_authenticated_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener el usuario autenticado a partir del token JWT del request.</span>
+
+<span class="sd">        Delega en :func:`~api_market.controllers.auth_controller.get_authenticated_user_with_refresh`,</span>
+<span class="sd">        incluyendo renovación automática del token si le queda poco tiempo de vida.</span>
+
+<span class="sd">        :return: Diccionario ``{&#39;user_data&#39;: dict, &#39;new_token&#39;: str}`` o ``None``</span>
+<span class="sd">            si el usuario no está autenticado.</span>
+<span class="sd">        :rtype: dict or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_authenticated_user_with_refresh</span><span class="p">()</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/articles/list&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_articles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener la lista paginada de artículos publicados con filtros opcionales.</span>
+
+<span class="sd">        La imagen principal **no** se incluye en la respuesta de lista; en su lugar se</span>
+<span class="sd">        devuelve ``imagen_url`` apuntando al endpoint binario</span>
+<span class="sd">        ``GET /api/v1/articles/&lt;id&gt;/image``, que Android carga de forma lazy con Coil.</span>
+
+<span class="sd">        **Body JSON (todos los campos son opcionales):**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;limit&quot;: 20,</span>
+<span class="sd">                &quot;offset&quot;: 0,</span>
+<span class="sd">                &quot;categoria_id&quot;: 1,</span>
+<span class="sd">                &quot;search&quot;: &quot;bicicleta&quot;,</span>
+<span class="sd">                &quot;precio_min&quot;: 10.0,</span>
+<span class="sd">                &quot;precio_max&quot;: 500.0,</span>
+<span class="sd">                &quot;estado_producto&quot;: &quot;bueno&quot;,</span>
+<span class="sd">                &quot;localidad&quot;: &quot;Sevilla&quot;</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success``, ``data.articles``, ``data.total``,</span>
+<span class="sd">            ``data.limit`` y ``data.offset``.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">params</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">httprequest</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+            
+            <span class="n">limit</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;limit&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;offset&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            
+            <span class="c1"># Construir dominio de búsqueda</span>
+            <span class="n">domain</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s1">&#39;estado_publicacion&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;publicado&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;activo&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">]</span>
+            
+            <span class="c1"># Filtros opcionales</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;categoria_id&#39;</span><span class="p">):</span>
+                <span class="n">domain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;id_categoria&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;categoria_id&#39;</span><span class="p">)))</span>
+            
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">):</span>
+                <span class="n">search_term</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;search&#39;</span><span class="p">)</span>
+                <span class="n">domain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
+                <span class="n">domain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;nombre&#39;</span><span class="p">,</span> <span class="s1">&#39;ilike&#39;</span><span class="p">,</span> <span class="n">search_term</span><span class="p">))</span>
+                <span class="n">domain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;descripcion&#39;</span><span class="p">,</span> <span class="s1">&#39;ilike&#39;</span><span class="p">,</span> <span class="n">search_term</span><span class="p">))</span>
+            
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;precio_min&#39;</span><span class="p">):</span>
+                <span class="n">domain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;precio&#39;</span><span class="p">,</span> <span class="s1">&#39;&gt;=&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;precio_min&#39;</span><span class="p">)))</span>
+            
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;precio_max&#39;</span><span class="p">):</span>
+                <span class="n">domain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;precio&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;=&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;precio_max&#39;</span><span class="p">)))</span>
+            
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;estado_producto&#39;</span><span class="p">):</span>
+                <span class="n">domain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;estado_producto&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;estado_producto&#39;</span><span class="p">)))</span>
+            
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;localidad&#39;</span><span class="p">):</span>
+                <span class="n">domain</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;localidad&#39;</span><span class="p">,</span> <span class="s1">&#39;ilike&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;localidad&#39;</span><span class="p">)))</span>
+            
+            <span class="c1"># Buscar artículos</span>
+            <span class="n">articles</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+                <span class="n">domain</span><span class="p">,</span>
+                <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span>
+                <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span>
+                <span class="n">order</span><span class="o">=</span><span class="s1">&#39;create_date desc&#39;</span>
+            <span class="p">)</span>
+            
+            <span class="n">total_count</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search_count</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+            
+            <span class="n">articles_data</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">article</span> <span class="ow">in</span> <span class="n">articles</span><span class="p">:</span>
+                <span class="n">articles_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;codigo&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">codigo</span><span class="p">,</span>
+                    <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">nombre</span><span class="p">,</span>
+                    <span class="s1">&#39;descripcion&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">descripcion</span><span class="p">,</span>
+                    <span class="s1">&#39;precio&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">precio</span><span class="p">,</span>
+                    <span class="s1">&#39;estado_producto&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">estado_producto</span><span class="p">,</span>
+                    <span class="s1">&#39;antiguedad&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">antiguedad</span><span class="p">,</span>
+                    <span class="s1">&#39;localidad&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">localidad</span><span class="p">,</span>
+                    <span class="s1">&#39;categoria&#39;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_categoria</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                        <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_categoria</span><span class="o">.</span><span class="n">name</span>
+                    <span class="p">}</span> <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">id_categoria</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;propietario&#39;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                        <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                        <span class="s1">&#39;calificacion_promedio&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">calificacion_promedio</span>
+                    <span class="p">}</span> <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="c1"># Sin base64 en la lista — la imagen se carga por URL desde Android</span>
+                    <span class="s1">&#39;imagen_principal&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;imagen_url&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;/api/v1/articles/</span><span class="si">{</span><span class="n">article</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s1">/image&#39;</span> <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">imagen_principal</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;conteo_imagenes&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">conteo_imagenes</span><span class="p">,</span>
+                    <span class="s1">&#39;conteo_favoritos&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">conteo_favoritos</span><span class="p">,</span>
+                    <span class="s1">&#39;conteo_vistas&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">conteo_vistas</span><span class="p">,</span>
+                    <span class="s1">&#39;etiquetas&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">tag</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">tag</span><span class="o">.</span><span class="n">name</span><span class="p">}</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">article</span><span class="o">.</span><span class="n">ids_etiquetas</span><span class="p">],</span>
+                    <span class="s1">&#39;create_date&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">create_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">create_date</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">})</span>
+
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;articles&#39;</span><span class="p">:</span> <span class="n">articles_data</span><span class="p">,</span>
+                    <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="n">total_count</span><span class="p">,</span>
+                    <span class="s1">&#39;limit&#39;</span><span class="p">:</span> <span class="n">limit</span><span class="p">,</span>
+                    <span class="s1">&#39;offset&#39;</span><span class="p">:</span> <span class="n">offset</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al obtener artículos: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al obtener artículos&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;GET_ARTICLES_ERROR&#39;</span>
+            <span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/articles/&lt;int:article_id&gt;/image&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;http&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_article_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">article_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Servir la imagen principal de un artículo en formato binario.</span>
+
+<span class="sd">        Endpoint de tipo ``http`` (no JSON) que devuelve los bytes de la imagen</span>
+<span class="sd">        directamente con su ``Content-Type``. Usado por Android con Coil para</span>
+<span class="sd">        carga lazy de imágenes (solo cuando la tarjeta es visible en pantalla).</span>
+
+<span class="sd">        Incluye ``Cache-Control: public, max-age=86400`` para evitar peticiones</span>
+<span class="sd">        repetidas durante 24 horas.</span>
+
+<span class="sd">        :param article_id: ID del artículo cuya imagen se quiere servir.</span>
+<span class="sd">        :type article_id: int</span>
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Respuesta HTTP con la imagen en binario, o ``404 Not Found``</span>
+<span class="sd">            si el artículo no existe o no tiene imagen.</span>
+<span class="sd">        :rtype: :class:`odoo.http.Response`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">article</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">article_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">article</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">article</span><span class="o">.</span><span class="n">imagen_principal</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">not_found</span><span class="p">()</span>
+
+            <span class="n">image_data</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">imagen_principal</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">make_response</span><span class="p">(</span>
+                <span class="n">image_data</span><span class="p">,</span>
+                <span class="n">headers</span><span class="o">=</span><span class="p">[</span>
+                    <span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s1">&#39;image/jpeg&#39;</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s1">&#39;Content-Length&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">image_data</span><span class="p">))),</span>
+                    <span class="p">(</span><span class="s1">&#39;Cache-Control&#39;</span><span class="p">,</span> <span class="s1">&#39;public, max-age=86400&#39;</span><span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al servir imagen del artículo </span><span class="si">{</span><span class="n">article_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">not_found</span><span class="p">()</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/articles/&lt;int:article_id&gt;&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_article_detail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">article_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener el detalle completo de un artículo e incrementar su contador de vistas.</span>
+
+<span class="sd">        Devuelve todos los campos del artículo, sus imágenes en base64, los comentarios</span>
+<span class="sd">        activos y datos públicos del propietario.</span>
+
+<span class="sd">        :param article_id: ID del artículo a consultar.</span>
+<span class="sd">        :type article_id: int</span>
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y ``data`` (detalle completo del artículo).</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">article</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">article_id</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">article</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">article</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Artículo no encontrado&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;ARTICLE_NOT_FOUND&#39;</span>
+                <span class="p">}</span>
+            
+            <span class="c1"># Incrementar vistas</span>
+            <span class="n">article</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;conteo_vistas&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">conteo_vistas</span> <span class="o">+</span> <span class="mi">1</span><span class="p">})</span>
+            
+            <span class="c1"># Obtener imágenes</span>
+            <span class="n">imagenes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">article</span><span class="o">.</span><span class="n">ids_imagenes</span><span class="p">:</span>
+                <span class="n">imagenes</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="s1">&#39;image&#39;</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">image</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;sequence&#39;</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">sequence</span>
+                <span class="p">})</span>
+            
+            <span class="c1"># Obtener comentarios</span>
+            <span class="n">comentarios</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">com</span> <span class="ow">in</span> <span class="n">article</span><span class="o">.</span><span class="n">ids_comentarios</span><span class="o">.</span><span class="n">filtered</span><span class="p">(</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">activo</span><span class="p">):</span>
+                <span class="n">comentarios</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">com</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;texto&#39;</span><span class="p">:</span> <span class="n">com</span><span class="o">.</span><span class="n">texto</span><span class="p">,</span>
+                    <span class="s1">&#39;emisor&#39;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">com</span><span class="o">.</span><span class="n">id_emisor</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                        <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">com</span><span class="o">.</span><span class="n">id_emisor</span><span class="o">.</span><span class="n">name</span>
+                    <span class="p">},</span>
+                    <span class="s1">&#39;fecha_hora&#39;</span><span class="p">:</span> <span class="n">com</span><span class="o">.</span><span class="n">fecha_hora</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">com</span><span class="o">.</span><span class="n">fecha_hora</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">})</span>
+            
+            <span class="n">article_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;codigo&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">codigo</span><span class="p">,</span>
+                <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">nombre</span><span class="p">,</span>
+                <span class="s1">&#39;descripcion&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">descripcion</span><span class="p">,</span>
+                <span class="s1">&#39;precio&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">precio</span><span class="p">,</span>
+                <span class="s1">&#39;estado_producto&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">estado_producto</span><span class="p">,</span>
+                <span class="s1">&#39;estado_publicacion&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">estado_publicacion</span><span class="p">,</span>
+                <span class="s1">&#39;antiguedad&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">antiguedad</span><span class="p">,</span>
+                <span class="s1">&#39;localidad&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">localidad</span><span class="p">,</span>
+                <span class="s1">&#39;latitud&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">latitud</span><span class="p">,</span>
+                <span class="s1">&#39;longitud&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">longitud</span><span class="p">,</span>
+                <span class="s1">&#39;categoria&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_categoria</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_categoria</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="s1">&#39;descripcion&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_categoria</span><span class="o">.</span><span class="n">descripcion</span>
+                <span class="p">}</span> <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">id_categoria</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;propietario&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;id_usuario&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id_usuario</span><span class="p">,</span>
+                    <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="s1">&#39;calificacion_promedio&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">calificacion_promedio</span><span class="p">,</span>
+                    <span class="s1">&#39;total_valoraciones&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">total_valoraciones</span><span class="p">,</span>
+                    <span class="s1">&#39;productos_vendidos&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">productos_vendidos</span><span class="p">,</span>
+                    <span class="s1">&#39;antiguedad&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">antiguedad</span>
+                <span class="p">}</span> <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s1">&#39;imagenes&#39;</span><span class="p">:</span> <span class="n">imagenes</span><span class="p">,</span>
+                <span class="s1">&#39;etiquetas&#39;</span><span class="p">:</span> <span class="p">[{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">tag</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">tag</span><span class="o">.</span><span class="n">name</span><span class="p">}</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">article</span><span class="o">.</span><span class="n">ids_etiquetas</span><span class="p">],</span>
+                <span class="s1">&#39;comentarios&#39;</span><span class="p">:</span> <span class="n">comentarios</span><span class="p">,</span>
+                <span class="s1">&#39;conteo_vistas&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">conteo_vistas</span><span class="p">,</span>
+                <span class="s1">&#39;conteo_favoritos&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">conteo_favoritos</span><span class="p">,</span>
+                <span class="s1">&#39;conteo_comentarios&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">conteo_comentarios</span><span class="p">,</span>
+                <span class="s1">&#39;create_date&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">create_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">create_date</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="p">}</span>
+            
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="n">article_data</span>
+            <span class="p">}</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al obtener artículo: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al obtener artículo&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;GET_ARTICLE_ERROR&#39;</span>
+            <span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/articles&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_article</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Crear un nuevo artículo y publicarlo directamente.</span>
+
+<span class="sd">        El usuario autenticado se convierte en el propietario. El artículo se crea</span>
+<span class="sd">        directamente en estado ``publicado``. Se admiten entre 1 y 10 imágenes.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        **Body JSON:**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;nombre&quot;: &quot;Bicicleta de montaña&quot;,</span>
+<span class="sd">                &quot;descripcion&quot;: &quot;En buen estado&quot;,</span>
+<span class="sd">                &quot;precio&quot;: 150.0,</span>
+<span class="sd">                &quot;estado_producto&quot;: &quot;bueno&quot;,</span>
+<span class="sd">                &quot;localidad&quot;: &quot;Sevilla&quot;,</span>
+<span class="sd">                &quot;categoria_id&quot;: 1,</span>
+<span class="sd">                &quot;antiguedad&quot;: 2,</span>
+<span class="sd">                &quot;latitud&quot;: 37.38,</span>
+<span class="sd">                &quot;longitud&quot;: -5.99,</span>
+<span class="sd">                &quot;etiquetas_ids&quot;: [1, 3],</span>
+<span class="sd">                &quot;imagenes&quot;: [</span>
+<span class="sd">                    {&quot;image&quot;: &quot;&lt;base64&gt;&quot;, &quot;name&quot;: &quot;foto1.jpg&quot;, &quot;sequence&quot;: 10}</span>
+<span class="sd">                ]</span>
+<span class="sd">            }</span>
+
+<span class="sd">        Los campos ``antiguedad``, ``latitud``, ``longitud`` y ``etiquetas_ids`` son opcionales.</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success``, ``message`` y ``data.article_id`` + ``data.codigo``.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Verificar autenticación</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado. Debe proporcionar token en header Authorization&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span>
+                <span class="p">}</span>
+            
+            <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">params</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">httprequest</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Validar campos requeridos</span>
+            <span class="n">required_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nombre&#39;</span><span class="p">,</span> <span class="s1">&#39;descripcion&#39;</span><span class="p">,</span> <span class="s1">&#39;precio&#39;</span><span class="p">,</span> <span class="s1">&#39;estado_producto&#39;</span><span class="p">,</span> <span class="s1">&#39;localidad&#39;</span><span class="p">,</span> <span class="s1">&#39;categoria_id&#39;</span><span class="p">,</span> <span class="s1">&#39;imagenes&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">required_fields</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="p">{</span>
+                        <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;El campo </span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s1"> es requerido&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;MISSING_FIELD&#39;</span>
+                    <span class="p">}</span>
+            
+            <span class="c1"># Validar imágenes</span>
+            <span class="n">imagenes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;imagenes&#39;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">imagenes</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">imagenes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Debes subir entre 1 y 10 imágenes&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;INVALID_IMAGE_COUNT&#39;</span>
+                <span class="p">}</span>
+            
+            <span class="c1"># Crear artículo</span>
+            <span class="n">article_vals</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nombre&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;descripcion&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;descripcion&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;precio&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;precio&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;estado_producto&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;estado_producto&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;localidad&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;localidad&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;id_categoria&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;categoria_id&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;id_propietario&#39;</span><span class="p">:</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;antiguedad&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;antiguedad&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s1">&#39;latitud&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;latitud&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;longitud&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;longitud&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;estado_publicacion&#39;</span><span class="p">:</span> <span class="s1">&#39;publicado&#39;</span>
+            <span class="p">}</span>
+            
+            <span class="n">article</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">article_vals</span><span class="p">)</span>
+            
+            <span class="c1"># Agregar imágenes</span>
+            <span class="k">for</span> <span class="n">img_data</span> <span class="ow">in</span> <span class="n">imagenes</span><span class="p">:</span>
+                <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.image&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
+                    <span class="s1">&#39;article_id&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;image&#39;</span><span class="p">:</span> <span class="n">img_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;image&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">img_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;sequence&#39;</span><span class="p">:</span> <span class="n">img_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sequence&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+                <span class="p">})</span>
+            
+            <span class="c1"># Agregar etiquetas si existen</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;etiquetas_ids&#39;</span><span class="p">):</span>
+                <span class="n">etiquetas_ids</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;etiquetas_ids&#39;</span><span class="p">)</span>
+                <span class="c1"># Validar que todas las etiquetas existan</span>
+                <span class="n">existing_tags</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.tag&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">([</span>
+                    <span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="n">etiquetas_ids</span><span class="p">)</span>
+                <span class="p">])</span>
+                <span class="n">existing_tag_ids</span> <span class="o">=</span> <span class="n">existing_tags</span><span class="o">.</span><span class="n">ids</span>
+                
+                <span class="c1"># Filtrar solo las etiquetas que existen</span>
+                <span class="n">valid_tag_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag_id</span> <span class="k">for</span> <span class="n">tag_id</span> <span class="ow">in</span> <span class="n">etiquetas_ids</span> <span class="k">if</span> <span class="n">tag_id</span> <span class="ow">in</span> <span class="n">existing_tag_ids</span><span class="p">]</span>
+                
+                <span class="k">if</span> <span class="n">valid_tag_ids</span><span class="p">:</span>
+                    <span class="n">article</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;ids_etiquetas&#39;</span><span class="p">:</span> <span class="p">[(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">valid_tag_ids</span><span class="p">)]})</span>
+                
+                <span class="c1"># Advertir si algunas etiquetas no existen</span>
+                <span class="n">invalid_tags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">etiquetas_ids</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">existing_tag_ids</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">invalid_tags</span><span class="p">:</span>
+                    <span class="n">_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Etiquetas no encontradas (ignoradas): </span><span class="si">{</span><span class="n">invalid_tags</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Artículo creado: </span><span class="si">{</span><span class="n">article</span><span class="o">.</span><span class="n">codigo</span><span class="si">}</span><span class="s2"> por usuario </span><span class="si">{</span><span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Artículo creado exitosamente&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;article_id&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;codigo&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">codigo</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            
+            <span class="c1"># Agregar nuevo token si fue renovado</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+                
+            <span class="k">return</span> <span class="n">response</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al crear artículo: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al crear artículo&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;CREATE_ARTICLE_ERROR&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_detail&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/articles/&lt;int:article_id&gt;&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;PUT&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_article</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">article_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Actualizar uno o varios campos de un artículo existente.</span>
+
+<span class="sd">        Solo el propietario del artículo puede editarlo. Se actualizan únicamente</span>
+<span class="sd">        los campos enviados en el body.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        **Body JSON (campos editables):**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;nombre&quot;: &quot;Nuevo nombre&quot;,</span>
+<span class="sd">                &quot;precio&quot;: 120.0,</span>
+<span class="sd">                &quot;localidad&quot;: &quot;Málaga&quot;,</span>
+<span class="sd">                &quot;categoria_id&quot;: 2</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param article_id: ID del artículo a actualizar.</span>
+<span class="sd">        :type article_id: int</span>
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y mensaje de confirmación.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span>
+                <span class="p">}</span>
+
+            <span class="n">user</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">][</span><span class="s1">&#39;user&#39;</span><span class="p">]</span>
+
+            <span class="n">article</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">article_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">article</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Artículo no encontrado&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;ARTICLE_NOT_FOUND&#39;</span>
+                <span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No tienes permiso para editar este artículo&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;FORBIDDEN&#39;</span>
+                <span class="p">}</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">params</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">httprequest</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DATA RECIBIDA =&gt; </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">updatable_fields</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s1">&#39;nombre&#39;</span><span class="p">,</span> <span class="s1">&#39;descripcion&#39;</span><span class="p">,</span> <span class="s1">&#39;precio&#39;</span><span class="p">,</span> <span class="s1">&#39;estado_producto&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;localidad&#39;</span><span class="p">,</span> <span class="s1">&#39;antiguedad&#39;</span><span class="p">,</span> <span class="s1">&#39;latitud&#39;</span><span class="p">,</span> <span class="s1">&#39;longitud&#39;</span>
+            <span class="p">]</span>
+
+            <span class="n">update_vals</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">updatable_fields</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                    <span class="n">update_vals</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">field</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="s1">&#39;categoria_id&#39;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">update_vals</span><span class="p">[</span><span class="s1">&#39;id_categoria&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;categoria_id&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">update_vals</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No se enviaron campos para actualizar&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;NO_DATA&#39;</span>
+                <span class="p">}</span>
+
+            <span class="n">article</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">update_vals</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Artículo actualizado exitosamente&#39;</span>
+            <span class="p">}</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al actualizar artículo: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al actualizar artículo&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UPDATE_ARTICLE_ERROR&#39;</span>
+            <span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/articles/&lt;int:article_id&gt;/publish&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">publish_article</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">article_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cambiar el estado de un artículo a ``publicado``.</span>
+
+<span class="sd">        Solo el propietario puede publicar su artículo. Útil para artículos</span>
+<span class="sd">        creados previamente en estado ``borrador``.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        :param article_id: ID del artículo a publicar.</span>
+<span class="sd">        :type article_id: int</span>
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y mensaje de confirmación.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado. Debe proporcionar token en header Authorization&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span>
+                <span class="p">}</span>
+            
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+            
+            <span class="n">article</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">article_id</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">article</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Artículo no encontrado&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;ARTICLE_NOT_FOUND&#39;</span>
+                <span class="p">}</span>
+            
+            <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No tienes permiso&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;FORBIDDEN&#39;</span>
+                <span class="p">}</span>
+            
+            <span class="n">article</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado_publicacion&#39;</span><span class="p">:</span> <span class="s1">&#39;publicado&#39;</span><span class="p">})</span>
+            
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Artículo publicado exitosamente&#39;</span>
+            <span class="p">}</span>
+            
+            <span class="c1"># Agregar nuevo token si fue renovado</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+                
+            <span class="k">return</span> <span class="n">response</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al publicar artículo: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al publicar artículo&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;PUBLISH_ERROR&#39;</span>
+            <span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/articles/&lt;int:article_id&gt;&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;DELETE&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_article</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">article_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Desactivar (borrado lógico) un artículo.</span>
+
+<span class="sd">        Solo el propietario puede eliminar su artículo. El artículo pasa a</span>
+<span class="sd">        ``activo = False`` y ``estado_publicacion = &#39;eliminado&#39;``, sin borrar</span>
+<span class="sd">        el registro de la base de datos.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        :param article_id: ID del artículo a desactivar.</span>
+<span class="sd">        :type article_id: int</span>
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y mensaje de confirmación.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado. Debe proporcionar token en header Authorization&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span>
+                <span class="p">}</span>
+            
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+            
+            <span class="n">article</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">article_id</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">article</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Artículo no encontrado&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;ARTICLE_NOT_FOUND&#39;</span>
+                <span class="p">}</span>
+            
+            <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No tienes permiso&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;FORBIDDEN&#39;</span>
+                <span class="p">}</span>
+            
+            <span class="n">article</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">({</span>
+                <span class="s1">&#39;activo&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;estado_publicacion&#39;</span><span class="p">:</span> <span class="s1">&#39;eliminado&#39;</span>
+            <span class="p">})</span>
+            
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Artículo eliminado exitosamente&#39;</span>
+            <span class="p">}</span>
+            
+            <span class="c1"># Agregar nuevo token si fue renovado</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+                
+            <span class="k">return</span> <span class="n">response</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al eliminar artículo: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al eliminar artículo&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;DELETE_ERROR&#39;</span>
+            <span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/articles/my-articles&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_my_articles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener todos los artículos del usuario autenticado (todos los estados).</span>
+
+<span class="sd">        Incluye artículos en borrador, publicados, reservados y eliminados.</span>
+<span class="sd">        Admite paginación mediante los parámetros ``limit`` y ``offset``.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        :param kwargs: Parámetros opcionales: ``limit`` (por defecto 20)</span>
+<span class="sd">            y ``offset`` (por defecto 0).</span>
+<span class="sd">        :return: Diccionario con ``success``, ``data.articles`` y ``data.total``.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado. Debe proporcionar token en header Authorization&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span>
+                <span class="p">}</span>
+            
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+            
+            <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">httprequest</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">limit</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;limit&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;offset&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            
+            <span class="n">articles</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">([</span>
+                <span class="p">(</span><span class="s1">&#39;id_propietario&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">])</span>
+            <span class="p">],</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;create_date desc&#39;</span><span class="p">)</span>
+            
+            <span class="n">total_count</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search_count</span><span class="p">([</span>
+                <span class="p">(</span><span class="s1">&#39;id_propietario&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">])</span>
+            <span class="p">])</span>
+            
+            <span class="n">articles_data</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">article</span> <span class="ow">in</span> <span class="n">articles</span><span class="p">:</span>
+                <span class="n">articles_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;codigo&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">codigo</span><span class="p">,</span>
+                    <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">nombre</span><span class="p">,</span>
+                    <span class="s1">&#39;precio&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">precio</span><span class="p">,</span>
+                    <span class="s1">&#39;estado_producto&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">estado_producto</span><span class="p">,</span>
+                    <span class="s1">&#39;estado_publicacion&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">estado_publicacion</span><span class="p">,</span>
+                    <span class="s1">&#39;activo&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">activo</span><span class="p">,</span>
+                    <span class="s1">&#39;conteo_vistas&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">conteo_vistas</span><span class="p">,</span>
+                    <span class="s1">&#39;conteo_comentarios&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">conteo_comentarios</span><span class="p">,</span>
+                    <span class="s1">&#39;imagen_principal&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">imagen_principal</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">imagen_principal</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;create_date&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">create_date</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">create_date</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">})</span>
+            
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;articles&#39;</span><span class="p">:</span> <span class="n">articles_data</span><span class="p">,</span>
+                    <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="n">total_count</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            
+            <span class="c1"># Agregar nuevo token si fue renovado</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+                
+            <span class="k">return</span> <span class="n">response</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al obtener mis artículos: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al obtener artículos&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;GET_MY_ARTICLES_ERROR&#39;</span>
+            <span class="p">}</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Dalo</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Ir a" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navegación</h3>
+<p class="caption" role="heading"><span class="caption-text">Secciones:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Modelos (second_market)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API REST (api_market)</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Código de módulo</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Jonatan C. and Jose S..
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

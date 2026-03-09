@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+
+<html lang="es" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>api_market.controllers.com_compr_val &#8212; documentación de Dalo - 1.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=4936afed"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/translations.js?v=f85f4cfb"></script>
+    <link rel="index" title="Índice" href="../../../genindex.html" />
+    <link rel="search" title="Búsqueda" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Código fuente para api_market.controllers.com_compr_val</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Controladores de comentarios, compras y valoraciones para la API REST de Second Market.</span>
+
+<span class="sd">**Endpoints de Comentarios** (``SecondMarketCommentController``):</span>
+
+<span class="sd">- ``POST   /api/v1/comments``                     — Publicar un comentario en un artículo.</span>
+<span class="sd">- ``POST   /api/v1/comments/&lt;id&gt;/read``           — Marcar un comentario como leído.</span>
+<span class="sd">- ``DELETE /api/v1/comments/&lt;id&gt;``                — Eliminar (borrado lógico) un comentario.</span>
+<span class="sd">- ``POST   /api/v1/comments/received``            — Listar comentarios recibidos.</span>
+
+<span class="sd">**Endpoints de Compras** (``SecondMarketPurchaseController``):</span>
+
+<span class="sd">- ``POST /api/v1/purchases``                      — Iniciar una compra.</span>
+<span class="sd">- ``POST /api/v1/purchases/&lt;id&gt;/confirm``         — Confirmar una compra (vendedor).</span>
+<span class="sd">- ``POST /api/v1/purchases/&lt;id&gt;/cancel``          — Cancelar una compra.</span>
+<span class="sd">- ``POST /api/v1/purchases/my-purchases``         — Listar compras del usuario.</span>
+<span class="sd">- ``POST /api/v1/purchases/my-sales``             — Listar ventas del usuario.</span>
+
+<span class="sd">**Endpoints de Valoraciones** (``SecondMarketRatingController``):</span>
+
+<span class="sd">- ``POST /api/v1/ratings``                        — Crear una valoración.</span>
+<span class="sd">- ``POST /api/v1/ratings/user/&lt;id&gt;``              — Listar valoraciones de un usuario.</span>
+
+<span class="sd">Todos los endpoints requieren el header ``Authorization: Bearer &lt;token&gt;``,</span>
+<span class="sd">excepto ``GET /api/v1/ratings/user/&lt;id&gt;`` que es público.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">http</span><span class="p">,</span> <span class="n">_</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">request</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.auth_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">verify_jwt_token</span><span class="p">,</span> <span class="n">get_token_from_request</span><span class="p">,</span> <span class="n">get_authenticated_user_with_refresh</span>
+
+<span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SecondMarketCommentController">
+<a class="viewcode-back" href="../../../api.html#api_market.controllers.com_compr_val.SecondMarketCommentController">[documentos]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SecondMarketCommentController</span><span class="p">(</span><span class="n">http</span><span class="o">.</span><span class="n">Controller</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Controlador para la gestión de comentarios en artículos.</span>
+
+<span class="sd">    Los comentarios vinculan a un emisor, un receptor (el propietario del</span>
+<span class="sd">    artículo) y un artículo concreto. El receptor recibe una notificación</span>
+<span class="sd">    en el chatter de Odoo al crearse el comentario.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_authenticated_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener el usuario autenticado a partir del token JWT del request.</span>
+
+<span class="sd">        :return: Diccionario ``{&#39;user_data&#39;: dict, &#39;new_token&#39;: str}`` o ``None``.</span>
+<span class="sd">        :rtype: dict or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_authenticated_user_with_refresh</span><span class="p">()</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/comments&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_comment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Publicar un comentario público en un artículo.</span>
+
+<span class="sd">        El receptor del comentario es automáticamente el propietario del artículo.</span>
+<span class="sd">        Se envía una notificación en el chatter del artículo y del receptor.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        **Body JSON:**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;articulo_id&quot;: 42,</span>
+<span class="sd">                &quot;texto&quot;: &quot;¿Tiene algún defecto el artículo?&quot;</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success``, ``message`` y ``data.comment_id``.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">params</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">httprequest</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;articulo_id&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;texto&#39;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;El artículo y el texto son requeridos&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;MISSING_FIELD&#39;</span><span class="p">}</span>
+
+            <span class="n">article</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;articulo_id&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">article</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Artículo no encontrado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;ARTICLE_NOT_FOUND&#39;</span><span class="p">}</span>
+
+            <span class="n">comment</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.comment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
+                <span class="s1">&#39;id_articulo&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;id_emisor&#39;</span><span class="p">:</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;id_receptor&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;texto&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;texto&#39;</span><span class="p">]</span>
+            <span class="p">})</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Comentario creado exitosamente&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;comment_id&#39;</span><span class="p">:</span> <span class="n">comment</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;id_mensaje&#39;</span><span class="p">:</span> <span class="n">comment</span><span class="o">.</span><span class="n">id_mensaje</span><span class="p">}</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al crear comentario: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al crear comentario&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;CREATE_COMMENT_ERROR&#39;</span><span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/comments/&lt;int:comment_id&gt;/read&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mark_comment_read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comment_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Marcar un comentario como leído.</span>
+
+<span class="sd">        Solo el receptor del comentario puede marcarlo como leído.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        :param comment_id: ID del comentario a marcar como leído.</span>
+<span class="sd">        :type comment_id: int</span>
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y mensaje de confirmación.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+
+            <span class="n">comment</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.comment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">comment_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">comment</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Comentario no encontrado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;COMMENT_NOT_FOUND&#39;</span><span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">comment</span><span class="o">.</span><span class="n">id_receptor</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No tienes permiso&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;FORBIDDEN&#39;</span><span class="p">}</span>
+
+            <span class="n">comment</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">leer</span><span class="p">()</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Comentario marcado como leído&#39;</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al marcar comentario: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al marcar comentario&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;READ_COMMENT_ERROR&#39;</span><span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/comments/&lt;int:comment_id&gt;&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;DELETE&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_comment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comment_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Eliminar (borrado lógico) un comentario.</span>
+
+<span class="sd">        Solo el emisor del comentario puede eliminarlo. Se establece</span>
+<span class="sd">        ``activo = False`` sin borrar el registro de la base de datos.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        :param comment_id: ID del comentario a eliminar.</span>
+<span class="sd">        :type comment_id: int</span>
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y mensaje de confirmación.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+
+            <span class="n">comment</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.comment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">comment_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">comment</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Comentario no encontrado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;COMMENT_NOT_FOUND&#39;</span><span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">comment</span><span class="o">.</span><span class="n">id_emisor</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No tienes permiso&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;FORBIDDEN&#39;</span><span class="p">}</span>
+
+            <span class="n">comment</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">eliminar</span><span class="p">()</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Comentario eliminado&#39;</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al eliminar comentario: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al eliminar comentario&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;DELETE_COMMENT_ERROR&#39;</span><span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/comments/received&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_received_comments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener los comentarios recibidos por el usuario autenticado.</span>
+
+<span class="sd">        Admite paginación mediante los parámetros opcionales ``limit`` y ``offset``.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        :param kwargs: Parámetros opcionales: ``limit`` (por defecto 20)</span>
+<span class="sd">            y ``offset`` (por defecto 0).</span>
+<span class="sd">        :return: Diccionario con ``success`` y ``data.comments``.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">httprequest</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">limit</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;limit&#39;</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;offset&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">comments</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.comment&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">([</span>
+                <span class="p">(</span><span class="s1">&#39;id_receptor&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]),</span>
+                <span class="p">(</span><span class="s1">&#39;activo&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">],</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;fecha_hora desc&#39;</span><span class="p">)</span>
+
+            <span class="n">comments_data</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">comment</span> <span class="ow">in</span> <span class="n">comments</span><span class="p">:</span>
+                <span class="n">comments_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">comment</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;texto&#39;</span><span class="p">:</span> <span class="n">comment</span><span class="o">.</span><span class="n">texto</span><span class="p">,</span>
+                    <span class="s1">&#39;leido&#39;</span><span class="p">:</span> <span class="n">comment</span><span class="o">.</span><span class="n">leido</span><span class="p">,</span>
+                    <span class="s1">&#39;fecha_hora&#39;</span><span class="p">:</span> <span class="n">comment</span><span class="o">.</span><span class="n">fecha_hora</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">comment</span><span class="o">.</span><span class="n">fecha_hora</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;emisor&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">comment</span><span class="o">.</span><span class="n">id_emisor</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">comment</span><span class="o">.</span><span class="n">id_emisor</span><span class="o">.</span><span class="n">name</span><span class="p">},</span>
+                    <span class="s1">&#39;articulo&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">comment</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">comment</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">nombre</span><span class="p">}</span>
+                <span class="p">})</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;comments&#39;</span><span class="p">:</span> <span class="n">comments_data</span><span class="p">}}</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al obtener comentarios: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al obtener comentarios&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;GET_COMMENTS_ERROR&#39;</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="SecondMarketPurchaseController">
+<a class="viewcode-back" href="../../../api.html#api_market.controllers.com_compr_val.SecondMarketPurchaseController">[documentos]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SecondMarketPurchaseController</span><span class="p">(</span><span class="n">http</span><span class="o">.</span><span class="n">Controller</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Controlador para la gestión del ciclo de vida de compras.</span>
+
+<span class="sd">    El flujo típico de una compra es:</span>
+
+<span class="sd">    1. El comprador llama a ``POST /api/v1/purchases`` → estado ``pendiente``, artículo ``reservado``.</span>
+<span class="sd">    2. El vendedor llama a ``POST /api/v1/purchases/&lt;id&gt;/confirm`` → estado ``completada``, artículo ``vendido``.</span>
+<span class="sd">    3. Cualquiera puede llamar a ``POST /api/v1/purchases/&lt;id&gt;/cancel`` → estado ``cancelada``, artículo vuelve a ``publicado``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_authenticated_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener el usuario autenticado a partir del token JWT del request.</span>
+
+<span class="sd">        :return: Diccionario ``{&#39;user_data&#39;: dict, &#39;new_token&#39;: str}`` o ``None``.</span>
+<span class="sd">        :rtype: dict or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_authenticated_user_with_refresh</span><span class="p">()</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/purchases&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_purchase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iniciar el proceso de compra de un artículo.</span>
+
+<span class="sd">        Crea la compra en estado ``pendiente`` y cambia el artículo a ``reservado``.</span>
+<span class="sd">        El comprador no puede ser el propietario del artículo.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        **Body JSON:**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            { &quot;articulo_id&quot;: 42 }</span>
+
+<span class="sd">        **Respuesta exitosa:**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;success&quot;: true,</span>
+<span class="sd">                &quot;data&quot;: {</span>
+<span class="sd">                    &quot;purchase_id&quot;: 5,</span>
+<span class="sd">                    &quot;id_compra&quot;: &quot;0000005&quot;,</span>
+<span class="sd">                    &quot;precio&quot;: 150.0</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success``, ``message`` y ``data`` de la compra.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">params</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">httprequest</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;articulo_id&#39;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;El artículo es requerido&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;MISSING_FIELD&#39;</span><span class="p">}</span>
+
+            <span class="n">article</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.article&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;articulo_id&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">article</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Artículo no encontrado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;ARTICLE_NOT_FOUND&#39;</span><span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">estado_publicacion</span> <span class="o">!=</span> <span class="s1">&#39;publicado&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Este artículo no está disponible para compra&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;ARTICLE_NOT_AVAILABLE&#39;</span><span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No puedes comprar tu propio artículo&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;SELF_PURCHASE&#39;</span><span class="p">}</span>
+
+            <span class="n">purchase</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.purchase&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
+                <span class="s1">&#39;id_comprador&#39;</span><span class="p">:</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;id_vendedor&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id_propietario</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;id_articulo&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;precio&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">precio</span><span class="p">,</span>
+                <span class="s1">&#39;estado&#39;</span><span class="p">:</span> <span class="s1">&#39;pendiente&#39;</span>
+            <span class="p">})</span>
+
+            <span class="n">article</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado_publicacion&#39;</span><span class="p">:</span> <span class="s1">&#39;reservado&#39;</span><span class="p">})</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Compra creada exitosamente&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;purchase_id&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;id_compra&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id_compra</span><span class="p">,</span> <span class="s1">&#39;precio&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">precio</span><span class="p">}</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al crear compra: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al crear compra&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;CREATE_PURCHASE_ERROR&#39;</span><span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/purchases/&lt;int:purchase_id&gt;/confirm&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">confirm_purchase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">purchase_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Confirmar la entrega y marcar la compra como completada.</span>
+
+<span class="sd">        Solo el vendedor puede confirmar la transacción. Al confirmar,</span>
+<span class="sd">        el artículo pasa a estado ``vendido``.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        :param purchase_id: ID de la compra a confirmar.</span>
+<span class="sd">        :type purchase_id: int</span>
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y mensaje de confirmación.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+
+            <span class="n">purchase</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.purchase&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">purchase_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">purchase</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Compra no encontrada&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;PURCHASE_NOT_FOUND&#39;</span><span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id_vendedor</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Solo el vendedor puede confirmar&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;FORBIDDEN&#39;</span><span class="p">}</span>
+
+            <span class="n">purchase</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">confirmar_transaccion</span><span class="p">()</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Compra confirmada exitosamente&#39;</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al confirmar compra: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al confirmar compra&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;CONFIRM_PURCHASE_ERROR&#39;</span><span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/purchases/&lt;int:purchase_id&gt;/cancel&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cancel_purchase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">purchase_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cancelar una compra y devolver el artículo a estado publicado.</span>
+
+<span class="sd">        Tanto el comprador como el vendedor pueden cancelar la compra,</span>
+<span class="sd">        siempre que no esté ya completada.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        :param purchase_id: ID de la compra a cancelar.</span>
+<span class="sd">        :type purchase_id: int</span>
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y mensaje de confirmación.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+
+            <span class="n">purchase</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.purchase&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">purchase_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">purchase</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Compra no encontrada&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;PURCHASE_NOT_FOUND&#39;</span><span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id_comprador</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id_vendedor</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No tienes permiso&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;FORBIDDEN&#39;</span><span class="p">}</span>
+
+            <span class="n">purchase</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">cancelar_compra</span><span class="p">()</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Compra cancelada&#39;</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al cancelar compra: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al cancelar compra&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;CANCEL_PURCHASE_ERROR&#39;</span><span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/purchases/my-purchases&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_my_purchases</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener todas las compras realizadas por el usuario autenticado.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y ``data.purchases`` (lista de compras).</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+
+            <span class="n">purchases</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.purchase&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">([</span>
+                <span class="p">(</span><span class="s1">&#39;id_comprador&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">])</span>
+            <span class="p">],</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;fecha_hora desc&#39;</span><span class="p">)</span>
+
+            <span class="n">purchases_data</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">purchase</span> <span class="ow">in</span> <span class="n">purchases</span><span class="p">:</span>
+                <span class="n">purchases_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;id_compra&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id_compra</span><span class="p">,</span>
+                    <span class="s1">&#39;precio&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">precio</span><span class="p">,</span>
+                    <span class="s1">&#39;estado&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">estado</span><span class="p">,</span>
+                    <span class="s1">&#39;fecha_hora&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">fecha_hora</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">purchase</span><span class="o">.</span><span class="n">fecha_hora</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;articulo&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">nombre</span><span class="p">,</span> <span class="s1">&#39;codigo&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">codigo</span><span class="p">},</span>
+                    <span class="s1">&#39;vendedor&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id_vendedor</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">purchase</span><span class="o">.</span><span class="n">id_vendedor</span><span class="o">.</span><span class="n">name</span><span class="p">}</span>
+                <span class="p">})</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;purchases&#39;</span><span class="p">:</span> <span class="n">purchases_data</span><span class="p">}}</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al obtener compras: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al obtener compras&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;GET_PURCHASES_ERROR&#39;</span><span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/purchases/my-sales&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_my_sales</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener todas las ventas realizadas por el usuario autenticado.</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y ``data.sales`` (lista de ventas).</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+
+            <span class="n">sales</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.purchase&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">([</span>
+                <span class="p">(</span><span class="s1">&#39;id_vendedor&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">])</span>
+            <span class="p">],</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;fecha_hora desc&#39;</span><span class="p">)</span>
+
+            <span class="n">sales_data</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">sale</span> <span class="ow">in</span> <span class="n">sales</span><span class="p">:</span>
+                <span class="n">sales_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">sale</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;id_compra&#39;</span><span class="p">:</span> <span class="n">sale</span><span class="o">.</span><span class="n">id_compra</span><span class="p">,</span>
+                    <span class="s1">&#39;precio&#39;</span><span class="p">:</span> <span class="n">sale</span><span class="o">.</span><span class="n">precio</span><span class="p">,</span>
+                    <span class="s1">&#39;estado&#39;</span><span class="p">:</span> <span class="n">sale</span><span class="o">.</span><span class="n">estado</span><span class="p">,</span>
+                    <span class="s1">&#39;fecha_hora&#39;</span><span class="p">:</span> <span class="n">sale</span><span class="o">.</span><span class="n">fecha_hora</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">sale</span><span class="o">.</span><span class="n">fecha_hora</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;articulo&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">sale</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">sale</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">nombre</span><span class="p">,</span> <span class="s1">&#39;codigo&#39;</span><span class="p">:</span> <span class="n">sale</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">codigo</span><span class="p">},</span>
+                    <span class="s1">&#39;comprador&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">sale</span><span class="o">.</span><span class="n">id_comprador</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">sale</span><span class="o">.</span><span class="n">id_comprador</span><span class="o">.</span><span class="n">name</span><span class="p">}</span>
+                <span class="p">})</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;sales&#39;</span><span class="p">:</span> <span class="n">sales_data</span><span class="p">}}</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al obtener ventas: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al obtener ventas&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;GET_SALES_ERROR&#39;</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="SecondMarketRatingController">
+<a class="viewcode-back" href="../../../api.html#api_market.controllers.com_compr_val.SecondMarketRatingController">[documentos]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SecondMarketRatingController</span><span class="p">(</span><span class="n">http</span><span class="o">.</span><span class="n">Controller</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Controlador para la gestión de valoraciones entre usuarios.</span>
+
+<span class="sd">    Permite a los usuarios calificarse mutuamente tras una transacción.</span>
+<span class="sd">    Las valoraciones son únicas por par valorador-valorado.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_authenticated_user</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener el usuario autenticado a partir del token JWT del request.</span>
+
+<span class="sd">        :return: Diccionario ``{&#39;user_data&#39;: dict, &#39;new_token&#39;: str}`` o ``None``.</span>
+<span class="sd">        :rtype: dict or None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_authenticated_user_with_refresh</span><span class="p">()</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/ratings&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_rating</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Crear una valoración para otro usuario.</span>
+
+<span class="sd">        Un usuario no puede valorarse a sí mismo ni valorar al mismo usuario</span>
+<span class="sd">        dos veces (restricción del modelo).</span>
+
+<span class="sd">        **Header requerido:** ``Authorization: Bearer &lt;token&gt;``</span>
+
+<span class="sd">        **Body JSON:**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;usuario_id&quot;: 3,</span>
+<span class="sd">                &quot;calificacion&quot;: 5,</span>
+<span class="sd">                &quot;comentario&quot;: &quot;Trato muy amable y envío rápido&quot;</span>
+<span class="sd">            }</span>
+
+<span class="sd">        El campo ``comentario`` es opcional.</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success``, ``message`` y ``data.rating_id``.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">auth_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_authenticated_user</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_result</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No autenticado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;UNAUTHORIZED&#39;</span><span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">auth_result</span><span class="p">[</span><span class="s1">&#39;user_data&#39;</span><span class="p">]</span>
+            <span class="n">new_token</span> <span class="o">=</span> <span class="n">auth_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_token&#39;</span><span class="p">)</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">params</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">httprequest</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;usuario_id&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;calificacion&#39;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;El usuario y la calificación son requeridos&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;MISSING_FIELD&#39;</span><span class="p">}</span>
+
+            <span class="n">rated_user</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.user&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;usuario_id&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">rated_user</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Usuario no encontrado&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;USER_NOT_FOUND&#39;</span><span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">rated_user</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">]:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;No puedes valorarte a ti mismo&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;SELF_RATING&#39;</span><span class="p">}</span>
+
+            <span class="n">rating</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">({</span>
+                <span class="s1">&#39;id_usuario&#39;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;usuario_id&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;id_valorador&#39;</span><span class="p">:</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user_id&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;calificacion&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;calificacion&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;comentario&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;comentario&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="p">})</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Valoración creada exitosamente&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;rating_id&#39;</span><span class="p">:</span> <span class="n">rating</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">new_token</span><span class="p">:</span>
+                <span class="n">response</span><span class="p">[</span><span class="s1">&#39;new_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_token</span>
+            <span class="k">return</span> <span class="n">response</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al crear valoración: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;ya has valorado&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;Error al crear valoración&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;CREATE_RATING_ERROR&#39;</span>
+            <span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/ratings/user/&lt;int:user_id&gt;&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_user_ratings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_id</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Obtener las valoraciones recibidas por un usuario.</span>
+
+<span class="sd">        Endpoint público — no requiere autenticación.</span>
+
+<span class="sd">        :param user_id: ID del usuario cuyas valoraciones se quieren listar.</span>
+<span class="sd">        :type user_id: int</span>
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success`` y ``data.ratings``.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ratings</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.rating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">([</span>
+                <span class="p">(</span><span class="s1">&#39;id_usuario&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">user_id</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;activo&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">],</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;fecha_hora desc&#39;</span><span class="p">)</span>
+
+            <span class="n">ratings_data</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">rating</span> <span class="ow">in</span> <span class="n">ratings</span><span class="p">:</span>
+                <span class="n">ratings_data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">rating</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s1">&#39;calificacion&#39;</span><span class="p">:</span> <span class="n">rating</span><span class="o">.</span><span class="n">calificacion</span><span class="p">,</span>
+                    <span class="s1">&#39;comentario&#39;</span><span class="p">:</span> <span class="n">rating</span><span class="o">.</span><span class="n">comentario</span><span class="p">,</span>
+                    <span class="s1">&#39;fecha_hora&#39;</span><span class="p">:</span> <span class="n">rating</span><span class="o">.</span><span class="n">fecha_hora</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">rating</span><span class="o">.</span><span class="n">fecha_hora</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="s1">&#39;valorador&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">rating</span><span class="o">.</span><span class="n">id_valorador</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;nombre&#39;</span><span class="p">:</span> <span class="n">rating</span><span class="o">.</span><span class="n">id_valorador</span><span class="o">.</span><span class="n">name</span><span class="p">}</span>
+                <span class="p">})</span>
+
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;ratings&#39;</span><span class="p">:</span> <span class="n">ratings_data</span><span class="p">}}</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error al obtener valoraciones: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al obtener valoraciones&#39;</span><span class="p">,</span> <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;GET_RATINGS_ERROR&#39;</span><span class="p">}</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Dalo</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Ir a" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navegación</h3>
+<p class="caption" role="heading"><span class="caption-text">Secciones:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Modelos (second_market)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API REST (api_market)</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Código de módulo</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Jonatan C. and Jose S..
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

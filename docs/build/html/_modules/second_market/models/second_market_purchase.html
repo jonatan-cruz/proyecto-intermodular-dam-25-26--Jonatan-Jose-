@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+
+<html lang="es" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>second_market.models.second_market_purchase &#8212; documentación de Dalo - 1.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=4936afed"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/translations.js?v=f85f4cfb"></script>
+    <link rel="index" title="Índice" href="../../../genindex.html" />
+    <link rel="search" title="Búsqueda" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Código fuente para second_market.models.second_market_purchase</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Módulo de gestión de compras y transacciones.</span>
+
+<span class="sd">Define el modelo :class:`SecondMarketPurchase` que registra las transacciones</span>
+<span class="sd">de compra-venta entre usuarios de la plataforma Second Market, incluyendo</span>
+<span class="sd">su ciclo de vida desde el estado pendiente hasta completado o cancelado.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">api</span><span class="p">,</span> <span class="n">_</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">UserError</span>
+
+
+<div class="viewcode-block" id="SecondMarketPurchase">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_purchase.SecondMarketPurchase">[documentos]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SecondMarketPurchase</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Modelo que representa una transacción de compra-venta.</span>
+
+<span class="sd">    Gestiona el ciclo completo de una compra: desde que el comprador</span>
+<span class="sd">    inicia la transacción (``pendiente``) hasta que se confirma</span>
+<span class="sd">    (``confirmada``), se completa (``completada``) o se cancela</span>
+<span class="sd">    (``cancelada``).</span>
+
+<span class="sd">    :cvar _name: Nombre técnico del modelo en Odoo.</span>
+<span class="sd">    :cvar _description: Descripción legible del modelo.</span>
+<span class="sd">    :cvar _inherit: Mixins heredados para chatter y actividades.</span>
+<span class="sd">    :cvar _rec_name: Campo usado como nombre representativo del registro.</span>
+<span class="sd">    :cvar _order: Ordenación por fecha de transacción (más reciente primero).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_name</span> <span class="o">=</span> <span class="s1">&#39;second_market.purchase&#39;</span>
+    <span class="n">_description</span> <span class="o">=</span> <span class="s1">&#39;Compra/Transacción&#39;</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mail.thread&#39;</span><span class="p">,</span> <span class="s1">&#39;mail.activity.mixin&#39;</span><span class="p">]</span>
+    <span class="n">_rec_name</span> <span class="o">=</span> <span class="s1">&#39;id_compra&#39;</span>
+    <span class="n">_order</span> <span class="o">=</span> <span class="s1">&#39;fecha_hora desc&#39;</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CAMPOS PRINCIPALES</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">id_compra</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;ID Compra&#39;</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nuevo&#39;</span><span class="p">),</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Código único de 7 dígitos para la compra&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">id_comprador</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.user&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Comprador&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;restrict&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Usuario que compra el artículo&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">id_vendedor</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.user&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Vendedor&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;restrict&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Usuario que vende el artículo&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">id_articulo</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span>
+        <span class="s1">&#39;second_market.article&#39;</span><span class="p">,</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Artículo&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;restrict&#39;</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Artículo comprado&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">fecha_hora</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Fecha y Hora&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Fecha y hora de la transacción&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">precio</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Float</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Precio (€)&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">digits</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Precio final de la compra&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CAMPOS DE ESTADO</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">estado</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Selection</span><span class="p">([</span>
+        <span class="p">(</span><span class="s1">&#39;pendiente&#39;</span><span class="p">,</span> <span class="s1">&#39;Pendiente&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;confirmada&#39;</span><span class="p">,</span> <span class="s1">&#39;Confirmada&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;completada&#39;</span><span class="p">,</span> <span class="s1">&#39;Completada&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;cancelada&#39;</span><span class="p">,</span> <span class="s1">&#39;Cancelada&#39;</span><span class="p">)</span>
+    <span class="p">],</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Estado&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;pendiente&#39;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">activo</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Boolean</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Activo&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Si está desmarcado, la compra está cancelada&#39;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CAMPOS COMPUTADOS</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="n">nombre_comprador</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Comprador&#39;</span><span class="p">,</span>
+        <span class="n">related</span><span class="o">=</span><span class="s1">&#39;id_comprador.name&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">nombre_vendedor</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Vendedor&#39;</span><span class="p">,</span>
+        <span class="n">related</span><span class="o">=</span><span class="s1">&#39;id_vendedor.name&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="n">nombre_articulo</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Artículo&#39;</span><span class="p">,</span>
+        <span class="n">related</span><span class="o">=</span><span class="s1">&#39;id_articulo.nombre&#39;</span><span class="p">,</span>
+        <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># CONSTRAINTS Y VALIDACIONES</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;id_comprador&#39;</span><span class="p">,</span> <span class="s1">&#39;id_vendedor&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_comprador_vendedor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que el comprador y el vendedor sean usuarios distintos.</span>
+
+<span class="sd">        :raises ValidationError: Si el comprador y el vendedor son el mismo usuario.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">compra</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">compra</span><span class="o">.</span><span class="n">id_comprador</span> <span class="o">==</span> <span class="n">compra</span><span class="o">.</span><span class="n">id_vendedor</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El comprador y el vendedor no pueden ser el mismo usuario.&#39;</span><span class="p">))</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;precio&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_precio</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que el precio de la compra sea mayor que 0.</span>
+
+<span class="sd">        :raises ValidationError: Si el precio es 0 o negativo.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">compra</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">compra</span><span class="o">.</span><span class="n">precio</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El precio debe ser mayor que 0.&#39;</span><span class="p">))</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;id_articulo&#39;</span><span class="p">,</span> <span class="s1">&#39;id_vendedor&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_vendedor_articulo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validar que el vendedor sea el propietario del artículo.</span>
+
+<span class="sd">        :raises ValidationError: Si el ``id_vendedor`` no coincide con el</span>
+<span class="sd">            ``id_propietario`` del artículo.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">compra</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">compra</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">id_propietario</span> <span class="o">!=</span> <span class="n">compra</span><span class="o">.</span><span class="n">id_vendedor</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El vendedor debe ser el propietario del artículo.&#39;</span><span class="p">))</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># MÉTODOS CREATE Y WRITE</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Crear una nueva compra generando su ID único.</span>
+
+<span class="sd">        Asigna un código secuencial de 7 dígitos desde la secuencia</span>
+<span class="sd">        ``second_market.purchase`` y notifica a comprador y vendedor.</span>
+
+<span class="sd">        :param vals: Diccionario con los valores del nuevo registro.</span>
+<span class="sd">        :type vals: dict</span>
+<span class="sd">        :return: Registro de compra creado.</span>
+<span class="sd">        :rtype: second_market.purchase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">vals</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id_compra&#39;</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nuevo&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nuevo&#39;</span><span class="p">):</span>
+            <span class="n">vals</span><span class="p">[</span><span class="s1">&#39;id_compra&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;ir.sequence&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">next_by_code</span><span class="p">(</span><span class="s1">&#39;second_market.purchase&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Nuevo&#39;</span><span class="p">)</span>
+
+        <span class="n">compra</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">SecondMarketPurchase</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="n">compra</span><span class="o">.</span><span class="n">_notificar_nueva_compra</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">compra</span>
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># MÉTODOS PRINCIPALES</span>
+    <span class="c1"># ============================================</span>
+
+<div class="viewcode-block" id="SecondMarketPurchase.realizar_compra">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_purchase.SecondMarketPurchase.realizar_compra">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">realizar_compra</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Confirmar la compra y reservar el artículo.</span>
+
+<span class="sd">        Cambia el estado de la compra a ``confirmada`` y el estado de</span>
+<span class="sd">        publicación del artículo a ``reservado``.</span>
+
+<span class="sd">        :raises UserError: Si la compra está cancelada, ya fue procesada</span>
+<span class="sd">            o el artículo no está disponible.</span>
+<span class="sd">        :return: Notificación de éxito en forma de acción de cliente.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Esta compra está cancelada.&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">estado</span> <span class="o">!=</span> <span class="s1">&#39;pendiente&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Esta compra ya ha sido procesada.&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">estado_publicacion</span> <span class="o">!=</span> <span class="s1">&#39;publicado&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;El artículo ya no está disponible (Estado: </span><span class="si">%s</span><span class="s1">).&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">estado_publicacion</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado&#39;</span><span class="p">:</span> <span class="s1">&#39;confirmada&#39;</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado_publicacion&#39;</span><span class="p">:</span> <span class="s1">&#39;reservado&#39;</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.client&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="s1">&#39;display_notification&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;¡Compra Confirmada!&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;La compra ha sido confirmada. El artículo ha quedado reservado.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sticky&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketPurchase.confirmar_transaccion">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_purchase.SecondMarketPurchase.confirmar_transaccion">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">confirmar_transaccion</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Marcar la transacción como completada y el artículo como vendido.</span>
+
+<span class="sd">        Cambia el estado de la compra a ``completada`` y el del artículo</span>
+<span class="sd">        a ``vendido``. Notifica a las partes implicadas.</span>
+
+<span class="sd">        :raises UserError: Si la compra está cancelada o ya está completada.</span>
+<span class="sd">        :return: Notificación de éxito en forma de acción de cliente.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Esta compra está cancelada.&#39;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">estado</span> <span class="o">==</span> <span class="s1">&#39;completada&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;Esta transacción ya está completada.&#39;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado&#39;</span><span class="p">:</span> <span class="s1">&#39;completada&#39;</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado_publicacion&#39;</span><span class="p">:</span> <span class="s1">&#39;vendido&#39;</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notificar_transaccion_completada</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.client&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="s1">&#39;display_notification&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;¡Transacción Completada!&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;La venta se ha completado exitosamente.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;success&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sticky&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketPurchase.cancelar_compra">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_purchase.SecondMarketPurchase.cancelar_compra">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cancelar_compra</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Cancelar la compra y volver a publicar el artículo si estaba reservado.</span>
+
+<span class="sd">        Cambia el estado de la compra a ``cancelada`` y la desactiva.</span>
+<span class="sd">        Si el artículo estaba en estado ``reservado``, lo vuelve a ``publicado``.</span>
+
+<span class="sd">        :raises UserError: Si la transacción ya estaba completada.</span>
+<span class="sd">        :return: Notificación de advertencia en forma de acción de cliente.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">estado</span> <span class="o">==</span> <span class="s1">&#39;completada&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UserError</span><span class="p">(</span><span class="n">_</span><span class="p">(</span><span class="s1">&#39;No puedes cancelar una transacción completada.&#39;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado&#39;</span><span class="p">:</span> <span class="s1">&#39;cancelada&#39;</span><span class="p">,</span> <span class="s1">&#39;activo&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">estado_publicacion</span> <span class="o">==</span> <span class="s1">&#39;reservado&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;estado_publicacion&#39;</span><span class="p">:</span> <span class="s1">&#39;publicado&#39;</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.client&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="s1">&#39;display_notification&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Compra Cancelada&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;La compra ha sido cancelada.&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;warning&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;sticky&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+
+    <span class="c1"># ============================================</span>
+    <span class="c1"># MÉTODOS AUXILIARES</span>
+    <span class="c1"># ============================================</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_notificar_nueva_compra</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enviar notificación a comprador, vendedor y artículo al crear la compra.</span>
+
+<span class="sd">        Publica un mensaje en el chatter del artículo, del vendedor y del</span>
+<span class="sd">        comprador con los detalles de la nueva transacción.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="n">mensaje</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span>
+            <span class="s2">&quot;¡Nueva compra realizada!&lt;br/&gt;&quot;</span>
+            <span class="s2">&quot;El usuario &lt;b&gt;</span><span class="si">%s</span><span class="s2">&lt;/b&gt; ha comprado el artículo &lt;b&gt;</span><span class="si">%s</span><span class="s2">&lt;/b&gt; por &lt;b&gt;</span><span class="si">%.2f</span><span class="s2">€&lt;/b&gt;.&lt;br/&gt;&quot;</span>
+            <span class="s2">&quot;Estado actual: &lt;b&gt;</span><span class="si">%s</span><span class="s2">&lt;/b&gt;.&quot;</span>
+        <span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id_comprador</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">nombre</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">precio</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">estado</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">message_post</span><span class="p">(</span><span class="n">body</span><span class="o">=</span><span class="n">mensaje</span><span class="p">,</span> <span class="n">message_type</span><span class="o">=</span><span class="s1">&#39;notification&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_vendedor</span><span class="o">.</span><span class="n">message_post</span><span class="p">(</span><span class="n">body</span><span class="o">=</span><span class="n">mensaje</span><span class="p">,</span> <span class="n">message_type</span><span class="o">=</span><span class="s1">&#39;notification&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id_comprador</span><span class="o">.</span><span class="n">message_post</span><span class="p">(</span><span class="n">body</span><span class="o">=</span><span class="n">mensaje</span><span class="p">,</span> <span class="n">message_type</span><span class="o">=</span><span class="s1">&#39;notification&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_notificar_transaccion_completada</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Publicar una nota interna indicando que la transacción se completó.</span>
+
+<span class="sd">        Utiliza el subtipo ``mail.mt_note`` para que la notificación quede</span>
+<span class="sd">        como nota interna en el chatter de la compra.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="n">mensaje</span> <span class="o">=</span> <span class="n">_</span><span class="p">(</span><span class="s2">&quot;Transacción completada exitosamente el </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message_post</span><span class="p">(</span><span class="n">body</span><span class="o">=</span><span class="n">mensaje</span><span class="p">,</span> <span class="n">subtype_xmlid</span><span class="o">=</span><span class="s1">&#39;mail.mt_note&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SecondMarketPurchase.action_ver_articulo">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_purchase.SecondMarketPurchase.action_ver_articulo">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_ver_articulo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir el formulario del artículo relacionado.</span>
+
+<span class="sd">        :return: Acción de ventana para abrir el artículo en modo formulario.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Artículo&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;second_market.article&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;form&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_articulo</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;target&#39;</span><span class="p">:</span> <span class="s1">&#39;current&#39;</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketPurchase.action_ver_comprador">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_purchase.SecondMarketPurchase.action_ver_comprador">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_ver_comprador</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir el formulario del perfil del comprador.</span>
+
+<span class="sd">        :return: Acción de ventana para abrir el usuario comprador en modo formulario.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Comprador&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;second_market.user&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;form&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_comprador</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;target&#39;</span><span class="p">:</span> <span class="s1">&#39;current&#39;</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="SecondMarketPurchase.action_ver_vendedor">
+<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_purchase.SecondMarketPurchase.action_ver_vendedor">[documentos]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_ver_vendedor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir el formulario del perfil del vendedor.</span>
+
+<span class="sd">        :return: Acción de ventana para abrir el usuario vendedor en modo formulario.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s1">&#39;Vendedor&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;second_market.user&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;form&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id_vendedor</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;target&#39;</span><span class="p">:</span> <span class="s1">&#39;current&#39;</span><span class="p">,</span>
+        <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Dalo</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Ir a" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navegación</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Código de módulo</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Jonatan C. and Jose S..
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

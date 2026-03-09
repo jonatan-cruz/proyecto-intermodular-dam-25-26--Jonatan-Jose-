@@ -1,5 +1,21 @@
 # -*- coding: utf-8 -*-
 
+"""
+Módulo de autenticación JWT para la API de Second Market.
+
+Proporciona funciones auxiliares reutilizables para extraer, verificar
+y renovar automáticamente tokens JWT en los distintos controladores
+de la API.
+
+Variables de configuración (importadas desde ``config.py`` con fallback):
+
+- ``JWT_SECRET_KEY``: Clave secreta para firmar/verificar tokens.
+- ``JWT_ALGORITHM``: Algoritmo de cifrado (por defecto ``HS256``).
+- ``JWT_EXP_DELTA_SECONDS``: Duración del token en segundos (por defecto 86 400 = 24h).
+- ``JWT_REFRESH_THRESHOLD_SECONDS``: Segundos restantes a partir de los cuales se
+  renueva automáticamente el token (por defecto 7 200 = 2h).
+"""
+
 from odoo.http import request
 import jwt
 import datetime
@@ -10,8 +26,8 @@ _logger = logging.getLogger(__name__)
 # Importar configuración
 try:
     from ..config import (
-        JWT_SECRET_KEY, 
-        JWT_ALGORITHM, 
+        JWT_SECRET_KEY,
+        JWT_ALGORITHM,
         JWT_EXP_DELTA_SECONDS,
         JWT_REFRESH_THRESHOLD_SECONDS,
     )
@@ -24,70 +40,79 @@ except ImportError:
 
 
 def get_token_from_request():
+    """Extraer el token JWT del header ``Authorization`` de la petición actual.
+
+    Solo se admite el formato ``Authorization: Bearer <token>``.
+
+    :return: Token JWT como cadena de texto, o ``None`` si no está presente.
+    :rtype: str or None
+
+    Ejemplo de header esperado::
+
+        Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
     """
-    Extrae el token JWT del header Authorization ÚNICAMENTE
-    
-    Soporta SOLO:
-    - Header: Authorization: Bearer <token>
-    
-    Retorna:
-        str: token si se encuentra
-        None: si no hay token
-    """
-    # Obtener del header Authorization únicamente
     auth_header = request.httprequest.headers.get('Authorization', '')
     if auth_header.startswith('Bearer '):
         return auth_header.replace('Bearer ', '').strip()
-    
     return None
 
 
 def verify_jwt_token(token):
-    """
-    Función auxiliar para verificar tokens JWT en otros controladores
-    
-    Uso en otros controladores:
+    """Verificar un token JWT y devolver los datos del usuario asociado.
+
+    Decodifica el token, extrae el ``user_id`` del payload, y comprueba
+    que el usuario exista y esté activo en ``second_market.user``.
+
+    Uso típico desde otros controladores::
+
         from .auth_controller import verify_jwt_token
-        
+
         user_data = verify_jwt_token(token)
         if user_data:
-            # Token válido
             user_id = user_data['user_id']
         else:
-            # Token inválido
-    
-    Retorna:
-        dict con datos del usuario si el token es válido
-        None si el token es inválido
+            # Token inválido o usuario inactivo
+
+    :param token: Token JWT a verificar.
+    :type token: str
+    :return: Diccionario con datos del usuario si el token es válido:
+
+        .. code-block:: python
+
+            {
+                'user_id': int,
+                'id_usuario': str,
+                'login': str,
+                'name': str,
+                'user': second_market.user  # Recordset completo
+            }
+
+        Devuelve ``None`` si el token ha expirado, es inválido o el
+        usuario no existe / está inactivo.
+    :rtype: dict or None
     """
     try:
-        # Decodificar el token
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        
-        # Obtener user_id del payload
         user_id = payload.get('user_id')
-        
+
         if not user_id:
             _logger.warning("Token sin user_id")
             return None
-        
-        # Buscar el usuario en second_market.user
+
         user = request.env['second_market.user'].sudo().browse(user_id)
-        
-        # Verificar que el usuario existe y está activo
+
         if not user.exists() or not user.activo:
             _logger.warning(f"Usuario {user_id} no encontrado o inactivo")
             return None
-        
-        # Retornar datos del usuario
+
         return {
             'user_id': user.id,
             'id_usuario': user.id_usuario,
             'login': user.login,
             'name': user.name,
-            'user': user  # Objeto completo del usuario
+            'user': user
         }
-        
+
     except jwt.ExpiredSignatureError:
         _logger.warning("Token expirado")
         return None
@@ -100,45 +125,41 @@ def verify_jwt_token(token):
 
 
 def auto_refresh_token_if_needed(token):
-    """
-    Verifica si un token necesita ser renovado automáticamente
-    
-    Si al token le quedan menos de JWT_REFRESH_THRESHOLD_SECONDS para expirar,
-    genera y retorna un nuevo token automáticamente.
-    
-    Args:
-        token (str): Token JWT actual
-    
-    Returns:
-        str: Nuevo token si necesita renovación
-        None: Si no necesita renovación o si hay error
+    """Renovar automáticamente un token JWT si está próximo a expirar.
+
+    Si al token le quedan menos de ``JWT_REFRESH_THRESHOLD_SECONDS`` segundos
+    de vida, genera y devuelve un nuevo token con la fecha de expiración
+    reiniciada. El usuario no nota la renovación.
+
+    :param token: Token JWT actual del cliente.
+    :type token: str
+    :return: Nuevo token JWT si la renovación fue necesaria, o ``None`` si
+        todavía le queda suficiente tiempo de vida o si ocurre algún error.
+    :rtype: str or None
+
+    .. note::
+        Si el token ya está expirado (``ExpiredSignatureError``), esta función
+        devuelve ``None`` sin intentar la renovación.
     """
     try:
-        # Decodificar el token para obtener la fecha de expiración
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-        
-        # Obtener timestamp de expiración
+
         exp_timestamp = payload.get('exp')
         if not exp_timestamp:
             return None
-        
-        # Calcular tiempo restante hasta la expiración
+
         now = datetime.datetime.utcnow()
         exp_datetime = datetime.datetime.utcfromtimestamp(exp_timestamp)
         time_remaining = (exp_datetime - now).total_seconds()
-        
-        # Si quedan menos de JWT_REFRESH_THRESHOLD_SECONDS, renovar el token
+
         if time_remaining < JWT_REFRESH_THRESHOLD_SECONDS:
             user_id = payload.get('user_id')
-            
-            # Verificar que el usuario existe y está activo
             user = request.env['second_market.user'].sudo().browse(user_id)
-            
+
             if not user.exists() or not user.activo:
                 _logger.warning(f"Usuario {user_id} no encontrado o inactivo durante auto-refresh")
                 return None
-            
-            # Generar nuevo token
+
             new_payload = {
                 'user_id': user.id,
                 'id_usuario': user.id_usuario,
@@ -147,17 +168,14 @@ def auto_refresh_token_if_needed(token):
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=JWT_EXP_DELTA_SECONDS),
                 'iat': datetime.datetime.utcnow()
             }
-            
+
             new_token = jwt.encode(new_payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
-            
             _logger.info(f"Token auto-renovado para usuario: {user.login} (ID: {user.id})")
             return new_token
-        
-        # No necesita renovación
+
         return None
-        
+
     except jwt.ExpiredSignatureError:
-        # Token ya expirado, no se puede auto-renovar
         return None
     except Exception as e:
         _logger.error(f"Error en auto-refresh de token: {str(e)}", exc_info=True)
@@ -165,59 +183,58 @@ def auto_refresh_token_if_needed(token):
 
 
 def get_authenticated_user_with_refresh():
-    """
-    Función helper completa para autenticación con auto-refresh
-    
-    Esta función:
-    1. Obtiene el token del request
-    2. Verifica que sea válido
-    3. Verifica si necesita renovación automática
-    4. Retorna los datos del usuario y el nuevo token (si aplica)
-    
-    Uso en controladores:
+    """Verificar la autenticación del usuario actual e incluir auto-refresh del token.
+
+    Función helper completa que encadena:
+
+    1. Extracción del token del header ``Authorization``.
+    2. Verificación de validez y existencia del usuario.
+    3. Comprobación de si el token necesita renovación automática.
+
+    Uso típico en controladores::
+
         auth_result = get_authenticated_user_with_refresh()
         if not auth_result:
-            return {'success': False, 'message': 'No autenticado'}, 401
-        
+            return {'success': False, 'message': 'No autenticado'}
+
         user_data = auth_result['user_data']
-        new_token = auth_result.get('new_token')  # Puede ser None
-        
-        # ... tu lógica aquí ...
-        
-        # Al retornar, agregar el nuevo token si existe
-        response_data = {'success': True, 'data': ...}
+        new_token = auth_result.get('new_token')  # None si no se renovó
+
+        # ...lógica de negocio...
+
+        response = {'success': True, 'data': ...}
         if new_token:
-            # El cliente debe leer este header y actualizar su token
-            request.httprequest.environ['HTTP_X_NEW_TOKEN'] = new_token
-        
-        return response_data
-    
-    Returns:
-        dict: {
-            'user_data': dict con datos del usuario,
-            'new_token': str (opcional, solo si se renovó)
-        }
-        None: Si no está autenticado o el token es inválido
+            response['new_token'] = new_token  # El cliente debe guardar el nuevo token
+        return response
+
+    :return: Diccionario con los datos de autenticación:
+
+        .. code-block:: python
+
+            {
+                'user_data': dict,      # Resultado de verify_jwt_token()
+                'new_token': str        # Solo presente si el token fue renovado
+            }
+
+        Devuelve ``None`` si no hay token, el token es inválido o el usuario
+        está inactivo.
+    :rtype: dict or None
     """
     token = get_token_from_request()
-    
+
     if not token:
         return None
-    
-    # Verificar el token
+
     user_data = verify_jwt_token(token)
-    
+
     if not user_data:
         return None
-    
-    # Verificar si necesita renovación automática
+
     new_token = auto_refresh_token_if_needed(token)
-    
-    result = {
-        'user_data': user_data
-    }
-    
+
+    result = {'user_data': user_data}
+
     if new_token:
         result['new_token'] = new_token
-    
+
     return result

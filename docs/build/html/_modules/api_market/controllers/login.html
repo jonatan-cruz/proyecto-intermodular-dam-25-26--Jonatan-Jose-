@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+
+<html lang="es" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>api_market.controllers.login &#8212; documentación de Dalo - 1.0</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=4936afed"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/translations.js?v=f85f4cfb"></script>
+    <link rel="index" title="Índice" href="../../../genindex.html" />
+    <link rel="search" title="Búsqueda" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Código fuente para api_market.controllers.login</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Controlador de autenticación para la API REST de Second Market.</span>
+
+<span class="sd">Gestiona el login, registro, verificación y logout de usuarios mediante</span>
+<span class="sd">tokens JWT (JSON Web Tokens) firmados con el algoritmo HS256.</span>
+
+<span class="sd">**Endpoints disponibles:**</span>
+
+<span class="sd">- ``POST /api/v1/auth/login``    — Autenticar usuario y obtener token.</span>
+<span class="sd">- ``POST /api/v1/auth/register`` — Registrar nuevo usuario y obtener token.</span>
+<span class="sd">- ``POST /api/v1/auth/verify``   — Verificar validez de un token existente.</span>
+<span class="sd">- ``POST /api/v1/auth/logout``   — Cerrar sesión (logging del evento).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">http</span><span class="p">,</span> <span class="n">_</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">request</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jwt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">passlib.context</span><span class="w"> </span><span class="kn">import</span> <span class="n">CryptContext</span>
+
+<span class="c1">#: Contexto de hashing de contraseñas (mismo esquema que en `second_market.user`).</span>
+<span class="n">crypt_context</span> <span class="o">=</span> <span class="n">CryptContext</span><span class="p">(</span><span class="n">schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;pbkdf2_sha512&quot;</span><span class="p">,</span> <span class="s2">&quot;plaintext&quot;</span><span class="p">],</span> <span class="n">deprecated</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
+
+<span class="c1"># Importar configuración</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">..config</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">JWT_SECRET_KEY</span><span class="p">,</span>
+        <span class="n">JWT_ALGORITHM</span><span class="p">,</span>
+        <span class="n">JWT_EXP_DELTA_SECONDS</span><span class="p">,</span>
+        <span class="n">RESPONSE_MESSAGES</span><span class="p">,</span>
+        <span class="n">ERROR_CODES</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">JWT_SECRET_KEY</span> <span class="o">=</span> <span class="s1">&#39;second_market_secret_key_2025&#39;</span>
+    <span class="n">JWT_ALGORITHM</span> <span class="o">=</span> <span class="s1">&#39;HS256&#39;</span>
+    <span class="n">JWT_EXP_DELTA_SECONDS</span> <span class="o">=</span> <span class="mi">86400</span>
+    <span class="n">RESPONSE_MESSAGES</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">ERROR_CODES</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="SecondMarketAuthController">
+<a class="viewcode-back" href="../../../api.html#api_market.controllers.login.SecondMarketAuthController">[documentos]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SecondMarketAuthController</span><span class="p">(</span><span class="n">http</span><span class="o">.</span><span class="n">Controller</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Controlador de autenticación para Second Market — API v1.</span>
+
+<span class="sd">    Proporciona endpoints de login, registro, verificación de token y logout.</span>
+<span class="sd">    Todos los endpoints son de tipo ``json`` y no requieren autenticación</span>
+<span class="sd">    previa de Odoo (``auth=&#39;public&#39;``).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/auth/login&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">login</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Autenticar un usuario y devolver un token JWT.</span>
+
+<span class="sd">        Verifica las credenciales contra ``second_market.user``, comprueba que la</span>
+<span class="sd">        cuenta esté activa y genera un token JWT con expiración configurada en</span>
+<span class="sd">        ``JWT_EXP_DELTA_SECONDS``.</span>
+
+<span class="sd">        **Body JSON esperado:**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;login&quot;: &quot;usuario@ejemplo.com&quot;,</span>
+<span class="sd">                &quot;password&quot;: &quot;miContraseña123&quot;</span>
+<span class="sd">            }</span>
+
+<span class="sd">        **Respuesta exitosa:**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;success&quot;: true,</span>
+<span class="sd">                &quot;message&quot;: &quot;Login exitoso&quot;,</span>
+<span class="sd">                &quot;data&quot;: {</span>
+<span class="sd">                    &quot;token&quot;: &quot;&lt;JWT&gt;&quot;,</span>
+<span class="sd">                    &quot;expires_in&quot;: 86400,</span>
+<span class="sd">                    &quot;user&quot;: {</span>
+<span class="sd">                        &quot;id&quot;: 1,</span>
+<span class="sd">                        &quot;id_usuario&quot;: &quot;0000001&quot;,</span>
+<span class="sd">                        &quot;name&quot;: &quot;Jonatan&quot;,</span>
+<span class="sd">                        &quot;login&quot;: &quot;jonatan@ejemplo.com&quot;,</span>
+<span class="sd">                        &quot;calificacion_promedio&quot;: 4.5,</span>
+<span class="sd">                        &quot;productos_en_venta&quot;: 3</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo (no se usan directamente).</span>
+<span class="sd">        :return: Diccionario con ``success``, ``message`` y ``data`` (token + datos de usuario).</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">params</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">httprequest</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">login</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">)</span>
+            <span class="n">password</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">login</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">password</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MISSING_CREDENTIALS&#39;</span><span class="p">,</span> <span class="s1">&#39;El login y la contraseña son requeridos&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="n">ERROR_CODES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MISSING_CREDENTIALS&#39;</span><span class="p">,</span> <span class="s1">&#39;MISSING_CREDENTIALS&#39;</span><span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="n">user</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.user&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">([</span>
+                <span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">login</span><span class="p">)</span>
+            <span class="p">],</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;LOGIN_FAILED&#39;</span><span class="p">,</span> <span class="s1">&#39;Credenciales inválidas&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="n">ERROR_CODES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;INVALID_CREDENTIALS&#39;</span><span class="p">,</span> <span class="s1">&#39;INVALID_CREDENTIALS&#39;</span><span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">activo</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ACCOUNT_DISABLED&#39;</span><span class="p">,</span> <span class="s1">&#39;Tu cuenta está deshabilitada&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="n">ERROR_CODES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ACCOUNT_DISABLED&#39;</span><span class="p">,</span> <span class="s1">&#39;ACCOUNT_DISABLED&#39;</span><span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">crypt_context</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="n">user</span><span class="o">.</span><span class="n">password</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;LOGIN_FAILED&#39;</span><span class="p">,</span> <span class="s1">&#39;Credenciales inválidas&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="n">ERROR_CODES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;INVALID_CREDENTIALS&#39;</span><span class="p">,</span> <span class="s1">&#39;INVALID_CREDENTIALS&#39;</span><span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;user_id&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;id_usuario&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id_usuario</span><span class="p">,</span>
+                <span class="s1">&#39;login&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">login</span><span class="p">,</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s1">&#39;exp&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">JWT_EXP_DELTA_SECONDS</span><span class="p">),</span>
+                <span class="s1">&#39;iat&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+            <span class="p">}</span>
+
+            <span class="n">token</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">JWT_SECRET_KEY</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="n">JWT_ALGORITHM</span><span class="p">)</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;id_usuario&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id_usuario</span><span class="p">,</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s1">&#39;login&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">login</span><span class="p">,</span>
+                <span class="s1">&#39;telefono&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">telefono</span><span class="p">,</span>
+                <span class="s1">&#39;ubicacion&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">ubicacion</span><span class="p">,</span>
+                <span class="s1">&#39;biografia&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">biografia</span><span class="p">,</span>
+                <span class="s1">&#39;calificacion_promedio&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">calificacion_promedio</span><span class="p">,</span>
+                <span class="s1">&#39;total_valoraciones&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">total_valoraciones</span><span class="p">,</span>
+                <span class="s1">&#39;productos_en_venta&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">productos_en_venta</span><span class="p">,</span>
+                <span class="s1">&#39;productos_vendidos&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">productos_vendidos</span><span class="p">,</span>
+                <span class="s1">&#39;productos_comprados&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">productos_comprados</span><span class="p">,</span>
+                <span class="s1">&#39;antiguedad&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">antiguedad</span><span class="p">,</span>
+                <span class="s1">&#39;fecha_registro&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">fecha_registro</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">fecha_registro</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Login exitoso para usuario: </span><span class="si">{</span><span class="n">user</span><span class="o">.</span><span class="n">login</span><span class="si">}</span><span class="s2"> (ID: </span><span class="si">{</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;LOGIN_SUCCESS&#39;</span><span class="p">,</span> <span class="s1">&#39;Login exitoso&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;token&#39;</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span>
+                    <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">user_data</span><span class="p">,</span>
+                    <span class="s1">&#39;expires_in&#39;</span><span class="p">:</span> <span class="n">JWT_EXP_DELTA_SECONDS</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error en login: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;INTERNAL_ERROR&#39;</span><span class="p">,</span> <span class="s1">&#39;Error interno del servidor&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="n">ERROR_CODES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;INTERNAL_ERROR&#39;</span><span class="p">,</span> <span class="s1">&#39;INTERNAL_ERROR&#39;</span><span class="p">)</span>
+            <span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/auth/register&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Registrar un nuevo usuario y devolver un token JWT.</span>
+
+<span class="sd">        Valida los campos requeridos, verifica que el login no esté en uso,</span>
+<span class="sd">        crea el usuario (la contraseña se hashea automáticamente en</span>
+<span class="sd">        :meth:`~second_market.user.SecondMarketUser.create`) y genera un</span>
+<span class="sd">        token JWT de sesión.</span>
+
+<span class="sd">        **Body JSON esperado:**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;name&quot;: &quot;Jonatan&quot;,</span>
+<span class="sd">                &quot;login&quot;: &quot;jonatan@ejemplo.com&quot;,</span>
+<span class="sd">                &quot;password&quot;: &quot;miContraseña123&quot;,</span>
+<span class="sd">                &quot;telefono&quot;: &quot;612345678&quot;,</span>
+<span class="sd">                &quot;ubicacion&quot;: &quot;Sevilla&quot;,</span>
+<span class="sd">                &quot;biografia&quot;: &quot;Hola, soy Jonatan&quot;</span>
+<span class="sd">            }</span>
+
+<span class="sd">        Los campos ``telefono``, ``ubicacion`` y ``biografia`` son opcionales.</span>
+
+<span class="sd">        **Respuesta exitosa:**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;success&quot;: true,</span>
+<span class="sd">                &quot;message&quot;: &quot;Usuario registrado exitosamente&quot;,</span>
+<span class="sd">                &quot;data&quot;: {</span>
+<span class="sd">                    &quot;token&quot;: &quot;&lt;JWT&gt;&quot;,</span>
+<span class="sd">                    &quot;expires_in&quot;: 86400,</span>
+<span class="sd">                    &quot;user&quot;: { ... }</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success``, ``message`` y ``data`` (token + datos de usuario).</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">params</span> <span class="ow">or</span> <span class="n">request</span><span class="o">.</span><span class="n">httprequest</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="n">required_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;login&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">required_fields</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="p">{</span>
+                        <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;El campo </span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s1"> es requerido&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="n">ERROR_CODES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MISSING_FIELD&#39;</span><span class="p">,</span> <span class="s1">&#39;MISSING_FIELD&#39;</span><span class="p">)</span>
+                    <span class="p">}</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PASSWORD_TOO_SHORT&#39;</span><span class="p">,</span> <span class="s1">&#39;La contraseña debe tener al menos 8 caracteres&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="n">ERROR_CODES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;PASSWORD_TOO_SHORT&#39;</span><span class="p">,</span> <span class="s1">&#39;PASSWORD_TOO_SHORT&#39;</span><span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="n">existing_user</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.user&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">([</span>
+                <span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">))</span>
+            <span class="p">],</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">existing_user</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;LOGIN_EXISTS&#39;</span><span class="p">,</span> <span class="s1">&#39;Ya existe un usuario con este login&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="n">ERROR_CODES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;LOGIN_EXISTS&#39;</span><span class="p">,</span> <span class="s1">&#39;LOGIN_EXISTS&#39;</span><span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="n">user_vals</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;login&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;password&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;telefono&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;telefono&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;ubicacion&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ubicacion&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;biografia&#39;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;biografia&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;activo&#39;</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="p">}</span>
+
+            <span class="n">user</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;second_market.user&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">user_vals</span><span class="p">)</span>
+
+            <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;user_id&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;id_usuario&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id_usuario</span><span class="p">,</span>
+                <span class="s1">&#39;login&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">login</span><span class="p">,</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s1">&#39;exp&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">JWT_EXP_DELTA_SECONDS</span><span class="p">),</span>
+                <span class="s1">&#39;iat&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+            <span class="p">}</span>
+
+            <span class="n">token</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">JWT_SECRET_KEY</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="n">JWT_ALGORITHM</span><span class="p">)</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;id_usuario&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id_usuario</span><span class="p">,</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s1">&#39;login&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">login</span><span class="p">,</span>
+                <span class="s1">&#39;telefono&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">telefono</span><span class="p">,</span>
+                <span class="s1">&#39;ubicacion&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">ubicacion</span><span class="p">,</span>
+                <span class="s1">&#39;biografia&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">biografia</span><span class="p">,</span>
+                <span class="s1">&#39;fecha_registro&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">fecha_registro</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">fecha_registro</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Registro exitoso para usuario: </span><span class="si">{</span><span class="n">user</span><span class="o">.</span><span class="n">login</span><span class="si">}</span><span class="s2"> (ID: </span><span class="si">{</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;REGISTRATION_SUCCESS&#39;</span><span class="p">,</span> <span class="s1">&#39;Usuario registrado exitosamente&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;token&#39;</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span>
+                    <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">user_data</span><span class="p">,</span>
+                    <span class="s1">&#39;expires_in&#39;</span><span class="p">:</span> <span class="n">JWT_EXP_DELTA_SECONDS</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error en registro: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;REGISTRATION_FAILED&#39;</span><span class="p">,</span> <span class="s1">&#39;Error al registrar usuario&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;REGISTRATION_ERROR&#39;</span>
+            <span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/auth/verify&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">verify_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Verificar la validez de un token JWT.</span>
+
+<span class="sd">        El token debe enviarse en el header HTTP ``Authorization``::</span>
+
+<span class="sd">            Authorization: Bearer &lt;token&gt;</span>
+
+<span class="sd">        Si el token es válido, devuelve los datos del usuario asociado.</span>
+
+<span class="sd">        **Respuesta exitosa:**</span>
+
+<span class="sd">        .. code-block:: json</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;success&quot;: true,</span>
+<span class="sd">                &quot;message&quot;: &quot;Token válido&quot;,</span>
+<span class="sd">                &quot;data&quot;: {</span>
+<span class="sd">                    &quot;user&quot;: {</span>
+<span class="sd">                        &quot;id&quot;: 1,</span>
+<span class="sd">                        &quot;name&quot;: &quot;Jonatan&quot;,</span>
+<span class="sd">                        &quot;login&quot;: &quot;jonatan@ejemplo.com&quot;,</span>
+<span class="sd">                        &quot;calificacion_promedio&quot;: 4.5</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success``, ``message`` y ``data`` (perfil del usuario).</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.auth_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_token_from_request</span><span class="p">,</span> <span class="n">verify_jwt_token</span>
+
+            <span class="n">token</span> <span class="o">=</span> <span class="n">get_token_from_request</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">token</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;TOKEN_MISSING&#39;</span><span class="p">,</span> <span class="s1">&#39;Token no proporcionado en el header Authorization&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="n">ERROR_CODES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;TOKEN_MISSING&#39;</span><span class="p">,</span> <span class="s1">&#39;TOKEN_MISSING&#39;</span><span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="n">user_data</span> <span class="o">=</span> <span class="n">verify_jwt_token</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">user_data</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span>
+                    <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;TOKEN_INVALID&#39;</span><span class="p">,</span> <span class="s1">&#39;Token inválido o expirado&#39;</span><span class="p">),</span>
+                    <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="n">ERROR_CODES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;TOKEN_INVALID&#39;</span><span class="p">,</span> <span class="s1">&#39;TOKEN_INVALID&#39;</span><span class="p">)</span>
+                <span class="p">}</span>
+
+            <span class="n">user</span> <span class="o">=</span> <span class="n">user_data</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">]</span>
+
+            <span class="n">user_info</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="s1">&#39;id_usuario&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id_usuario</span><span class="p">,</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="s1">&#39;login&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">login</span><span class="p">,</span>
+                <span class="s1">&#39;telefono&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">telefono</span><span class="p">,</span>
+                <span class="s1">&#39;ubicacion&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">ubicacion</span><span class="p">,</span>
+                <span class="s1">&#39;biografia&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">biografia</span><span class="p">,</span>
+                <span class="s1">&#39;calificacion_promedio&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">calificacion_promedio</span><span class="p">,</span>
+                <span class="s1">&#39;total_valoraciones&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">total_valoraciones</span><span class="p">,</span>
+                <span class="s1">&#39;productos_en_venta&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">productos_en_venta</span><span class="p">,</span>
+                <span class="s1">&#39;productos_vendidos&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">productos_vendidos</span><span class="p">,</span>
+                <span class="s1">&#39;productos_comprados&#39;</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">productos_comprados</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="n">RESPONSE_MESSAGES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;TOKEN_VALID&#39;</span><span class="p">,</span> <span class="s1">&#39;Token válido&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="n">user_info</span><span class="p">}</span>
+            <span class="p">}</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error en verificación de token: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error al verificar token&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;VERIFICATION_ERROR&#39;</span>
+            <span class="p">}</span>
+
+    <span class="nd">@http</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/api/v1/auth/logout&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="s1">&#39;public&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">],</span> <span class="n">csrf</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cors</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">logout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Registrar el cierre de sesión del usuario.</span>
+
+<span class="sd">        JWT es stateless: el logout real se realiza en el cliente eliminando</span>
+<span class="sd">        el token almacenado. Este endpoint se usa principalmente para registrar</span>
+<span class="sd">        el evento en los logs del servidor.</span>
+
+<span class="sd">        .. note::</span>
+<span class="sd">            No invalida el token en el servidor. El cliente debe eliminar</span>
+<span class="sd">            el token de su almacenamiento local tras llamar a este endpoint.</span>
+
+<span class="sd">        :param kwargs: Parámetros adicionales del dispatcher de Odoo.</span>
+<span class="sd">        :return: Diccionario con ``success = True`` y mensaje de confirmación.</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">.auth_controller</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_token_from_request</span>
+
+            <span class="n">token</span> <span class="o">=</span> <span class="n">get_token_from_request</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">token</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">payload</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">JWT_SECRET_KEY</span><span class="p">,</span> <span class="n">algorithms</span><span class="o">=</span><span class="p">[</span><span class="n">JWT_ALGORITHM</span><span class="p">],</span> <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;verify_exp&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+                    <span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Logout para usuario: </span><span class="si">{</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;login&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> (ID: </span><span class="si">{</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_id&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Logout exitoso&#39;</span>
+            <span class="p">}</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error en logout: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s1">&#39;success&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;Error en logout&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;error_code&#39;</span><span class="p">:</span> <span class="s1">&#39;LOGOUT_ERROR&#39;</span>
+            <span class="p">}</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">Dalo</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Ir a" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navegación</h3>
+<p class="caption" role="heading"><span class="caption-text">Secciones:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Modelos (second_market)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API REST (api_market)</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Código de módulo</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Jonatan C. and Jose S..
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
