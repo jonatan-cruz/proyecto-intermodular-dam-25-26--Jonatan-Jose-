@@ -30,9 +30,9 @@
                     <sheet>
                         <group>
                             <group string="Información del Chat">
-                                <field name="id_articulo" readonly="1" />
-                                <field name="id_comprador" readonly="1" />
-                                <field name="id_vendedor" readonly="1" />
+                                <field name="id_articulo" readonly="id != False" />
+                                <field name="id_comprador" readonly="id != False" />
+                                <field name="id_vendedor" readonly="id != False" />
                             </group>
                             <group string="Estadísticas">
                                 <field name="conteo_mensajes" readonly="1" />
