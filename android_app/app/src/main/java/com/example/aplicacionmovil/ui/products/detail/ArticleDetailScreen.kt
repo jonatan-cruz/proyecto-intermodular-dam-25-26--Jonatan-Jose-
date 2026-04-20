@@ -36,6 +36,7 @@ import com.example.aplicacionmovil.domain.models.ArticleTag
 import com.example.aplicacionmovil.ui.main.BuyButton
 import com.example.aplicacionmovil.ui.chat.ChatViewModel
 import com.example.aplicacionmovil.ui.chat.ChatViewModelFactory
+import com.example.aplicacionmovil.utils.DateUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -206,7 +207,7 @@ fun ArticleDetailContent(
                 }
                 article.createDate?.let { date ->
                     Text(
-                        text = "Publicado: $date",
+                        text = "Publicado: ${DateUtils.formatLongDate(date)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.padding(top = 4.dp)
@@ -390,7 +391,7 @@ fun ArticleDetailContent(
                                 Text(text = comment.texto, style = MaterialTheme.typography.bodyLarge)
                                 if (comment.fechaHora != null) {
                                     Text(
-                                        text = comment.fechaHora,
+                                        text = DateUtils.formatRelativeTime(comment.fechaHora),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                         modifier = Modifier.align(Alignment.End)

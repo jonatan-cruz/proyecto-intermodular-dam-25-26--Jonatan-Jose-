@@ -1,44 +1,47 @@
-API REST (api\_market)
-======================
+Controladores de la API REST ``api_market``
+=============================================
 
-Documentación de los controladores de la API REST del módulo **api_market**.
+En esta sección se documentan los controladores del módulo ``api_market``, que actúan
+como "endpoints" de la API para la aplicación móvil.
 
-.. contents:: Índice de endpoints
-   :local:
-   :depth: 1
+Usuario
+-------
+.. automodule:: api_market.controllers.usuario
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Autenticación (Auth Controller)
+-------------------------------
+.. automodule:: api_market.controllers.auth_controller
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Login
+-----
+.. automodule:: api_market.controllers.login
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Artículos
 ---------
-
 .. automodule:: api_market.controllers.articulos
    :members:
+   :undoc-members:
+   :show-inheritance:
 
-Autenticación
--------------
-
-.. automodule:: api_market.controllers.auth_controller
-   :members:
-
-Login / Registro
-----------------
-
-.. automodule:: api_market.controllers.login
-   :members:
-
-Usuarios
---------
-
-.. automodule:: api_market.controllers.usuario
-   :members:
-
-Chats, Denuncias y Categorías
-------------------------------
-
-.. automodule:: api_market.controllers.chat_den_cat
-   :members:
-
-Comentarios, Compras y Valoraciones
--------------------------------------
-
+Compras y Valoraciones
+----------------------
 .. automodule:: api_market.controllers.com_compr_val
    :members:
+   :undoc-members:
+   :show-inheritance:
+
+Chat y Denuncias
+----------------
+.. automodule:: api_market.controllers.chat_den_cat
+   :members:
+   :undoc-members:
+   :show-inheritance:

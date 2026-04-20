@@ -53,5 +53,38 @@ language = 'es'
 
 # -- Options for HTML output -------------------------------------------------
 
+# Estilo de resaltado de sintaxis para los bloques de código
+pygments_style = 'monokai'
+
 html_theme = 'alabaster'
 html_static_path = ['_static']
+
+# Logo de la app (dalored.png en _static)
+html_logo = '_static/dalored.png'
+html_favicon = '_static/dalored.png'
+
+# CSS personalizado con los colores de la app
+html_css_files = ['custom.css']
+
+# Opciones del tema alabaster con los colores de la app Dalo (#c22a2a)
+html_theme_options = {
+    # Cabecera de la sidebar
+    'description': 'Documentación técnica del backend Odoo',
+    'logo_name': True,
+    'logo_text_align': 'center',
+
+    # Colores – paleta real (DaloRed: #c22a2a)
+    'body_text_color': '#121212',         # Charcoal
+    'link_color': '#8b1e1e',              # primary-dark, máximo contraste sobre blanco
+    'link_hover_color': '#c22a2a',        # primary rojo
+    'sidebar_header': '#c5a059',          # GoldAccent – headings sidebar
+    'sidebar_text': '#f5ede9',            # texto claro sobre fondo oscuro barra lateral
+    'sidebar_link': '#f5ede9',
+    'sidebar_link_underscore': '0',
+    'sidebar_collapse': False,
+    'anchor_hover_fg': '#c22a2a',
+    
+    # Diseño (layout)
+    'sidebar_width': '350px',
+    'page_width': '1200px',
+}

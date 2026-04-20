@@ -5,13 +5,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>second_market.models.second_market_comentarios &#8212; documentación de Dalo - 1.0</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5349f25f" />
     <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=980c7f40" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=0be4100e" />
     <script src="../../../_static/documentation_options.js?v=4936afed"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/translations.js?v=f85f4cfb"></script>
+    <link rel="icon" href="../../../_static/dalored.png"/>
     <link rel="index" title="Índice" href="../../../genindex.html" />
     <link rel="search" title="Búsqueda" href="../../../search.html" />
    
@@ -48,7 +50,7 @@
 
 
 <div class="viewcode-block" id="SecondMarketComment">
-<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_comentarios.SecondMarketComment">[documentos]</a>
+<a class="viewcode-back" href="../../../models.html#second_market.models.second_market_comentarios.SecondMarketComment">[documentos]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SecondMarketComment</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Modelo que representa un comentario de un usuario sobre un artículo.</span>
 
@@ -226,7 +228,7 @@
         <span class="k">return</span> <span class="n">comentarios</span>
 
 <div class="viewcode-block" id="SecondMarketComment.write">
-<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_comentarios.SecondMarketComment.write">[documentos]</a>
+<a class="viewcode-back" href="../../../models.html#second_market.models.second_market_comentarios.SecondMarketComment.write">[documentos]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Actualizar un comentario registrando la fecha de lectura si se marca como leído.</span>
 
@@ -248,7 +250,7 @@
     <span class="c1"># ============================================</span>
 
 <div class="viewcode-block" id="SecondMarketComment.enviar">
-<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_comentarios.SecondMarketComment.enviar">[documentos]</a>
+<a class="viewcode-back" href="../../../models.html#second_market.models.second_market_comentarios.SecondMarketComment.enviar">[documentos]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">enviar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Enviar el comentario actualizando su fecha de envío y notificando al receptor.</span>
 
@@ -279,7 +281,7 @@
 
 
 <div class="viewcode-block" id="SecondMarketComment.leer">
-<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_comentarios.SecondMarketComment.leer">[documentos]</a>
+<a class="viewcode-back" href="../../../models.html#second_market.models.second_market_comentarios.SecondMarketComment.leer">[documentos]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">leer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Marcar el comentario como leído registrando la fecha de lectura.</span>
 
@@ -307,7 +309,7 @@
 
 
 <div class="viewcode-block" id="SecondMarketComment.eliminar">
-<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_comentarios.SecondMarketComment.eliminar">[documentos]</a>
+<a class="viewcode-back" href="../../../models.html#second_market.models.second_market_comentarios.SecondMarketComment.eliminar">[documentos]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">eliminar</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Realizar un borrado lógico del comentario (``activo = False``).</span>
 
@@ -369,7 +371,7 @@
             <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Error al enviar notificación de comentario: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
 <div class="viewcode-block" id="SecondMarketComment.action_ver_articulo">
-<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_comentarios.SecondMarketComment.action_ver_articulo">[documentos]</a>
+<a class="viewcode-back" href="../../../models.html#second_market.models.second_market_comentarios.SecondMarketComment.action_ver_articulo">[documentos]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">action_ver_articulo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir el formulario del artículo relacionado con el comentario.</span>
 
@@ -388,7 +390,7 @@
 
 
 <div class="viewcode-block" id="SecondMarketComment.action_responder">
-<a class="viewcode-back" href="../../../index.html#second_market.models.second_market_comentarios.SecondMarketComment.action_responder">[documentos]</a>
+<a class="viewcode-back" href="../../../models.html#second_market.models.second_market_comentarios.SecondMarketComment.action_responder">[documentos]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">action_responder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abrir un formulario para crear un nuevo comentario como respuesta.</span>
 
@@ -419,9 +421,14 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/dalored.png" alt="Logo of Dalo"/>
+            </a></p>
 <h1 class="logo"><a href="../../../index.html">Dalo</a></h1>
 
 
+
+<p class="blurb">Documentación técnica del backend Odoo</p>
 
 
 
@@ -438,6 +445,29 @@
     </div>
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navegación</h3>
+<p class="caption" role="heading"><span class="caption-text">Contenidos:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">Controladores de la API REST <code class="docutils literal notranslate"><span class="pre">api_market</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../api.html#module-api_market.controllers.usuario">Usuario</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api.html#module-api_market.controllers.auth_controller">Autenticación (Auth Controller)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api.html#module-api_market.controllers.login">Login</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api.html#module-api_market.controllers.articulos">Artículos</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api.html#module-api_market.controllers.com_compr_val">Compras y Valoraciones</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../api.html#module-api_market.controllers.chat_den_cat">Chat y Denuncias</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Modelos del Mercado (<code class="docutils literal notranslate"><span class="pre">second_market</span></code>)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../models.html#module-second_market.models.second_market_app_users">Usuarios</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models.html#module-second_market.models.second_market_articulo">Artículos</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models.html#module-second_market.models.second_market_imagen">Imágenes de Artículos</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models.html#module-second_market.models.second_market_categoria">Categorías</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models.html#module-second_market.models.second_market_purchase">Compras (Purchases)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models.html#module-second_market.models.second_market_rating">Historial de Precios y Valoraciones (Rating &amp; Comentarios)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models.html#module-second_market.models.second_market_chat">Chat y Mensajería</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../models.html#module-second_market.models.second_market_denuncia">Denuncias</a></li>
+</ul>
+</li>
+</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>

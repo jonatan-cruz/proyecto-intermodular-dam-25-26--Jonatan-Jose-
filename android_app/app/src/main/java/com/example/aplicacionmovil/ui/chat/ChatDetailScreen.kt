@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.aplicacionmovil.domain.models.ChatMessage
+import com.example.aplicacionmovil.utils.DateUtils
 import kotlinx.coroutines.launch
 
 /**
@@ -370,18 +371,5 @@ fun EmptyMessagesState() {
  * Formatea la hora del mensaje
  */
 fun formatMessageTime(dateString: String): String {
-    return try {
-        if (dateString.contains("T")) {
-            // Formato ISO: 2024-01-15T10:30:00
-            val parts = dateString.split("T")
-            if (parts.size >= 2) parts[1].take(5) else dateString
-        } else if (dateString.contains(" ")) {
-            val parts = dateString.split(" ")
-            if (parts.size >= 2) parts[1].take(5) else dateString
-        } else {
-            dateString
-        }
-    } catch (e: Exception) {
-        dateString
-    }
+    return DateUtils.formatChatTime(dateString)
 }

@@ -5,18 +5,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Modelos (second_market) &#8212; documentación de Dalo - 1.0</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <title>Modelos del Mercado (second_market) &#8212; documentación de Dalo - 1.0</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5349f25f" />
     <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=980c7f40" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=bd720885" />
     <script src="_static/documentation_options.js?v=4936afed"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/translations.js?v=f85f4cfb"></script>
+    <link rel="icon" href="_static/dalored.png"/>
     <link rel="index" title="Índice" href="genindex.html" />
     <link rel="search" title="Búsqueda" href="search.html" />
-    <link rel="next" title="API REST (api_market)" href="api.html" />
-    <link rel="prev" title="Second Market — Documentación" href="index.html" />
+    <link rel="prev" title="Controladores de la API REST api_market" href="api.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -34,111 +35,12 @@
 
           <div class="body" role="main">
             
-  <section id="modelos-second-market">
-<h1>Modelos (second_market)<a class="headerlink" href="#modelos-second-market" title="Link to this heading">¶</a></h1>
-<p>Documentación de los modelos de datos del módulo <strong>second_market</strong>.</p>
-<nav class="contents local" id="indice-de-modelos">
-<p class="topic-title">Índice de modelos</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_articulo" id="id1">Artículo</a></p></li>
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_app_users" id="id2">Usuario</a></p></li>
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_categoria" id="id3">Categoría</a></p></li>
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_chat" id="id4">Chat</a></p></li>
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_message" id="id5">Mensaje</a></p></li>
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_comentarios" id="id6">Comentario</a></p></li>
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_purchase" id="id7">Compra</a></p></li>
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_rating" id="id8">Valoración</a></p></li>
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_denuncia" id="id9">Denuncia</a></p></li>
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_etiqueta" id="id10">Etiqueta</a></p></li>
-<li><p><a class="reference internal" href="#module-second_market.models.second_market_imagen" id="id11">Imagen</a></p></li>
-</ul>
-</nav>
-<section id="module-second_market.models.second_market_articulo">
-<span id="articulo"></span><h2><a class="toc-backref" href="#id1" role="doc-backlink">Artículo</a><a class="headerlink" href="#module-second_market.models.second_market_articulo" title="Link to this heading">¶</a></h2>
-<p>Módulo de gestión de artículos de segunda mano.</p>
-<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_articulo.ArticuloSegundaMano" title="second_market.models.second_market_articulo.ArticuloSegundaMano"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArticuloSegundaMano</span></code></a> que representa los productos
-publicados por los usuarios en la plataforma Second Market.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_articulo.</span></span><span class="sig-name descname"><span class="pre">ArticuloSegundaMano</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_articulo.html#ArticuloSegundaMano"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
-<p>Modelo que representa un artículo de segunda mano publicado en la plataforma.</p>
-<p>Hereda de <code class="docutils literal notranslate"><span class="pre">mail.thread</span></code> y <code class="docutils literal notranslate"><span class="pre">mail.activity.mixin</span></code> para soporte de
-seguimiento de cambios y actividades programadas.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
-<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
-<li><p><strong>_inherit</strong> – Mixins heredados para chatter y actividades.</p></li>
-<li><p><strong>_order</strong> – Orden por defecto (más reciente primero).</p></li>
-<li><p><strong>_rec_name</strong> – Campo utilizado como nombre representativo del registro.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.action_publicar">
-<span class="sig-name descname"><span class="pre">action_publicar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_articulo.html#ArticuloSegundaMano.action_publicar"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.action_publicar" title="Link to this definition">¶</a></dt>
-<dd><p>Pasar el artículo al estado <em>publicado</em>.</p>
-<p>Solo se pueden publicar artículos que se encuentren en estado <code class="docutils literal notranslate"><span class="pre">borrador</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Muestra<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>UserError</strong> – Si el artículo no está en estado <code class="docutils literal notranslate"><span class="pre">borrador</span></code>.</p>
-</dd>
-<dt class="field-even">Devuelve<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> si la operación se realizó correctamente.</p>
-</dd>
-<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.estado_producto">
-<span class="sig-name descname"><span class="pre">estado_producto</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('nuevo',</span> <span class="pre">'Nuevo'),</span> <span class="pre">('como_nuevo',</span> <span class="pre">'Como</span> <span class="pre">Nuevo'),</span> <span class="pre">('buen_estado',</span> <span class="pre">'Buen</span> <span class="pre">Estado'),</span> <span class="pre">('aceptable',</span> <span class="pre">'Estado</span> <span class="pre">Aceptable'),</span> <span class="pre">('necesita_reparacion',</span> <span class="pre">'Necesita</span> <span class="pre">Reparación')]</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.estado_producto" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.estado_publicacion">
-<span class="sig-name descname"><span class="pre">estado_publicacion</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('borrador',</span> <span class="pre">'Borrador'),</span> <span class="pre">('publicado',</span> <span class="pre">'Publicado'),</span> <span class="pre">('reservado',</span> <span class="pre">'Reservado'),</span> <span class="pre">('vendido',</span> <span class="pre">'Vendido'),</span> <span class="pre">('eliminado',</span> <span class="pre">'Eliminado')]</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.estado_publicacion" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.id_categoria">
-<span class="sig-name descname"><span class="pre">id_categoria</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.category'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.id_categoria" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.id_propietario">
-<span class="sig-name descname"><span class="pre">id_propietario</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.id_propietario" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.ids_chats">
-<span class="sig-name descname"><span class="pre">ids_chats</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.chat'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.ids_chats" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.ids_comentarios">
-<span class="sig-name descname"><span class="pre">ids_comentarios</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.comment'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.ids_comentarios" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.ids_etiquetas">
-<span class="sig-name descname"><span class="pre">ids_etiquetas</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.tag'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.ids_etiquetas" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.ids_imagenes">
-<span class="sig-name descname"><span class="pre">ids_imagenes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.image'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.ids_imagenes" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</section>
+  <section id="modelos-del-mercado-second-market">
+<h1>Modelos del Mercado (<code class="docutils literal notranslate"><span class="pre">second_market</span></code>)<a class="headerlink" href="#modelos-del-mercado-second-market" title="Link to this heading">¶</a></h1>
+<p>Esta sección documenta los modelos de Odoo que definen la base de datos
+estrictamente tipada y sus relaciones en PostgreSQL para el mercado de segunda mano.</p>
 <section id="module-second_market.models.second_market_app_users">
-<span id="usuario"></span><h2><a class="toc-backref" href="#id2" role="doc-backlink">Usuario</a><a class="headerlink" href="#module-second_market.models.second_market_app_users" title="Link to this heading">¶</a></h2>
+<span id="usuarios"></span><h2>Usuarios<a class="headerlink" href="#module-second_market.models.second_market_app_users" title="Link to this heading">¶</a></h2>
 <p>Módulo de gestión de usuarios de la plataforma.</p>
 <p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_app_users.SecondMarketUser" title="second_market.models.second_market_app_users.SecondMarketUser"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecondMarketUser</span></code></a> que representa a los usuarios
 registrados en Second Market. Gestiona autenticación, estadísticas del usuario,
@@ -469,8 +371,121 @@ y crea el registro en el modelo <code class="docutils literal notranslate"><span
 </dd></dl>
 
 </section>
+<section id="module-second_market.models.second_market_articulo">
+<span id="articulos"></span><h2>Artículos<a class="headerlink" href="#module-second_market.models.second_market_articulo" title="Link to this heading">¶</a></h2>
+<p>Módulo de gestión de artículos de segunda mano.</p>
+<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_articulo.ArticuloSegundaMano" title="second_market.models.second_market_articulo.ArticuloSegundaMano"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArticuloSegundaMano</span></code></a> que representa los productos
+publicados por los usuarios en la plataforma Second Market.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_articulo.</span></span><span class="sig-name descname"><span class="pre">ArticuloSegundaMano</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_articulo.html#ArticuloSegundaMano"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Modelo que representa un artículo de segunda mano publicado en la plataforma.</p>
+<p>Hereda de <code class="docutils literal notranslate"><span class="pre">mail.thread</span></code> y <code class="docutils literal notranslate"><span class="pre">mail.activity.mixin</span></code> para soporte de
+seguimiento de cambios y actividades programadas.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
+<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
+<li><p><strong>_inherit</strong> – Mixins heredados para chatter y actividades.</p></li>
+<li><p><strong>_order</strong> – Orden por defecto (más reciente primero).</p></li>
+<li><p><strong>_rec_name</strong> – Campo utilizado como nombre representativo del registro.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.action_publicar">
+<span class="sig-name descname"><span class="pre">action_publicar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_articulo.html#ArticuloSegundaMano.action_publicar"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.action_publicar" title="Link to this definition">¶</a></dt>
+<dd><p>Pasar el artículo al estado <em>publicado</em>.</p>
+<p>Solo se pueden publicar artículos que se encuentren en estado <code class="docutils literal notranslate"><span class="pre">borrador</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>UserError</strong> – Si el artículo no está en estado <code class="docutils literal notranslate"><span class="pre">borrador</span></code>.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> si la operación se realizó correctamente.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.estado_producto">
+<span class="sig-name descname"><span class="pre">estado_producto</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('nuevo',</span> <span class="pre">'Nuevo'),</span> <span class="pre">('como_nuevo',</span> <span class="pre">'Como</span> <span class="pre">Nuevo'),</span> <span class="pre">('buen_estado',</span> <span class="pre">'Buen</span> <span class="pre">Estado'),</span> <span class="pre">('aceptable',</span> <span class="pre">'Estado</span> <span class="pre">Aceptable'),</span> <span class="pre">('necesita_reparacion',</span> <span class="pre">'Necesita</span> <span class="pre">Reparación')]</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.estado_producto" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.estado_publicacion">
+<span class="sig-name descname"><span class="pre">estado_publicacion</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[('borrador',</span> <span class="pre">'Borrador'),</span> <span class="pre">('publicado',</span> <span class="pre">'Publicado'),</span> <span class="pre">('reservado',</span> <span class="pre">'Reservado'),</span> <span class="pre">('vendido',</span> <span class="pre">'Vendido'),</span> <span class="pre">('eliminado',</span> <span class="pre">'Eliminado')]</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.estado_publicacion" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.id_categoria">
+<span class="sig-name descname"><span class="pre">id_categoria</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.category'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.id_categoria" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.id_propietario">
+<span class="sig-name descname"><span class="pre">id_propietario</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.id_propietario" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.ids_chats">
+<span class="sig-name descname"><span class="pre">ids_chats</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.chat'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.ids_chats" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.ids_comentarios">
+<span class="sig-name descname"><span class="pre">ids_comentarios</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.comment'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.ids_comentarios" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.ids_etiquetas">
+<span class="sig-name descname"><span class="pre">ids_etiquetas</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.tag'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.ids_etiquetas" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_articulo.ArticuloSegundaMano.ids_imagenes">
+<span class="sig-name descname"><span class="pre">ids_imagenes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.image'</span></span><a class="headerlink" href="#second_market.models.second_market_articulo.ArticuloSegundaMano.ids_imagenes" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-second_market.models.second_market_imagen">
+<span id="imagenes-de-articulos"></span><h2>Imágenes de Artículos<a class="headerlink" href="#module-second_market.models.second_market_imagen" title="Link to this heading">¶</a></h2>
+<p>Módulo de gestión de imágenes de artículos.</p>
+<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_imagen.ImagenArticulo" title="second_market.models.second_market_imagen.ImagenArticulo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImagenArticulo</span></code></a> que almacena las imágenes
+asociadas a cada artículo de la plataforma Second Market.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="second_market.models.second_market_imagen.ImagenArticulo">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_imagen.</span></span><span class="sig-name descname"><span class="pre">ImagenArticulo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_imagen.html#ImagenArticulo"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_imagen.ImagenArticulo" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Modelo que representa una imagen vinculada a un artículo de segunda mano.</p>
+<p>Cada artículo puede tener entre 1 y 10 imágenes. El orden de visualización
+se controla mediante el campo <code class="docutils literal notranslate"><span class="pre">sequence</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
+<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
+<li><p><strong>_order</strong> – Ordenación por <code class="docutils literal notranslate"><span class="pre">sequence</span></code> y luego por <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_imagen.ImagenArticulo.article_id">
+<span class="sig-name descname"><span class="pre">article_id</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.article'</span></span><a class="headerlink" href="#second_market.models.second_market_imagen.ImagenArticulo.article_id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-second_market.models.second_market_categoria">
-<span id="categoria"></span><h2><a class="toc-backref" href="#id3" role="doc-backlink">Categoría</a><a class="headerlink" href="#module-second_market.models.second_market_categoria" title="Link to this heading">¶</a></h2>
+<span id="categorias"></span><h2>Categorías<a class="headerlink" href="#module-second_market.models.second_market_categoria" title="Link to this heading">¶</a></h2>
 <p>Módulo de gestión de categorías de artículos.</p>
 <p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_categoria.CategoriaSegundaMano" title="second_market.models.second_market_categoria.CategoriaSegundaMano"><code class="xref py py-class docutils literal notranslate"><span class="pre">CategoriaSegundaMano</span></code></a> que agrupa los artículos
 de la plataforma Second Market en categorías temáticas.</p>
@@ -498,299 +513,8 @@ su búsqueda y filtrado en la plataforma.</p>
 </dd></dl>
 
 </section>
-<section id="module-second_market.models.second_market_chat">
-<span id="chat"></span><h2><a class="toc-backref" href="#id4" role="doc-backlink">Chat</a><a class="headerlink" href="#module-second_market.models.second_market_chat" title="Link to this heading">¶</a></h2>
-<p>Módulo de gestión de chats entre usuarios.</p>
-<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_chat.ChatSegundaMano" title="second_market.models.second_market_chat.ChatSegundaMano"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChatSegundaMano</span></code></a> que representa las conversaciones
-que se producen entre un comprador interesado y el vendedor de un artículo
-en la plataforma Second Market.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_chat.</span></span><span class="sig-name descname"><span class="pre">ChatSegundaMano</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_chat.html#ChatSegundaMano"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
-<p>Modelo que representa una conversación entre comprador y vendedor.</p>
-<p>Cada chat está vinculado a un artículo concreto y solo puede existir
-un chat por par (artículo, comprador). El vendedor se obtiene
-automáticamente del propietario del artículo.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
-<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
-<li><p><strong>_order</strong> – Ordenación por fecha del último mensaje (más reciente primero).</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano.id_articulo">
-<span class="sig-name descname"><span class="pre">id_articulo</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.article'</span></span><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano.id_articulo" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano.id_comprador">
-<span class="sig-name descname"><span class="pre">id_comprador</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano.id_comprador" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano.id_vendedor">
-<span class="sig-name descname"><span class="pre">id_vendedor</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano.id_vendedor" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano.ids_mensajes">
-<span class="sig-name descname"><span class="pre">ids_mensajes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.message'</span></span><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano.ids_mensajes" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano.name_get">
-<span class="sig-name descname"><span class="pre">name_get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_chat.html#ChatSegundaMano.name_get"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano.name_get" title="Link to this definition">¶</a></dt>
-<dd><p>Devolver el nombre representativo del chat para listas desplegables.</p>
-<p>El formato es: <code class="docutils literal notranslate"><span class="pre">Chat:</span> <span class="pre">&lt;artículo&gt;</span> <span class="pre">-</span> <span class="pre">&lt;comprador&gt;</span> <span class="pre">↔</span> <span class="pre">&lt;vendedor&gt;</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Lista de tuplas <code class="docutils literal notranslate"><span class="pre">(id,</span> <span class="pre">nombre)</span></code> para cada chat.</p>
-</dd>
-<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-even"><p>list[tuple[int, str]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
-<section id="module-second_market.models.second_market_message">
-<span id="mensaje"></span><h2><a class="toc-backref" href="#id5" role="doc-backlink">Mensaje</a><a class="headerlink" href="#module-second_market.models.second_market_message" title="Link to this heading">¶</a></h2>
-<p>Módulo de gestión de mensajes de chat.</p>
-<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_message.MensajeChat" title="second_market.models.second_market_message.MensajeChat"><code class="xref py py-class docutils literal notranslate"><span class="pre">MensajeChat</span></code></a> que almacena los mensajes individuales
-dentro de una conversación entre usuarios de la plataforma Second Market.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="second_market.models.second_market_message.MensajeChat">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_message.</span></span><span class="sig-name descname"><span class="pre">MensajeChat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_message.html#MensajeChat"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_message.MensajeChat" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
-<p>Modelo que representa un mensaje dentro de un chat.</p>
-<p>Los mensajes aparecen ordenados cronológicamente (más antiguo primero)
-dentro del chat al que pertenecen. Cada mensaje tiene un límite de
-500 caracteres.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
-<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
-<li><p><strong>_order</strong> – Orden cronológico ascendente por fecha de envío.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_message.MensajeChat.create">
-<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vals_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#second_market.models.second_market_message.MensajeChat.create" title="Link to this definition">¶</a></dt>
-<dd><p>Crear uno o varios mensajes de chat.</p>
-<p>Al crear mensajes, los campos computados del chat relacionado
-(<code class="docutils literal notranslate"><span class="pre">ultimo_mensaje</span></code>, <code class="docutils literal notranslate"><span class="pre">fecha_ultimo_mensaje</span></code>) se actualizan
-automáticamente gracias al mecanismo <code class="docutils literal notranslate"><span class="pre">&#64;api.depends</span></code> de Odoo.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>vals_list</strong> (<em>list</em><em>[</em><em>dict</em><em>]</em>) – Lista de diccionarios con los valores de cada mensaje.</p>
-</dd>
-<dt class="field-even">Devuelve<span class="colon">:</span></dt>
-<dd class="field-even"><p>Recordset con los mensajes creados.</p>
-</dd>
-<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-odd"><p>second_market.message</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_message.MensajeChat.id_chat">
-<span class="sig-name descname"><span class="pre">id_chat</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.chat'</span></span><a class="headerlink" href="#second_market.models.second_market_message.MensajeChat.id_chat" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_message.MensajeChat.id_usuario">
-<span class="sig-name descname"><span class="pre">id_usuario</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_message.MensajeChat.id_usuario" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_message.MensajeChat.name_get">
-<span class="sig-name descname"><span class="pre">name_get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_message.html#MensajeChat.name_get"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_message.MensajeChat.name_get" title="Link to this definition">¶</a></dt>
-<dd><p>Devolver un preview del mensaje para listas desplegables.</p>
-<p>Muestra el nombre del usuario seguido de los primeros 30 caracteres
-del contenido del mensaje.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Lista de tuplas <code class="docutils literal notranslate"><span class="pre">(id,</span> <span class="pre">nombre)</span></code> para cada mensaje.</p>
-</dd>
-<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-even"><p>list[tuple[int, str]]</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
-<section id="module-second_market.models.second_market_comentarios">
-<span id="comentario"></span><h2><a class="toc-backref" href="#id6" role="doc-backlink">Comentario</a><a class="headerlink" href="#module-second_market.models.second_market_comentarios" title="Link to this heading">¶</a></h2>
-<p>Módulo de gestión de comentarios entre usuarios.</p>
-<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_comentarios.SecondMarketComment" title="second_market.models.second_market_comentarios.SecondMarketComment"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecondMarketComment</span></code></a> que representa los comentarios
-que los usuarios pueden enviarse mutuamente sobre un artículo en la
-plataforma Second Market.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_comentarios.</span></span><span class="sig-name descname"><span class="pre">SecondMarketComment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
-<p>Modelo que representa un comentario de un usuario sobre un artículo.</p>
-<p>Los comentarios están asociados a un artículo concreto y tienen un
-emisor y un receptor. Admiten marcado de lectura y borrado lógico.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
-<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
-<li><p><strong>_inherit</strong> – Mixins heredados para chatter y actividades.</p></li>
-<li><p><strong>_order</strong> – Ordenación por fecha de envío (más reciente primero).</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.action_responder">
-<span class="sig-name descname"><span class="pre">action_responder</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.action_responder"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.action_responder" title="Link to this definition">¶</a></dt>
-<dd><p>Abrir un formulario para crear un nuevo comentario como respuesta.</p>
-<p>Pre-rellena el artículo y el receptor (el emisor original) en el contexto.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Acción de ventana para crear un comentario de respuesta.</p>
-</dd>
-<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.action_ver_articulo">
-<span class="sig-name descname"><span class="pre">action_ver_articulo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.action_ver_articulo"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.action_ver_articulo" title="Link to this definition">¶</a></dt>
-<dd><p>Abrir el formulario del artículo relacionado con el comentario.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Acción de ventana para abrir el artículo en modo formulario.</p>
-</dd>
-<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-even"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.create">
-<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vals_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.create" title="Link to this definition">¶</a></dt>
-<dd><p>Crear uno o varios comentarios generando el ID único de cada uno.</p>
-<p>Asigna un código secuencial desde la secuencia <code class="docutils literal notranslate"><span class="pre">second_market.comment</span></code>
-y notifica al receptor sobre el nuevo comentario.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>vals_list</strong> (<em>list</em><em>[</em><em>dict</em><em>]</em>) – Lista de diccionarios con los valores de cada comentario.</p>
-</dd>
-<dt class="field-even">Devuelve<span class="colon">:</span></dt>
-<dd class="field-even"><p>Recordset con los comentarios creados.</p>
-</dd>
-<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-odd"><p>second_market.comment</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.eliminar">
-<span class="sig-name descname"><span class="pre">eliminar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.eliminar"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.eliminar" title="Link to this definition">¶</a></dt>
-<dd><p>Realizar un borrado lógico del comentario (<code class="docutils literal notranslate"><span class="pre">activo</span> <span class="pre">=</span> <span class="pre">False</span></code>).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Muestra<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>UserError</strong> – Si el comentario ya estaba eliminado.</p>
-</dd>
-<dt class="field-even">Devuelve<span class="colon">:</span></dt>
-<dd class="field-even"><p>Notificación de advertencia en forma de acción de cliente.</p>
-</dd>
-<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.enviar">
-<span class="sig-name descname"><span class="pre">enviar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.enviar"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.enviar" title="Link to this definition">¶</a></dt>
-<dd><p>Enviar el comentario actualizando su fecha de envío y notificando al receptor.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Muestra<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>UserError</strong> – Si el comentario está eliminado o ya fue enviado y leído.</p>
-</dd>
-<dt class="field-even">Devuelve<span class="colon">:</span></dt>
-<dd class="field-even"><p>Notificación de éxito en forma de acción de cliente.</p>
-</dd>
-<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.id_articulo">
-<span class="sig-name descname"><span class="pre">id_articulo</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.article'</span></span><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.id_articulo" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.id_emisor">
-<span class="sig-name descname"><span class="pre">id_emisor</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.id_emisor" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.id_receptor">
-<span class="sig-name descname"><span class="pre">id_receptor</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.id_receptor" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.leer">
-<span class="sig-name descname"><span class="pre">leer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.leer"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.leer" title="Link to this definition">¶</a></dt>
-<dd><p>Marcar el comentario como leído registrando la fecha de lectura.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Muestra<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>UserError</strong> – Si el comentario ya estaba marcado como leído.</p>
-</dd>
-<dt class="field-even">Devuelve<span class="colon">:</span></dt>
-<dd class="field-even"><p>Notificación informativa en forma de acción de cliente.</p>
-</dd>
-<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.write">
-<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vals</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.write"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.write" title="Link to this definition">¶</a></dt>
-<dd><p>Actualizar un comentario registrando la fecha de lectura si se marca como leído.</p>
-<p>Si se establece <code class="docutils literal notranslate"><span class="pre">leido</span> <span class="pre">=</span> <span class="pre">True</span></code> y el comentario no estaba leído,
-se asigna automáticamente <code class="docutils literal notranslate"><span class="pre">fecha_lectura</span></code> con la fecha y hora actuales.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>vals</strong> (<em>dict</em>) – Diccionario con los campos a actualizar.</p>
-</dd>
-<dt class="field-even">Devuelve<span class="colon">:</span></dt>
-<dd class="field-even"><p>Resultado de la operación de escritura.</p>
-</dd>
-<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
 <section id="module-second_market.models.second_market_purchase">
-<span id="compra"></span><h2><a class="toc-backref" href="#id7" role="doc-backlink">Compra</a><a class="headerlink" href="#module-second_market.models.second_market_purchase" title="Link to this heading">¶</a></h2>
+<span id="compras-purchases"></span><h2>Compras (Purchases)<a class="headerlink" href="#module-second_market.models.second_market_purchase" title="Link to this heading">¶</a></h2>
 <p>Módulo de gestión de compras y transacciones.</p>
 <p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_purchase.SecondMarketPurchase" title="second_market.models.second_market_purchase.SecondMarketPurchase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecondMarketPurchase</span></code></a> que registra las transacciones
 de compra-venta entre usuarios de la plataforma Second Market, incluyendo
@@ -958,7 +682,7 @@ o el artículo no está disponible.</p>
 
 </section>
 <section id="module-second_market.models.second_market_rating">
-<span id="valoracion"></span><h2><a class="toc-backref" href="#id8" role="doc-backlink">Valoración</a><a class="headerlink" href="#module-second_market.models.second_market_rating" title="Link to this heading">¶</a></h2>
+<span id="historial-de-precios-y-valoraciones-rating-comentarios"></span><h2>Historial de Precios y Valoraciones (Rating &amp; Comentarios)<a class="headerlink" href="#module-second_market.models.second_market_rating" title="Link to this heading">¶</a></h2>
 <p>Módulo de gestión de valoraciones de usuarios.</p>
 <p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_rating.SecondMarketRating" title="second_market.models.second_market_rating.SecondMarketRating"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecondMarketRating</span></code></a> que permite a los usuarios
 calificarse mutuamente tras completar una transacción en la plataforma
@@ -1042,9 +766,294 @@ Ver <code class="xref py py-meth docutils literal notranslate"><span class="pre"
 
 </dd></dl>
 
+<p id="module-second_market.models.second_market_comentarios">Módulo de gestión de comentarios entre usuarios.</p>
+<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_comentarios.SecondMarketComment" title="second_market.models.second_market_comentarios.SecondMarketComment"><code class="xref py py-class docutils literal notranslate"><span class="pre">SecondMarketComment</span></code></a> que representa los comentarios
+que los usuarios pueden enviarse mutuamente sobre un artículo en la
+plataforma Second Market.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_comentarios.</span></span><span class="sig-name descname"><span class="pre">SecondMarketComment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Modelo que representa un comentario de un usuario sobre un artículo.</p>
+<p>Los comentarios están asociados a un artículo concreto y tienen un
+emisor y un receptor. Admiten marcado de lectura y borrado lógico.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
+<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
+<li><p><strong>_inherit</strong> – Mixins heredados para chatter y actividades.</p></li>
+<li><p><strong>_order</strong> – Ordenación por fecha de envío (más reciente primero).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.action_responder">
+<span class="sig-name descname"><span class="pre">action_responder</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.action_responder"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.action_responder" title="Link to this definition">¶</a></dt>
+<dd><p>Abrir un formulario para crear un nuevo comentario como respuesta.</p>
+<p>Pre-rellena el artículo y el receptor (el emisor original) en el contexto.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Acción de ventana para crear un comentario de respuesta.</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.action_ver_articulo">
+<span class="sig-name descname"><span class="pre">action_ver_articulo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.action_ver_articulo"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.action_ver_articulo" title="Link to this definition">¶</a></dt>
+<dd><p>Abrir el formulario del artículo relacionado con el comentario.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Acción de ventana para abrir el artículo en modo formulario.</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.create">
+<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vals_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.create" title="Link to this definition">¶</a></dt>
+<dd><p>Crear uno o varios comentarios generando el ID único de cada uno.</p>
+<p>Asigna un código secuencial desde la secuencia <code class="docutils literal notranslate"><span class="pre">second_market.comment</span></code>
+y notifica al receptor sobre el nuevo comentario.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vals_list</strong> (<em>list</em><em>[</em><em>dict</em><em>]</em>) – Lista de diccionarios con los valores de cada comentario.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Recordset con los comentarios creados.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>second_market.comment</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.eliminar">
+<span class="sig-name descname"><span class="pre">eliminar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.eliminar"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.eliminar" title="Link to this definition">¶</a></dt>
+<dd><p>Realizar un borrado lógico del comentario (<code class="docutils literal notranslate"><span class="pre">activo</span> <span class="pre">=</span> <span class="pre">False</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>UserError</strong> – Si el comentario ya estaba eliminado.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Notificación de advertencia en forma de acción de cliente.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.enviar">
+<span class="sig-name descname"><span class="pre">enviar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.enviar"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.enviar" title="Link to this definition">¶</a></dt>
+<dd><p>Enviar el comentario actualizando su fecha de envío y notificando al receptor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>UserError</strong> – Si el comentario está eliminado o ya fue enviado y leído.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Notificación de éxito en forma de acción de cliente.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.id_articulo">
+<span class="sig-name descname"><span class="pre">id_articulo</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.article'</span></span><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.id_articulo" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.id_emisor">
+<span class="sig-name descname"><span class="pre">id_emisor</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.id_emisor" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.id_receptor">
+<span class="sig-name descname"><span class="pre">id_receptor</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.id_receptor" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.leer">
+<span class="sig-name descname"><span class="pre">leer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.leer"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.leer" title="Link to this definition">¶</a></dt>
+<dd><p>Marcar el comentario como leído registrando la fecha de lectura.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Muestra<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>UserError</strong> – Si el comentario ya estaba marcado como leído.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Notificación informativa en forma de acción de cliente.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_comentarios.SecondMarketComment.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vals</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_comentarios.html#SecondMarketComment.write"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_comentarios.SecondMarketComment.write" title="Link to this definition">¶</a></dt>
+<dd><p>Actualizar un comentario registrando la fecha de lectura si se marca como leído.</p>
+<p>Si se establece <code class="docutils literal notranslate"><span class="pre">leido</span> <span class="pre">=</span> <span class="pre">True</span></code> y el comentario no estaba leído,
+se asigna automáticamente <code class="docutils literal notranslate"><span class="pre">fecha_lectura</span></code> con la fecha y hora actuales.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vals</strong> (<em>dict</em>) – Diccionario con los campos a actualizar.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Resultado de la operación de escritura.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-second_market.models.second_market_chat">
+<span id="chat-y-mensajeria"></span><h2>Chat y Mensajería<a class="headerlink" href="#module-second_market.models.second_market_chat" title="Link to this heading">¶</a></h2>
+<p>Módulo de gestión de chats entre usuarios.</p>
+<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_chat.ChatSegundaMano" title="second_market.models.second_market_chat.ChatSegundaMano"><code class="xref py py-class docutils literal notranslate"><span class="pre">ChatSegundaMano</span></code></a> que representa las conversaciones
+que se producen entre un comprador interesado y el vendedor de un artículo
+en la plataforma Second Market.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_chat.</span></span><span class="sig-name descname"><span class="pre">ChatSegundaMano</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_chat.html#ChatSegundaMano"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Modelo que representa una conversación entre comprador y vendedor.</p>
+<p>Cada chat está vinculado a un artículo concreto y solo puede existir
+un chat por par (artículo, comprador). El vendedor se obtiene
+automáticamente del propietario del artículo.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
+<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
+<li><p><strong>_order</strong> – Ordenación por fecha del último mensaje (más reciente primero).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano.id_articulo">
+<span class="sig-name descname"><span class="pre">id_articulo</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.article'</span></span><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano.id_articulo" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano.id_comprador">
+<span class="sig-name descname"><span class="pre">id_comprador</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano.id_comprador" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano.id_vendedor">
+<span class="sig-name descname"><span class="pre">id_vendedor</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano.id_vendedor" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano.ids_mensajes">
+<span class="sig-name descname"><span class="pre">ids_mensajes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.message'</span></span><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano.ids_mensajes" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_chat.ChatSegundaMano.name_get">
+<span class="sig-name descname"><span class="pre">name_get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_chat.html#ChatSegundaMano.name_get"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_chat.ChatSegundaMano.name_get" title="Link to this definition">¶</a></dt>
+<dd><p>Devolver el nombre representativo del chat para listas desplegables.</p>
+<p>El formato es: <code class="docutils literal notranslate"><span class="pre">Chat:</span> <span class="pre">&lt;artículo&gt;</span> <span class="pre">-</span> <span class="pre">&lt;comprador&gt;</span> <span class="pre">↔</span> <span class="pre">&lt;vendedor&gt;</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Lista de tuplas <code class="docutils literal notranslate"><span class="pre">(id,</span> <span class="pre">nombre)</span></code> para cada chat.</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[tuple[int, str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<p id="module-second_market.models.second_market_message">Módulo de gestión de mensajes de chat.</p>
+<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_message.MensajeChat" title="second_market.models.second_market_message.MensajeChat"><code class="xref py py-class docutils literal notranslate"><span class="pre">MensajeChat</span></code></a> que almacena los mensajes individuales
+dentro de una conversación entre usuarios de la plataforma Second Market.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="second_market.models.second_market_message.MensajeChat">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_message.</span></span><span class="sig-name descname"><span class="pre">MensajeChat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_message.html#MensajeChat"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_message.MensajeChat" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Modelo que representa un mensaje dentro de un chat.</p>
+<p>Los mensajes aparecen ordenados cronológicamente (más antiguo primero)
+dentro del chat al que pertenecen. Cada mensaje tiene un límite de
+500 caracteres.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
+<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
+<li><p><strong>_order</strong> – Orden cronológico ascendente por fecha de envío.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_message.MensajeChat.create">
+<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vals_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#second_market.models.second_market_message.MensajeChat.create" title="Link to this definition">¶</a></dt>
+<dd><p>Crear uno o varios mensajes de chat.</p>
+<p>Al crear mensajes, los campos computados del chat relacionado
+(<code class="docutils literal notranslate"><span class="pre">ultimo_mensaje</span></code>, <code class="docutils literal notranslate"><span class="pre">fecha_ultimo_mensaje</span></code>) se actualizan
+automáticamente gracias al mecanismo <code class="docutils literal notranslate"><span class="pre">&#64;api.depends</span></code> de Odoo.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parámetros<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vals_list</strong> (<em>list</em><em>[</em><em>dict</em><em>]</em>) – Lista de diccionarios con los valores de cada mensaje.</p>
+</dd>
+<dt class="field-even">Devuelve<span class="colon">:</span></dt>
+<dd class="field-even"><p>Recordset con los mensajes creados.</p>
+</dd>
+<dt class="field-odd">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-odd"><p>second_market.message</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_message.MensajeChat.id_chat">
+<span class="sig-name descname"><span class="pre">id_chat</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.chat'</span></span><a class="headerlink" href="#second_market.models.second_market_message.MensajeChat.id_chat" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="second_market.models.second_market_message.MensajeChat.id_usuario">
+<span class="sig-name descname"><span class="pre">id_usuario</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.user'</span></span><a class="headerlink" href="#second_market.models.second_market_message.MensajeChat.id_usuario" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="second_market.models.second_market_message.MensajeChat.name_get">
+<span class="sig-name descname"><span class="pre">name_get</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_message.html#MensajeChat.name_get"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_message.MensajeChat.name_get" title="Link to this definition">¶</a></dt>
+<dd><p>Devolver un preview del mensaje para listas desplegables.</p>
+<p>Muestra el nombre del usuario seguido de los primeros 30 caracteres
+del contenido del mensaje.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Devuelve<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Lista de tuplas <code class="docutils literal notranslate"><span class="pre">(id,</span> <span class="pre">nombre)</span></code> para cada mensaje.</p>
+</dd>
+<dt class="field-even">Tipo del valor devuelto<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[tuple[int, str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="module-second_market.models.second_market_denuncia">
-<span id="denuncia"></span><h2><a class="toc-backref" href="#id9" role="doc-backlink">Denuncia</a><a class="headerlink" href="#module-second_market.models.second_market_denuncia" title="Link to this heading">¶</a></h2>
+<span id="denuncias"></span><h2>Denuncias<a class="headerlink" href="#module-second_market.models.second_market_denuncia" title="Link to this heading">¶</a></h2>
 <p>Módulo de gestión de denuncias y reportes.</p>
 <p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_denuncia.Denuncia" title="second_market.models.second_market_denuncia.Denuncia"><code class="xref py py-class docutils literal notranslate"><span class="pre">Denuncia</span></code></a> que permite a los usuarios de la plataforma
 Second Market reportar contenido inapropiado (artículos, comentarios o usuarios)
@@ -1239,58 +1248,6 @@ Además notifica al denunciante sobre el cambio de estado.</p>
 </dd></dl>
 
 </section>
-<section id="module-second_market.models.second_market_etiqueta">
-<span id="etiqueta"></span><h2><a class="toc-backref" href="#id10" role="doc-backlink">Etiqueta</a><a class="headerlink" href="#module-second_market.models.second_market_etiqueta" title="Link to this heading">¶</a></h2>
-<p>Módulo de gestión de etiquetas de artículos.</p>
-<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_etiqueta.EtiquetaSegundaMano" title="second_market.models.second_market_etiqueta.EtiquetaSegundaMano"><code class="xref py py-class docutils literal notranslate"><span class="pre">EtiquetaSegundaMano</span></code></a> que permite asignar
-etiquetas descriptivas a los artículos de la plataforma.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="second_market.models.second_market_etiqueta.EtiquetaSegundaMano">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_etiqueta.</span></span><span class="sig-name descname"><span class="pre">EtiquetaSegundaMano</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_etiqueta.html#EtiquetaSegundaMano"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_etiqueta.EtiquetaSegundaMano" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
-<p>Modelo que representa una etiqueta para artículos de segunda mano.</p>
-<p>Las etiquetas permiten describir características adicionales de un artículo.
-Cada artículo puede tener un máximo de 5 etiquetas.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
-<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</section>
-<section id="module-second_market.models.second_market_imagen">
-<span id="imagen"></span><h2><a class="toc-backref" href="#id11" role="doc-backlink">Imagen</a><a class="headerlink" href="#module-second_market.models.second_market_imagen" title="Link to this heading">¶</a></h2>
-<p>Módulo de gestión de imágenes de artículos.</p>
-<p>Define el modelo <a class="reference internal" href="#second_market.models.second_market_imagen.ImagenArticulo" title="second_market.models.second_market_imagen.ImagenArticulo"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImagenArticulo</span></code></a> que almacena las imágenes
-asociadas a cada artículo de la plataforma Second Market.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="second_market.models.second_market_imagen.ImagenArticulo">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">second_market.models.second_market_imagen.</span></span><span class="sig-name descname"><span class="pre">ImagenArticulo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/second_market/models/second_market_imagen.html#ImagenArticulo"><span class="viewcode-link"><span class="pre">[fuente]</span></span></a><a class="headerlink" href="#second_market.models.second_market_imagen.ImagenArticulo" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
-<p>Modelo que representa una imagen vinculada a un artículo de segunda mano.</p>
-<p>Cada artículo puede tener entre 1 y 10 imágenes. El orden de visualización
-se controla mediante el campo <code class="docutils literal notranslate"><span class="pre">sequence</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>_name</strong> – Nombre técnico del modelo en Odoo.</p></li>
-<li><p><strong>_description</strong> – Descripción legible del modelo.</p></li>
-<li><p><strong>_order</strong> – Ordenación por <code class="docutils literal notranslate"><span class="pre">sequence</span></code> y luego por <code class="docutils literal notranslate"><span class="pre">id</span></code>.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="second_market.models.second_market_imagen.ImagenArticulo.article_id">
-<span class="sig-name descname"><span class="pre">article_id</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'second_market.article'</span></span><a class="headerlink" href="#second_market.models.second_market_imagen.ImagenArticulo.article_id" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</section>
 </section>
 
 
@@ -1300,9 +1257,14 @@ se controla mediante el campo <code class="docutils literal notranslate"><span c
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="index.html">
+              <img class="logo" src="_static/dalored.png" alt="Logo of Dalo"/>
+            </a></p>
 <h1 class="logo"><a href="index.html">Dalo</a></h1>
 
 
+
+<p class="blurb">Documentación técnica del backend Odoo</p>
 
 
 
@@ -1319,31 +1281,35 @@ se controla mediante el campo <code class="docutils literal notranslate"><span c
     </div>
 </search>
 <script>document.getElementById('searchbox').style.display = "block"</script><h3>Navegación</h3>
-<p class="caption" role="heading"><span class="caption-text">Secciones:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Contenidos:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Modelos (second_market)</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_articulo">Artículo</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_app_users">Usuario</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_categoria">Categoría</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_chat">Chat</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_message">Mensaje</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_comentarios">Comentario</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_purchase">Compra</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_rating">Valoración</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_denuncia">Denuncia</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_etiqueta">Etiqueta</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_imagen">Imagen</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Controladores de la API REST <code class="docutils literal notranslate"><span class="pre">api_market</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-api_market.controllers.usuario">Usuario</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-api_market.controllers.auth_controller">Autenticación (Auth Controller)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-api_market.controllers.login">Login</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-api_market.controllers.articulos">Artículos</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-api_market.controllers.com_compr_val">Compras y Valoraciones</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-api_market.controllers.chat_den_cat">Chat y Denuncias</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API REST (api_market)</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Modelos del Mercado (<code class="docutils literal notranslate"><span class="pre">second_market</span></code>)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_app_users">Usuarios</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_articulo">Artículos</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_imagen">Imágenes de Artículos</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_categoria">Categorías</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_purchase">Compras (Purchases)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_rating">Historial de Precios y Valoraciones (Rating &amp; Comentarios)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_chat">Chat y Mensajería</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-second_market.models.second_market_denuncia">Denuncias</a></li>
+</ul>
+</li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="capítulo anterior">Second Market — Documentación</a></li>
-      <li>Next: <a href="api.html" title="próximo capítulo">API REST (api_market)</a></li>
+      <li>Previous: <a href="api.html" title="capítulo anterior">Controladores de la API REST <code class="docutils literal notranslate"><span class="pre">api_market</span></code></a></li>
   </ul></li>
 </ul>
 </div>

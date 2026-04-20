@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.widget.Toast
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
@@ -275,6 +276,7 @@ fun CreateArticleScreen(
                 Button(
                     onClick = {
                         viewModel.createArticle(context) {
+                            Toast.makeText(context, "Artículo publicado con éxito", Toast.LENGTH_SHORT).show()
                             navController.popBackStack()
                         }
                     },

@@ -106,7 +106,7 @@ fun HomeScreen(
                         ) {
                             if (userState?.fotoPerfil != null) {
                                 AsyncImage(
-                                    model = userState?.fotoPerfil,
+                                    model = ImageDisplayUtils.getProfileImageModel(userState?.fotoPerfil),
                                     contentDescription = "Foto de perfil",
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop

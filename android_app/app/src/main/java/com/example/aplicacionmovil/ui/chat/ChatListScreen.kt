@@ -25,6 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.aplicacionmovil.domain.models.ChatConversation
+import com.example.aplicacionmovil.utils.DateUtils
 
 /**
  * Pantalla de lista de conversaciones
@@ -289,19 +290,5 @@ fun EmptyChatsState() {
  * Formatea la fecha del chat para mostrar
  */
 fun formatChatDate(dateString: String): String {
-    return try {
-        // Simplificación: mostrar solo la hora o fecha corta
-        if (dateString.contains("T")) {
-            // Formato ISO: 2024-01-15T10:30:00
-            val parts = dateString.split("T")
-            if (parts.size >= 2) parts[1].take(5) else dateString.take(10)
-        } else if (dateString.contains(" ")) {
-            val parts = dateString.split(" ")
-            if (parts.size >= 2) parts[1].take(5) else dateString.take(10)
-        } else {
-            dateString.take(10)
-        }
-    } catch (e: Exception) {
-        dateString.take(10)
-    }
+    return DateUtils.formatChatTime(dateString)
 }

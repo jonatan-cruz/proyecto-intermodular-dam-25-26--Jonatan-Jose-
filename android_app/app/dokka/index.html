@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>Second Market App</title>
+    <link href="images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="scripts/sourceset_dependencies.js" async="async"></script>
+<link href="styles/style.css" rel="Stylesheet">
+<link href="styles/main.css" rel="Stylesheet">
+<link href="styles/prism.css" rel="Stylesheet">
+<link href="styles/logo-styles.css" rel="Stylesheet">
+<link href="styles/font-jb-sans-auto.css" rel="Stylesheet">
+<script type="text/javascript" src="scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+<nav class="navigation" id="navigation-wrapper">
+    <div class="navigation--inner">
+        <div class="navigation-title">
+            <button class="menu-toggle" id="menu-toggle" type="button">toggle menu</button>
+            <div class="library-name">
+                    <a class="library-name--link" href="index.html">
+                            Second Market App
+                    </a>
+            </div>
+            <div class="library-version">
+            </div>
+        </div>
+        <div class="filter-section" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active="" data-filter=":app:dokkaHtml/release">androidJvm</button>
+        </div>
+    </div>
+    <div class="navigation-controls">
+        <button class="navigation-controls--btn navigation-controls--theme" id="theme-toggle-button" type="button">switch theme</button>
+        <div class="navigation-controls--btn navigation-controls--search" id="searchBar" role="button">search in API</div>
+    </div>
+</nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="sidebar--inner" id="sideMenu"></div>
+            </div>
+            <div id="main">
+<div class="main-content" id="content" pageIds="Second Market App::////PointingToDeclaration//492899073">
+  <div class="breadcrumbs"></div>
+  <div class="cover ">
+    <h1 class="cover"><span><span>Second</span></span> <span><span>Market</span></span> <span><span>App</span></span></h1>
+    <div class="platform-hinted UnderCoverText" data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":app:dokkaHtml/release"><p class="paragraph">Aplicación Android de marketplace de segunda mano.</p><h2 class="">Paquetes</h2><h3 class="">com.example.aplicacionmovil.data</h3><p class="paragraph">Capa de datos que gestiona el acceso a datos locales y remotos.</p><ul><li><p class="paragraph"><strong>local</strong>: Gestión de sesión con <code class="lang-kotlin">SessionManager</code> usando EncryptedSharedPreferences</p></li><li><p class="paragraph"><strong>remote.api</strong>: Cliente Retrofit y definición de endpoints <code class="lang-kotlin">ApiService</code></p></li><li><p class="paragraph"><strong>repository</strong>: Repositorios para acceso a datos</p></li></ul><h3 class="">com.example.aplicacionmovil.domain.models</h3><p class="paragraph">Modelos de dominio de la aplicación.</p><ul><li><p class="paragraph"><strong>Article</strong>: Modelo de artículo/producto</p></li><li><p class="paragraph"><strong>User</strong>: Modelo de usuario</p></li><li><p class="paragraph"><strong>ChatConversation</strong>: Modelo de conversación de chat</p></li><li><p class="paragraph"><strong>ChatMessage</strong>: Modelo de mensaje</p></li><li><p class="paragraph"><strong>Requests</strong>: Data classes para peticiones a la API</p></li><li><p class="paragraph"><strong>Response</strong>: Data classes para respuestas de la API</p></li></ul><h3 class="">com.example.aplicacionmovil.ui</h3><p class="paragraph">Capa de presentación con Jetpack Compose.</p><ul><li><p class="paragraph"><strong>main</strong>: Pantallas principales (Home, Login, Register, Search)</p></li><li><p class="paragraph"><strong>chat</strong>: Sistema de mensajería (ChatListScreen, ChatDetailScreen)</p></li><li><p class="paragraph"><strong>map</strong>: Mapa de productos con Google Maps</p></li><li><p class="paragraph"><strong>products</strong>: Creación y detalle de artículos</p></li><li><p class="paragraph"><strong>profile</strong>: Perfil de usuario</p></li><li><p class="paragraph"><strong>settings</strong>: Configuración de la app</p></li><li><p class="paragraph"><strong>navigation</strong>: Componentes de navegación (BottomNavBar)</p></li><li><p class="paragraph"><strong>theme</strong>: Tema Material 3 (colores, tipografía)</p></li></ul><h2 class="">Arquitectura</h2><p class="paragraph">La aplicación sigue el patrón <strong>MVVM</strong>:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">View (Composables) &lt;-&gt; ViewModel &lt;-&gt; Repository &lt;-&gt; API/Local</code></pre><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><p class="paragraph">Cada pantalla tiene su propio ViewModel que expone estados mediante <code class="lang-kotlin">StateFlow</code>.</p></div></div>
+  </div>
+  <h2 class="">Packages</h2>
+  <div class="table"><a data-name="-1464170944%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.data.local" id="-1464170944%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.data.local/index.html">com.example.aplicacionmovil.data.local</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1464170944%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="518037761%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.data.remote.api" id="518037761%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.data.remote.api/index.html">com.example.aplicacionmovil.data.remote.api</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="518037761%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="-1980017191%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.data.repository" id="-1980017191%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.data.repository/index.html">com.example.aplicacionmovil.data.repository</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1980017191%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="2027940703%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.domain.models" id="2027940703%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.domain.models/index.html">com.example.aplicacionmovil.domain.models</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2027940703%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="-701360067%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.ui.chat" id="-701360067%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.ui.chat/index.html">com.example.aplicacionmovil.ui.chat</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-701360067%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="-362585250%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.ui.main" id="-362585250%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.ui.main/index.html">com.example.aplicacionmovil.ui.main</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-362585250%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="1787972827%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.ui.map" id="1787972827%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.ui.map/index.html">com.example.aplicacionmovil.ui.map</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1787972827%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="1541770681%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.ui.navigation" id="1541770681%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.ui.navigation/index.html">com.example.aplicacionmovil.ui.navigation</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1541770681%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="1409364037%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.ui.products.create" id="1409364037%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.ui.products.create/index.html">com.example.aplicacionmovil.ui.products.create</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1409364037%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="247035738%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.ui.products.detail" id="247035738%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.ui.products.detail/index.html">com.example.aplicacionmovil.ui.products.detail</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="247035738%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="1707353192%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.ui.profile" id="1707353192%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.ui.profile/index.html">com.example.aplicacionmovil.ui.profile</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1707353192%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="1595002824%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.ui.settings" id="1595002824%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.ui.settings/index.html">com.example.aplicacionmovil.ui.settings</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1595002824%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="-141014072%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.ui.theme" id="-141014072%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.ui.theme/index.html">com.example.aplicacionmovil.ui.theme</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-141014072%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+<a data-name="-249637892%2FPackages%2F492899073" anchor-label="com.example.aplicacionmovil.utils" id="-249637892%2FPackages%2F492899073" data-filterable-set=":app:dokkaHtml/release"></a>
+    <div class="table-row" data-filterable-current=":app:dokkaHtml/release" data-filterable-set=":app:dokkaHtml/release">
+      <div>
+        <div class="main-subrow ">
+          <div class=""><span class="inline-flex">
+              <div><a href="-second -market -app/com.example.aplicacionmovil.utils/index.html">com.example.aplicacionmovil.utils</a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-249637892%2FPackages%2F492899073"></span>
+                <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+              </span></span></div>
+          <div class="pull-right">
+            <div class="platform-tags no-gutters">
+              <div class="platform-tag jvm-like">androidJvm</div>
+            </div>
+          </div>
+        </div>
+        <div></div>
+      </div>
+    </div>
+  </div>
+</div>
+      <div class="footer">
+        <span class="go-to-top-icon"><a href="#content" id="go-to-top-link"></a></span><span>© 2026 Copyright</span><span
+                class="pull-right"><span>Generated by </span><a
+                href="https://github.com/Kotlin/dokka"><span>dokka</span><span class="padded-icon"></span></a></span>
+      </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

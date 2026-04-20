@@ -11,7 +11,7 @@ body {
 
 
 div.document {
-    width: 940px;
+    width: 1200px;
     margin: 30px auto 0 auto;
 }
 
@@ -21,11 +21,11 @@ div.documentwrapper {
 }
 
 div.bodywrapper {
-    margin: 0 0 0 220px;
+    margin: 0 0 0 350px;
 }
 
 div.sphinxsidebar {
-    width: 220px;
+    width: 350px;
     font-size: 14px;
     line-height: 1.5;
 }
@@ -45,7 +45,7 @@ div.body > .section {
 }
 
 div.footer {
-    width: 940px;
+    width: 1200px;
     margin: 20px auto 30px auto;
     font-size: 14px;
     color: #888;
@@ -73,13 +73,13 @@ div.sphinxsidebar {
 }
 
 div.sphinxsidebar a {
-    color: #444;
+    color: #f5ede9;
     text-decoration: none;
-    border-bottom: 1px dotted #999;
+    border-bottom: 1px dotted 0;
 }
 
 div.sphinxsidebar a:hover {
-    border-bottom: 1px solid #999;
+    border-bottom: 1px solid 0;
 }
 
 div.sphinxsidebarwrapper {
@@ -96,7 +96,7 @@ div.sphinxsidebarwrapper h1.logo {
     margin-top: -10px;
     text-align: center;
     margin-bottom: 5px;
-    text-align: left;
+    text-align: center;
 }
 
 div.sphinxsidebarwrapper h1.logo-name {
@@ -111,7 +111,7 @@ div.sphinxsidebarwrapper p.blurb {
 div.sphinxsidebar h3,
 div.sphinxsidebar h4 {
     font-family: Georgia, serif;
-    color: #444;
+    color: #c5a059;
     font-size: 24px;
     font-weight: normal;
     margin: 0 0 5px 0;
@@ -123,7 +123,7 @@ div.sphinxsidebar h4 {
 }
 
 div.sphinxsidebar h3 a {
-    color: #444;
+    color: #f5ede9;
 }
 
 div.sphinxsidebar p.logo a,
@@ -134,7 +134,7 @@ div.sphinxsidebar h3 a:hover {
 }
 
 div.sphinxsidebar p {
-    color: #555;
+    color: #f5ede9;
     margin: 10px 0;
 }
 
@@ -228,7 +228,7 @@ a.headerlink {
 }
 
 a.headerlink:hover {
-    color: #444;
+    color: #c22a2a;
     background: #EAEAEA;
 }
 
@@ -503,7 +503,7 @@ a:hover tt, a:hover code {
     background: #EEE;
 }
 
-@media screen and (max-width: 940px) {
+@media screen and (max-width: 1200px) {
 
     body {
         margin: 0;

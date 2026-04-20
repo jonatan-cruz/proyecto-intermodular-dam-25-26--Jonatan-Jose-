@@ -1,74 +1,71 @@
-Modelos (second\_market)
-========================
+Modelos del Mercado (``second_market``)
+=====================================
 
-Documentación de los modelos de datos del módulo **second_market**.
+Esta sección documenta los modelos de Odoo que definen la base de datos
+estrictamente tipada y sus relaciones en PostgreSQL para el mercado de segunda mano.
 
-.. contents:: Índice de modelos
-   :local:
-   :depth: 1
-
-Artículo
+Usuarios
 --------
-
-.. automodule:: second_market.models.second_market_articulo
-   :members:
-
-Usuario
--------
-
 .. automodule:: second_market.models.second_market_app_users
    :members:
+   :undoc-members:
+   :show-inheritance:
 
-Categoría
+Artículos
 ---------
+.. automodule:: second_market.models.second_market_articulo
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
+Imágenes de Artículos
+---------------------
+.. automodule:: second_market.models.second_market_imagen
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Categorías
+----------
 .. automodule:: second_market.models.second_market_categoria
    :members:
+   :undoc-members:
+   :show-inheritance:
 
-Chat
-----
-
-.. automodule:: second_market.models.second_market_chat
+Compras (Purchases)
+-------------------
+.. automodule:: second_market.models.second_market_purchase
    :members:
+   :undoc-members:
+   :show-inheritance:
 
-Mensaje
--------
-
-.. automodule:: second_market.models.second_market_message
+Historial de Precios y Valoraciones (Rating & Comentarios)
+----------------------------------------------------------
+.. automodule:: second_market.models.second_market_rating
    :members:
-
-Comentario
-----------
+   :undoc-members:
+   :show-inheritance:
 
 .. automodule:: second_market.models.second_market_comentarios
    :members:
+   :undoc-members:
+   :show-inheritance:
 
-Compra
-------
-
-.. automodule:: second_market.models.second_market_purchase
+Chat y Mensajería
+-----------------
+.. automodule:: second_market.models.second_market_chat
    :members:
+   :undoc-members:
+   :show-inheritance:
 
-Valoración
-----------
-
-.. automodule:: second_market.models.second_market_rating
+.. automodule:: second_market.models.second_market_message
    :members:
+   :undoc-members:
+   :show-inheritance:
 
-Denuncia
---------
-
+Denuncias
+---------
 .. automodule:: second_market.models.second_market_denuncia
    :members:
-
-Etiqueta
---------
-
-.. automodule:: second_market.models.second_market_etiqueta
-   :members:
-
-Imagen
-------
-
-.. automodule:: second_market.models.second_market_imagen
-   :members:
+   :undoc-members:
+   :show-inheritance:

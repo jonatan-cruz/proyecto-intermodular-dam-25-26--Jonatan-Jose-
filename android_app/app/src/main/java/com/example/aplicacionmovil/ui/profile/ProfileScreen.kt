@@ -140,14 +140,14 @@ fun ProfileHeader(user: User, viewModel: ProfileViewModel) {
         ) {
             if (user.fotoPerfil != null) {
                 AsyncImage(
-                    model = ImageDisplayUtils.ensureDisplayableImage(user.fotoPerfil),
+                    model = ImageDisplayUtils.getProfileImageModel(user.fotoPerfil),
                     contentDescription = "Foto de perfil",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             } else {
                 Text(
-                    text = (user.name ?: "").firstOrNull()?.uppercase() ?: "U",
+                    text = user.name.firstOrNull()?.uppercase() ?: "U",
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.Bold

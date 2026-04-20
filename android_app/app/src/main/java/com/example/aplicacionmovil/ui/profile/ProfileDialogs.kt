@@ -9,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -100,6 +99,7 @@ fun EditProfileDialog(
                                         email = email
                                     )
                                 )
+                                Toast.makeText(context, "¡Perfil editado exitosamente!", Toast.LENGTH_SHORT).show()
                             }
                         ) {
                             Text("Guardar", fontWeight = FontWeight.Bold)
@@ -125,7 +125,7 @@ fun EditProfileDialog(
                     ) {
                         if (avatarBase64 != null) {
                             AsyncImage(
-                                model = ImageDisplayUtils.ensureDisplayableImage(avatarBase64),
+                                model = ImageDisplayUtils.getProfileImageModel(avatarBase64),
                                 contentDescription = "Nueva foto de perfil",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop

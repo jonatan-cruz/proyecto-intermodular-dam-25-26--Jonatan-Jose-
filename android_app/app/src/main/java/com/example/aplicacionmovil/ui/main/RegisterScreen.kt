@@ -1,6 +1,7 @@
 package com.example.aplicacionmovil.ui.main
 
 import android.content.Context
+import com.example.aplicacionmovil.data.local.SessionManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -41,21 +42,33 @@ fun RegisterScreen(
     var camposVacios by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
-
+    val sessionManager = remember { SessionManager(context) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val registerState by viewModel.registerState.collectAsState()
 
     LaunchedEffect(registerState) {
-        if (registerState is RegisterState.Success) {
-            navController.navigate("home") {
-                popUpTo("register") { inclusive = true }
+        when (val state = registerState) {
+            is RegisterState.Success -> {
+                navController.navigate("home") {
+                    popUpTo("register") { inclusive = true }
+                }
+                viewModel.resetState()
             }
-            viewModel.resetState()
+            is RegisterState.Error -> {
+                snackbarHostState.showSnackbar(
+                    message = state.message,
+                    duration = SnackbarDuration.Long
+                )
+                viewModel.resetState()
+            }
+            else -> {}
         }
     }
 
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Crear Cuenta") },
@@ -293,7 +306,7 @@ fun RegisterScreen(
                         camposVacios = true
                     } else {
                         camposVacios = false
-                        viewModel.register(name,email, password, telefono, ubicacion, biografia)
+                        viewModel.register(name, email, password, telefono, ubicacion, biografia, sessionManager)
                     }
                 },
                 modifier = Modifier
